@@ -4,9 +4,11 @@
 
 ## 项目概述
 
-一个给小朋友的 Bluey 风格画图填色网页应用,**所有代码都在一个 `index.html` 里**(内联 CSS + JS + SVG),无构建步骤、无依赖、无服务器。直接双击就能开,部署到 GitHub Pages 后通过 URL 访问。
+一个给小朋友的卡通画图填色网页应用(熊猫、狮子、企鹅、恐龙、独角兽、火箭、海盗船等场景),**所有代码都在一个 `index.html` 里**(内联 CSS + JS + SVG),无构建步骤、无依赖、无服务器。直接双击就能开,部署到 GitHub Pages 后通过 URL 访问。
 
 线上地址:https://lionnevergrowup.github.io/DrawGame/
+
+> 项目早期叫 "Bluey 画图填色",后来用户希望避开 Bluey 商标 + 觉得不够好看,所以全部换成无版权动物/场景。CSS 里 `--bluey-blue` 这种变量名是历史遗留,只是个颜色代号,不要再用 Bluey 主题。
 
 ## 开发分支规则
 
@@ -33,7 +35,7 @@
 | 撤销 | 单个 `state.history` 栈,两种条目:`{kind:'fill', el, prevColor}` 和 `{kind:'stroke', imageData}` |
 | 保存 PNG | `saveBtn` 处理器,把 SVG 序列化成 data URL 后画到离屏 canvas,再叠加画笔 canvas |
 | 自定义图(上传/URL/Google) | `addCustomPage(dataUrl, label)`、`fileInput`、`urlLoadBtn`、`googleBtn` |
-| 帮助弹窗 | `#helpModal`,首次打开自动弹(`localStorage` 标记 `bluey_help_seen`) |
+| 帮助弹窗 | `#helpModal`,首次打开自动弹(`localStorage` 标记 `coloring_help_seen`) |
 
 ## SVG 着色图样的约定
 
@@ -59,7 +61,7 @@ mykey: {
 
 - **保持单文件**:不要引入打包工具、外部 JS/CSS、npm 包。所有逻辑都进 `index.html`。
 - **触屏第一**:任何新交互都要 Pointer Events + `touch-action: none`(canvas)/`manipulation`(body),iPad 上验证。
-- **不要往 SVG 里塞官方 Bluey 美术资源**:Bluey 是 Ludo Studio 商标,只做"卡通蓝色狗狗"风格简笔画。用户想用真实着色页时,通过自定义图功能上传。
+- **不要塞商标受保护的卡通形象**:Bluey、米老鼠、小猪佩奇这类都是商标,不要内置。需要时,让用户通过"加自己的图"功能上传他们自己合法获取的着色页。
 - **保存 PNG 的 CORS 风险**:`<image>` 引用外网 URL 会污染 canvas 导致 `toBlob` 抛错。URL 载入流程已经先用 `fetch` 转 data URL,新增类似功能时务必保持这条路径。
 - **不要破坏 viewBox `0 0 400 300`**:很多坐标硬编码在里面,改 viewBox 等于要重排所有图样。
 
