@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Bluey 画图填色</title>
+<style>
+  :root {
+    --bluey-blue: #4ab3ff;
+    --bluey-dark: #2a6db0;
+    --bg: #fff8e7;
+    --panel: #ffffff;
+    --shadow: 0 4px 14px rgba(0,0,0,.08);
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: -apple-system, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    overscroll-behavior: none;
+    touch-action: manipulation;
+    user-select: none; -webkit-user-select: none;
+  }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--bluey-blue);
+    color: white;
+    box-shadow: var(--shadow);
+  }
+  header h1 {
+    font-size: 18px; margin: 0; letter-spacing: 1px;
+  }
+  .header-btns { display: flex; gap: 8px; }
+  .icon-btn {
+    background: rgba(255,255,255,.2);
+    border: none; color: white;
+    padding: 8px 12px; border-radius: 10px;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+  }
+  .icon-btn:active { background: rgba(255,255,255,.35); }
+
+  main {
+    display: flex;
+    height: calc(100vh - 56px);
+    height: calc(100dvh - 56px);
+  }
+
+  /* Left toolbar */
+  .toolbar {
+    width: 88px;
+    background: var(--panel);
+    box-shadow: var(--shadow);
+    padding: 10px 6px;
+    display: flex; flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+    z-index: 2;
+  }
+  .tool {
+    background: #f1f4f8;
+    border: 2px solid transparent;
+    border-radius: var(--radius);
+    padding: 10px 4px;
+    font-size: 11px;
+    text-align: center;
+    cursor: pointer;
+    color: #333;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .tool svg { width: 26px; height: 26px; }
+  .tool.active {
+    background: #e6f3ff;
+    border-color: var(--bluey-blue);
+    color: var(--bluey-dark);
+  }
+
+  /* Canvas area */
+  .stage-wrap {
+    flex: 1;
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    padding: 10px;
+    overflow: hidden;
+  }
+  .stage {
+    position: relative;
+    background: white;
+    box-shadow: var(--shadow);
+    border-radius: var(--radius);
+    overflow: hidden;
+    max-width: 100%; max-height: 100%;
+    aspect-ratio: 4 / 3;
+    width: 100%;
+  }
+  .stage svg, .stage canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    display: block;
+  }
+  .stage svg .fillable {
+    cursor: pointer;
+    transition: fill 0.15s ease;
+  }
+  .stage canvas { touch-action: none; }
+  .stage canvas.draw-mode { cursor: crosshair; }
+  .stage canvas.disabled { pointer-events: none; }
+
+  /* Right side panel */
+  .side {
+    width: 230px;
+    background: var(--panel);
+    box-shadow: var(--shadow);
+    padding: 12px 10px;
+    display: flex; flex-direction: column;
+    gap: 14px;
+    overflow-y: auto;
+  }
+  .section h3 {
+    font-size: 12px; color: #666; margin: 0 0 8px;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .colors {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;
+  }
+  .swatch {
+    width: 100%; aspect-ratio: 1;
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 1px 4px rgba(0,0,0,.2);
+    cursor: pointer;
+  }
+  .swatch.active {
+    outline: 3px solid var(--bluey-blue);
+    outline-offset: 1px;
+  }
+  .custom-color {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 8px;
+  }
+  .custom-color input[type=color] {
+    width: 36px; height: 36px; border: none; background: none; padding: 0; cursor: pointer;
+  }
+  .brush-row {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .brush-row input[type=range] { flex: 1; }
+  .brush-preview {
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .brush-dot {
+    background: currentColor; border-radius: 50%;
+  }
+  .pages {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;
+  }
+  .page-thumb {
+    background: #f1f4f8;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    padding: 4px;
+    cursor: pointer;
+    aspect-ratio: 4 / 3;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .page-thumb.active { border-color: var(--bluey-blue); background: #e6f3ff; }
+  .page-thumb svg { width: 100%; height: 100%; }
+
+  /* iPad / small layout adjustments */
+  @media (max-width: 900px) {
+    .side { width: 180px; }
+    .toolbar { width: 74px; }
+  }
+  @media (max-width: 640px) {
+    main { flex-direction: column; height: calc(100dvh - 56px); }
+    .toolbar {
+      width: 100%; height: auto;
+      flex-direction: row;
+      padding: 6px;
+      overflow-x: auto; overflow-y: hidden;
+    }
+    .tool { min-width: 64px; padding: 6px 4px; font-size: 10px; }
+    .tool svg { width: 22px; height: 22px; }
+    .side {
+      width: 100%; height: auto;
+      max-height: 38vh;
+      flex-direction: row;
+      gap: 12px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+    }
+    .section { min-width: 150px; }
+    .stage-wrap { flex: 1; min-height: 40vh; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎨 Bluey 画图填色</h1>
+  <div class="header-btns">
+    <button class="icon-btn" id="undoBtn">↶ 撤销</button>
+    <button class="icon-btn" id="clearBtn">🗑 清空</button>
+    <button class="icon-btn" id="saveBtn">💾 保存</button>
+  </div>
+</header>
+
+<main>
+  <!-- Left toolbar -->
+  <aside class="toolbar" id="toolbar">
+    <div class="tool active" data-tool="fill">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l9 9-7 7a3 3 0 01-4-4l2-2"/><path d="M19 14c0 2-2 4-2 4s-2-2-2-4a2 2 0 014 0z" fill="currentColor" stroke="none"/></svg>
+      点击填色
+    </div>
+    <div class="tool" data-tool="brush">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21s4-1 6-3l9-9-3-3-9 9c-2 2-3 6-3 6z"/></svg>
+      画笔
+    </div>
+    <div class="tool" data-tool="eraser">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6 6h12M16 3l5 5L9 20H3v-6z"/></svg>
+      橡皮
+    </div>
+  </aside>
+
+  <!-- Canvas stage -->
+  <div class="stage-wrap">
+    <div class="stage" id="stage">
+      <svg id="coloringSvg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid meet"></svg>
+      <canvas id="drawCanvas"></canvas>
+    </div>
+  </div>
+
+  <!-- Right side panel -->
+  <aside class="side">
+    <div class="section">
+      <h3>颜色</h3>
+      <div class="colors" id="colors"></div>
+      <div class="custom-color">
+        <input type="color" id="customColor" value="#4ab3ff" />
+        <span style="font-size:12px;color:#666">自选颜色</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>画笔大小</h3>
+      <div class="brush-row">
+        <input type="range" id="brushSize" min="2" max="40" value="8" />
+        <div class="brush-preview" id="brushPreview"><div class="brush-dot"></div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>选择图画</h3>
+      <div class="pages" id="pages"></div>
+    </div>
+  </aside>
+</main>
+
+<script>
+/* ========== Bluey-style coloring book pages (inline SVG) ==========
+   Cartoon-style line art inspired by Bluey. All shapes are simple paths/circles
+   so they can be tap-filled. Each fillable region has class="fillable" and a
+   default fill of #ffffff so the user can paint it. */
+
+const PAGES = {
+  bluey: {
+    name: 'Bluey',
+    svg: `
+      <g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+        <!-- Background ground -->
+        <path class="fillable" fill="#ffffff" d="M0 260 L400 260 L400 300 L0 300 Z"/>
+        <!-- Body -->
+        <ellipse class="fillable" fill="#ffffff" cx="200" cy="220" rx="85" ry="55"/>
+        <!-- Belly -->
+        <ellipse class="fillable" fill="#ffffff" cx="200" cy="235" rx="50" ry="30"/>
+        <!-- Front legs -->
+        <path class="fillable" fill="#ffffff" d="M160 260 Q155 280 165 285 L185 285 Q190 275 180 260 Z"/>
+        <path class="fillable" fill="#ffffff" d="M220 260 Q215 280 225 285 L245 285 Q250 275 240 260 Z"/>
+        <!-- Tail -->
+        <path class="fillable" fill="#ffffff" d="M280 200 Q310 180 305 160 Q295 175 275 195 Z"/>
+        <!-- Head -->
+        <ellipse class="fillable" fill="#ffffff" cx="200" cy="130" rx="78" ry="68"/>
+        <!-- Snout -->
+        <ellipse class="fillable" fill="#ffffff" cx="200" cy="155" rx="35" ry="25"/>
+        <!-- Left ear -->
+        <path class="fillable" fill="#ffffff" d="M140 90 Q120 60 135 50 Q150 70 158 95 Z"/>
+        <!-- Right ear -->
+        <path class="fillable" fill="#ffffff" d="M260 90 Q280 60 265 50 Q250 70 242 95 Z"/>
+        <!-- Eyes (whites) -->
+        <circle class="fillable" fill="#ffffff" cx="178" cy="115" r="13"/>
+        <circle class="fillable" fill="#ffffff" cx="222" cy="115" r="13"/>
+        <!-- Pupils (always black) -->
+        <circle fill="#1a1a1a" cx="180" cy="118" r="5"/>
+        <circle fill="#1a1a1a" cx="220" cy="118" r="5"/>
+        <!-- Nose -->
+        <ellipse class="fillable" fill="#ffffff" cx="200" cy="145" rx="9" ry="7"/>
+        <!-- Mouth -->
+        <path fill="none" d="M185 165 Q200 178 215 165"/>
+        <!-- Spot on head -->
+        <path class="fillable" fill="#ffffff" d="M160 80 Q175 70 195 78 Q180 95 160 95 Z"/>
+        <!-- Sun -->
+        <circle class="fillable" fill="#ffffff" cx="50" cy="50" r="22"/>
+        <g stroke="#1a1a1a" stroke-width="2">
+          <line x1="50" y1="15" x2="50" y2="22"/>
+          <line x1="50" y1="78" x2="50" y2="85"/>
+          <line x1="15" y1="50" x2="22" y2="50"/>
+          <line x1="78" y1="50" x2="85" y2="50"/>
+          <line x1="25" y1="25" x2="32" y2="32"/>
+          <line x1="68" y1="68" x2="75" y2="75"/>
+          <line x1="75" y1="25" x2="68" y2="32"/>
+          <line x1="32" y1="68" x2="25" y2="75"/>
+        </g>
+      </g>`
+  },
+  bingo: {
+    name: 'Bingo',
+    svg: `
+      <g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+        <path class="fillable" fill="#ffffff" d="M0 260 L400 260 L400 300 L0 300 Z"/>
+        <!-- Body -->
+        <ellipse class="fillable" fill="#ffffff" cx="200" cy="215" rx="80" ry="52"/>
+        <!-- Belly -->
+        <ellipse class="fillable" fill="#ffffff" cx="200" cy="230" rx="46" ry="28"/>
+        <!-- Legs -->
+        <path class="fillable" fill="#ffffff" d="M165 258 Q160 280 170 285 L188 285 Q193 275 183 258 Z"/>
+        <path class="fillable" fill="#ffffff" d="M218 258 Q213 280 223 285 L241 285 Q246 275 236 258 Z"/>
+        <!-- Tail -->
+        <path class="fillable" fill="#ffffff" d="M275 195 Q300 175 295 155 Q288 170 270 190 Z"/>
+        <!-- Head -->
+        <ellipse class="fillable" fill="#ffffff" cx="200" cy="135" rx="75" ry="65"/>
+        <!-- Snout -->
+        <ellipse class="fillable" fill="#ffffff" cx="200" cy="158" rx="32" ry="22"/>
+        <!-- Floppy ears -->
+        <path class="fillable" fill="#ffffff" d="M138 130 Q115 145 125 175 Q145 165 150 145 Z"/>
+        <path class="fillable" fill="#ffffff" d="M262 130 Q285 145 275 175 Q255 165 250 145 Z"/>
+        <!-- Eyes -->
+        <circle class="fillable" fill="#ffffff" cx="180" cy="120" r="12"/>
+        <circle class="fillable" fill="#ffffff" cx="220" cy="120" r="12"/>
+        <circle fill="#1a1a1a" cx="182" cy="123" r="5"/>
+        <circle fill="#1a1a1a" cx="222" cy="123" r="5"/>
+        <!-- Nose -->
+        <ellipse class="fillable" fill="#ffffff" cx="200" cy="148" rx="8" ry="6"/>
+        <!-- Mouth -->
+        <path fill="none" d="M186 168 Q200 180 214 168"/>
+        <!-- Cheek spot -->
+        <ellipse class="fillable" fill="#ffffff" cx="160" cy="145" rx="10" ry="8"/>
+        <!-- Heart -->
+        <path class="fillable" fill="#ffffff" d="M340 70 Q340 55 355 55 Q370 55 370 70 Q370 85 340 105 Q310 85 310 70 Q310 55 325 55 Q340 55 340 70 Z"/>
+      </g>`
+  },
+  house: {
+    name: '小狗屋',
+    svg: `
+      <g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+        <!-- Sky -->
+        <rect class="fillable" fill="#ffffff" x="0" y="0" width="400" height="220"/>
+        <!-- Ground -->
+        <rect class="fillable" fill="#ffffff" x="0" y="220" width="400" height="80"/>
+        <!-- Sun -->
+        <circle class="fillable" fill="#ffffff" cx="60" cy="55" r="28"/>
+        <g stroke-width="2">
+          <line x1="60" y1="15" x2="60" y2="22"/>
+          <line x1="60" y1="88" x2="60" y2="95"/>
+          <line x1="20" y1="55" x2="27" y2="55"/>
+          <line x1="93" y1="55" x2="100" y2="55"/>
+          <line x1="32" y1="27" x2="37" y2="32"/>
+          <line x1="83" y1="78" x2="88" y2="83"/>
+          <line x1="88" y1="27" x2="83" y2="32"/>
+          <line x1="37" y1="78" x2="32" y2="83"/>
+        </g>
+        <!-- Clouds -->
+        <path class="fillable" fill="#ffffff" d="M250 50 Q260 35 280 40 Q300 30 315 45 Q330 45 325 60 L250 60 Q240 55 250 50 Z"/>
+        <path class="fillable" fill="#ffffff" d="M150 90 Q160 78 175 82 Q190 75 200 88 Q215 90 208 100 L150 100 Q142 95 150 90 Z"/>
+        <!-- House body -->
+        <rect class="fillable" fill="#ffffff" x="120" y="160" width="160" height="100"/>
+        <!-- Roof -->
+        <path class="fillable" fill="#ffffff" d="M105 160 L200 95 L295 160 Z"/>
+        <!-- Door (arch) -->
+        <path class="fillable" fill="#ffffff" d="M170 260 L170 210 Q170 185 200 185 Q230 185 230 210 L230 260 Z"/>
+        <!-- Window left -->
+        <rect class="fillable" fill="#ffffff" x="135" y="180" width="25" height="25"/>
+        <line x1="147.5" y1="180" x2="147.5" y2="205"/>
+        <line x1="135" y1="192.5" x2="160" y2="192.5"/>
+        <!-- Window right -->
+        <rect class="fillable" fill="#ffffff" x="240" y="180" width="25" height="25"/>
+        <line x1="252.5" y1="180" x2="252.5" y2="205"/>
+        <line x1="240" y1="192.5" x2="265" y2="192.5"/>
+        <!-- Bone sign -->
+        <path class="fillable" fill="#ffffff" d="M190 215 Q183 215 183 222 Q183 226 187 226 Q183 230 187 234 Q190 236 195 230 L205 230 Q210 236 213 234 Q217 230 213 226 Q217 226 217 222 Q217 215 210 215 Q207 215 205 220 L195 220 Q193 215 190 215 Z"/>
+      </g>`
+  },
+  ball: {
+    name: '玩具球',
+    svg: `
+      <g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+        <rect class="fillable" fill="#ffffff" x="0" y="0" width="400" height="300"/>
+        <!-- Ground line -->
+        <path class="fillable" fill="#ffffff" d="M0 260 L400 260 L400 300 L0 300 Z"/>
+        <!-- Beach ball -->
+        <circle class="fillable" fill="#ffffff" cx="200" cy="160" r="90"/>
+        <!-- Beach ball segments -->
+        <path class="fillable" fill="#ffffff" d="M200 70 Q230 100 230 160 Q230 220 200 250 Q170 220 170 160 Q170 100 200 70 Z"/>
+        <path class="fillable" fill="#ffffff" d="M110 160 Q140 130 200 130 Q260 130 290 160 Q260 190 200 190 Q140 190 110 160 Z"/>
+        <circle class="fillable" fill="#ffffff" cx="200" cy="160" r="18"/>
+        <!-- Shadow -->
+        <ellipse class="fillable" fill="#ffffff" cx="200" cy="265" rx="80" ry="10"/>
+        <!-- Star sparkle -->
+        <path class="fillable" fill="#ffffff" d="M330 60 L335 75 L350 75 L338 84 L343 99 L330 90 L317 99 L322 84 L310 75 L325 75 Z"/>
+      </g>`
+  },
+  pawprint: {
+    name: '爪印',
+    svg: `
+      <g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+        <rect class="fillable" fill="#ffffff" x="0" y="0" width="400" height="300"/>
+        <!-- Big paw -->
+        <ellipse class="fillable" fill="#ffffff" cx="200" cy="200" rx="60" ry="50"/>
+        <circle class="fillable" fill="#ffffff" cx="150" cy="130" r="22"/>
+        <circle class="fillable" fill="#ffffff" cx="195" cy="105" r="24"/>
+        <circle class="fillable" fill="#ffffff" cx="245" cy="125" r="22"/>
+        <circle class="fillable" fill="#ffffff" cx="278" cy="170" r="18"/>
+        <!-- Small paw top-left -->
+        <ellipse class="fillable" fill="#ffffff" cx="70" cy="80" rx="28" ry="23"/>
+        <circle class="fillable" fill="#ffffff" cx="48" cy="48" r="10"/>
+        <circle class="fillable" fill="#ffffff" cx="68" cy="38" r="11"/>
+        <circle class="fillable" fill="#ffffff" cx="90" cy="48" r="10"/>
+        <circle class="fillable" fill="#ffffff" cx="103" cy="68" r="9"/>
+        <!-- Small paw bottom-right -->
+        <ellipse class="fillable" fill="#ffffff" cx="330" cy="250" rx="28" ry="23"/>
+        <circle class="fillable" fill="#ffffff" cx="308" cy="218" r="10"/>
+        <circle class="fillable" fill="#ffffff" cx="328" cy="208" r="11"/>
+        <circle class="fillable" fill="#ffffff" cx="350" cy="218" r="10"/>
+        <circle class="fillable" fill="#ffffff" cx="363" cy="238" r="9"/>
+        <!-- Hearts -->
+        <path class="fillable" fill="#ffffff" d="M70 220 Q70 208 82 208 Q94 208 94 220 Q94 232 70 250 Q46 232 46 220 Q46 208 58 208 Q70 208 70 220 Z"/>
+        <path class="fillable" fill="#ffffff" d="M330 80 Q330 68 342 68 Q354 68 354 80 Q354 92 330 110 Q306 92 306 80 Q306 68 318 68 Q330 68 330 80 Z"/>
+      </g>`
+  },
+  blank: {
+    name: '空白画板',
+    svg: `<rect class="fillable" fill="#ffffff" x="0" y="0" width="400" height="300"/>`
+  }
+};
+
+/* ========== Palette ========== */
+const PALETTE = [
+  '#ff3b30','#ff9500','#ffcc00','#34c759','#00c7be',
+  '#4ab3ff','#5856d6','#af52de','#ff2d92','#a0522d',
+  '#1a1a1a','#8e8e93','#ffffff','#f5e6cb','#ffd1a3'
+];
+
+/* ========== State ========== */
+const state = {
+  tool: 'fill',
+  color: '#4ab3ff',
+  brushSize: 8,
+  pageKey: 'bluey',
+  history: [],     // stack of {kind:'fill', el, prevColor} or {kind:'stroke', imageData}
+};
+
+/* ========== DOM ========== */
+const svgEl = document.getElementById('coloringSvg');
+const canvas = document.getElementById('drawCanvas');
+const ctx = canvas.getContext('2d');
+const colorsBox = document.getElementById('colors');
+const customColor = document.getElementById('customColor');
+const brushSizeInput = document.getElementById('brushSize');
+const brushPreview = document.getElementById('brushPreview');
+const brushDot = brushPreview.querySelector('.brush-dot');
+const pagesBox = document.getElementById('pages');
+const toolbar = document.getElementById('toolbar');
+const stage = document.getElementById('stage');
+
+/* ========== Init palette ========== */
+function buildPalette() {
+  PALETTE.forEach(c => {
+    const sw = document.createElement('div');
+    sw.className = 'swatch' + (c === state.color ? ' active' : '');
+    sw.style.background = c;
+    sw.dataset.color = c;
+    if (c === '#ffffff') sw.style.borderColor = '#ddd';
+    sw.addEventListener('click', () => selectColor(c));
+    colorsBox.appendChild(sw);
+  });
+}
+function selectColor(c) {
+  state.color = c;
+  customColor.value = c.startsWith('#') && c.length === 7 ? c : '#000000';
+  document.querySelectorAll('.swatch').forEach(s => {
+    s.classList.toggle('active', s.dataset.color === c);
+  });
+  updateBrushPreview();
+}
+customColor.addEventListener('input', e => {
+  state.color = e.target.value;
+  document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+  updateBrushPreview();
+});
+
+/* ========== Brush size preview ========== */
+function updateBrushPreview() {
+  const s = Math.max(4, Math.min(28, state.brushSize));
+  brushDot.style.width = s + 'px';
+  brushDot.style.height = s + 'px';
+  brushPreview.style.color = state.color;
+}
+brushSizeInput.addEventListener('input', e => {
+  state.brushSize = +e.target.value;
+  updateBrushPreview();
+});
+
+/* ========== Pages thumbnails ========== */
+function buildPages() {
+  Object.keys(PAGES).forEach(key => {
+    const div = document.createElement('div');
+    div.className = 'page-thumb' + (key === state.pageKey ? ' active' : '');
+    div.dataset.key = key;
+    div.innerHTML = `<svg viewBox="0 0 400 300">${PAGES[key].svg}</svg>`;
+    div.title = PAGES[key].name;
+    div.addEventListener('click', () => loadPage(key));
+    pagesBox.appendChild(div);
+  });
+}
+function loadPage(key) {
+  state.pageKey = key;
+  state.history = [];
+  svgEl.innerHTML = PAGES[key].svg;
+  bindFillable();
+  clearCanvas(false);
+  document.querySelectorAll('.page-thumb').forEach(p => {
+    p.classList.toggle('active', p.dataset.key === key);
+  });
+  syncCanvasSize();
+}
+
+/* ========== Fill mode bindings on SVG paths ========== */
+function bindFillable() {
+  svgEl.querySelectorAll('.fillable').forEach(el => {
+    const handler = (e) => {
+      if (state.tool !== 'fill') return;
+      e.preventDefault();
+      const prev = el.getAttribute('fill') || '#ffffff';
+      state.history.push({ kind: 'fill', el, prevColor: prev });
+      el.setAttribute('fill', state.color);
+    };
+    el.addEventListener('click', handler);
+    el.addEventListener('touchstart', handler, { passive: false });
+  });
+}
+
+/* ========== Tool selection ========== */
+toolbar.addEventListener('click', e => {
+  const t = e.target.closest('.tool');
+  if (!t) return;
+  state.tool = t.dataset.tool;
+  document.querySelectorAll('.tool').forEach(x => x.classList.toggle('active', x === t));
+  // When in fill mode, disable canvas pointer events so SVG receives taps
+  if (state.tool === 'fill') {
+    canvas.classList.add('disabled');
+    canvas.classList.remove('draw-mode');
+  } else {
+    canvas.classList.remove('disabled');
+    canvas.classList.add('draw-mode');
+  }
+});
+
+/* ========== Canvas drawing (brush / eraser) ========== */
+function syncCanvasSize() {
+  const rect = stage.getBoundingClientRect();
+  // Preserve previous drawing across resize
+  const prev = document.createElement('canvas');
+  prev.width = canvas.width; prev.height = canvas.height;
+  if (canvas.width && canvas.height) prev.getContext('2d').drawImage(canvas, 0, 0);
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(rect.width * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  if (prev.width) ctx.drawImage(prev, 0, 0, prev.width / dpr, prev.height / dpr);
+}
+window.addEventListener('resize', syncCanvasSize);
+
+let drawing = false;
+let lastX = 0, lastY = 0;
+let strokeSnapshot = null;
+
+function getPos(ev) {
+  const rect = canvas.getBoundingClientRect();
+  const p = ev.touches ? ev.touches[0] : ev;
+  return { x: p.clientX - rect.left, y: p.clientY - rect.top };
+}
+function startDraw(ev) {
+  if (state.tool === 'fill') return;
+  ev.preventDefault();
+  // snapshot for undo
+  strokeSnapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  drawing = true;
+  const { x, y } = getPos(ev);
+  lastX = x; lastY = y;
+  drawSegment(x, y, x, y);
+}
+function moveDraw(ev) {
+  if (!drawing) return;
+  ev.preventDefault();
+  const { x, y } = getPos(ev);
+  drawSegment(lastX, lastY, x, y);
+  lastX = x; lastY = y;
+}
+function endDraw() {
+  if (!drawing) return;
+  drawing = false;
+  if (strokeSnapshot) {
+    state.history.push({ kind: 'stroke', imageData: strokeSnapshot });
+    strokeSnapshot = null;
+  }
+}
+function drawSegment(x1, y1, x2, y2) {
+  ctx.lineWidth = state.brushSize;
+  if (state.tool === 'eraser') {
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.strokeStyle = 'rgba(0,0,0,1)';
+  } else {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = state.color;
+  }
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+}
+
+canvas.addEventListener('pointerdown', startDraw);
+canvas.addEventListener('pointermove', moveDraw);
+canvas.addEventListener('pointerup', endDraw);
+canvas.addEventListener('pointercancel', endDraw);
+canvas.addEventListener('pointerleave', endDraw);
+// fallback for older Safari
+canvas.addEventListener('touchstart', startDraw, { passive: false });
+canvas.addEventListener('touchmove', moveDraw, { passive: false });
+canvas.addEventListener('touchend', endDraw);
+
+/* ========== Header actions ========== */
+document.getElementById('undoBtn').addEventListener('click', () => {
+  const last = state.history.pop();
+  if (!last) return;
+  if (last.kind === 'fill') {
+    last.el.setAttribute('fill', last.prevColor);
+  } else if (last.kind === 'stroke') {
+    ctx.putImageData(last.imageData, 0, 0);
+  }
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if (!confirm('要清空当前画作吗?')) return;
+  loadPage(state.pageKey);
+});
+
+function clearCanvas(addHistory = true) {
+  if (addHistory) {
+    state.history.push({ kind: 'stroke', imageData: ctx.getImageData(0, 0, canvas.width, canvas.height) });
+  }
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.restore();
+}
+
+/* ========== Save: merge SVG + canvas into a PNG ========== */
+document.getElementById('saveBtn').addEventListener('click', async () => {
+  const rect = stage.getBoundingClientRect();
+  const w = Math.round(rect.width);
+  const h = Math.round(rect.height);
+  const out = document.createElement('canvas');
+  out.width = w * 2; out.height = h * 2;
+  const octx = out.getContext('2d');
+  octx.scale(2, 2);
+  octx.fillStyle = '#ffffff';
+  octx.fillRect(0, 0, w, h);
+
+  // Serialize current SVG with full XML
+  const cloned = svgEl.cloneNode(true);
+  cloned.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  cloned.setAttribute('width', w);
+  cloned.setAttribute('height', h);
+  const svgStr = new XMLSerializer().serializeToString(cloned);
+  const svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(svgBlob);
+  const img = new Image();
+  img.onload = () => {
+    octx.drawImage(img, 0, 0, w, h);
+    // Draw the brush canvas on top (canvas is already DPR-scaled)
+    octx.drawImage(canvas, 0, 0, w, h);
+    URL.revokeObjectURL(url);
+    out.toBlob(blob => {
+      const a = document.createElement('a');
+      a.download = `bluey-${state.pageKey}-${Date.now()}.png`;
+      a.href = URL.createObjectURL(blob);
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }, 'image/png');
+  };
+  img.onerror = () => alert('保存失败,请重试');
+  img.src = url;
+});
+
+/* ========== Boot ========== */
+buildPalette();
+buildPages();
+loadPage('bluey');
+updateBrushPreview();
+// canvas starts in disabled (fill mode by default)
+canvas.classList.add('disabled');
+// Resize after layout settles
+requestAnimationFrame(syncCanvasSize);
+
+/* Prevent iOS double-tap zoom on the stage */
+let lastTouch = 0;
+stage.addEventListener('touchend', (e) => {
+  const now = Date.now();
+  if (now - lastTouch < 350) e.preventDefault();
+  lastTouch = now;
+}, { passive: false });
+</script>
+</body>
+</html>
