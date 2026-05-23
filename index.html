@@ -171,6 +171,77 @@
   .page-thumb.active { border-color: var(--bluey-blue); background: #e6f3ff; }
   .page-thumb svg { width: 100%; height: 100%; }
 
+  /* Custom-image controls */
+  .row-btns { display: flex; flex-direction: column; gap: 6px; }
+  .ghost-btn {
+    background: #f1f4f8; border: 1px solid #dde3ea;
+    border-radius: 10px; padding: 8px 10px;
+    font-size: 13px; color: #333;
+    cursor: pointer; text-align: left;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .ghost-btn:active { background: #e6f3ff; }
+  .ghost-btn .ic { font-size: 16px; }
+  .url-row { display: flex; gap: 4px; margin-top: 4px; }
+  .url-row input {
+    flex: 1; min-width: 0;
+    padding: 7px 8px; font-size: 12px;
+    border: 1px solid #dde3ea; border-radius: 8px;
+    background: #fff;
+  }
+  .url-row button {
+    padding: 7px 10px; font-size: 12px;
+    border: none; border-radius: 8px;
+    background: var(--bluey-blue); color: #fff; cursor: pointer;
+  }
+  .hint { font-size: 11px; color: #888; line-height: 1.4; margin-top: 4px; }
+  .page-thumb.custom { position: relative; }
+  .page-thumb.custom::after {
+    content: '×';
+    position: absolute; top: 2px; right: 4px;
+    width: 18px; height: 18px;
+    background: rgba(0,0,0,.55); color: #fff;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; line-height: 1;
+  }
+  .page-thumb.custom img {
+    width: 100%; height: 100%; object-fit: contain;
+  }
+
+  /* Help modal */
+  .modal {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.45);
+    display: none; align-items: center; justify-content: center;
+    z-index: 50; padding: 16px;
+  }
+  .modal.show { display: flex; }
+  .modal-box {
+    background: #fff; border-radius: 16px;
+    max-width: 520px; width: 100%;
+    max-height: 86vh; overflow-y: auto;
+    padding: 22px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.25);
+  }
+  .modal-box h2 {
+    margin: 0 0 12px; color: var(--bluey-dark); font-size: 20px;
+  }
+  .modal-box h3 {
+    margin: 16px 0 6px; font-size: 14px; color: #333;
+  }
+  .modal-box p, .modal-box li { font-size: 14px; line-height: 1.6; color: #444; }
+  .modal-box ul, .modal-box ol { padding-left: 20px; margin: 6px 0; }
+  .modal-box code {
+    background: #f1f4f8; padding: 1px 5px; border-radius: 4px; font-size: 12px;
+  }
+  .modal-close {
+    display: block; margin: 18px auto 0;
+    background: var(--bluey-blue); color: #fff;
+    border: none; padding: 10px 22px;
+    border-radius: 10px; font-size: 15px; cursor: pointer;
+  }
+
   /* iPad / small layout adjustments */
   @media (max-width: 900px) {
     .side { width: 180px; }
@@ -204,6 +275,7 @@
 <header>
   <h1>🎨 Bluey 画图填色</h1>
   <div class="header-btns">
+    <button class="icon-btn" id="helpBtn">? 帮助</button>
     <button class="icon-btn" id="undoBtn">↶ 撤销</button>
     <button class="icon-btn" id="clearBtn">🗑 清空</button>
     <button class="icon-btn" id="saveBtn">💾 保存</button>
@@ -258,8 +330,69 @@
       <h3>选择图画</h3>
       <div class="pages" id="pages"></div>
     </div>
+
+    <div class="section">
+      <h3>添加自己的图</h3>
+      <div class="row-btns">
+        <label class="ghost-btn"><span class="ic">📁</span> 从相册/文件上传
+          <input id="fileInput" type="file" accept="image/*" style="display:none" />
+        </label>
+        <button class="ghost-btn" id="googleBtn"><span class="ic">🔍</span> 谷歌图片搜图</button>
+      </div>
+      <div class="url-row">
+        <input id="urlInput" type="url" placeholder="或粘贴图片网址…" />
+        <button id="urlLoadBtn">载入</button>
+      </div>
+      <div class="hint">小贴士:谷歌图片有些图禁止跨站点加载,推荐"长按 → 拷贝图片",然后回到这里用相册上传更稳。</div>
+    </div>
   </aside>
 </main>
+
+<!-- Help modal -->
+<div class="modal" id="helpModal" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <h2>🎨 怎么玩</h2>
+    <p>这是给小朋友的画图和涂色应用,直接在浏览器(电脑/iPad)里就能玩。</p>
+
+    <h3>1. 选一张图</h3>
+    <p>右侧"<b>选择图画</b>"里有 Bluey、Bingo、彩虹、蛋糕、花、汽车等十几张图,点缩略图就能换。</p>
+
+    <h3>2. 选颜色</h3>
+    <p>右侧"<b>颜色</b>"里点圆点选颜色,或用最下面的"<b>自选颜色</b>"调任意色。</p>
+
+    <h3>3. 选工具(左边)</h3>
+    <ul>
+      <li><b>点击填色</b>:选好颜色后,点图里任意一块区域,自动填满那一块。</li>
+      <li><b>画笔</b>:自由涂鸦,可在右侧调整粗细。</li>
+      <li><b>橡皮</b>:只擦画笔留下的笔迹(不会擦掉填的颜色)。</li>
+    </ul>
+
+    <h3>4. 撤销 / 清空 / 保存(顶部)</h3>
+    <ul>
+      <li><b>↶ 撤销</b>:撤回上一步(填色或一笔)。</li>
+      <li><b>🗑 清空</b>:重新开始这张图。</li>
+      <li><b>💾 保存</b>:把当前作品下载成 PNG 图片。</li>
+    </ul>
+
+    <h3>5. 加自己的图</h3>
+    <ol>
+      <li>点 <b>📁 从相册/文件上传</b>:可以选手机里的照片或文件夹里的图。</li>
+      <li>点 <b>🔍 谷歌图片搜图</b>:在新页面打开 Google 图片,搜你想要的 (例如 "bluey coloring page")。</li>
+      <li>找到喜欢的图后:
+        <ul>
+          <li><b>iPad</b>:长按图片 → "存储到照片" → 回来用"从相册上传"。</li>
+          <li><b>电脑</b>:右键图片 → "图片另存为" → 回来上传文件。</li>
+          <li>也可以直接复制图片地址,粘进"图片网址"框,但 Google 经常禁跨站加载,所以下载更稳。</li>
+        </ul>
+      </li>
+    </ol>
+
+    <h3>iPad 全屏小技巧</h3>
+    <p>Safari 打开后,点"<b>分享</b> → <b>添加到主屏幕</b>",图标会出现在桌面,以后点开就是全屏 App。</p>
+
+    <button class="modal-close" id="helpClose">明白了!</button>
+  </div>
+</div>
 
 <script>
 /* ========== Bluey-style coloring book pages (inline SVG) ==========
@@ -441,6 +574,130 @@ const PAGES = {
         <path class="fillable" fill="#ffffff" d="M330 80 Q330 68 342 68 Q354 68 354 80 Q354 92 330 110 Q306 92 306 80 Q306 68 318 68 Q330 68 330 80 Z"/>
       </g>`
   },
+  butterfly: {
+    name: '蝴蝶',
+    svg: `
+      <g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+        <rect class="fillable" fill="#ffffff" x="0" y="0" width="400" height="300"/>
+        <ellipse class="fillable" fill="#ffffff" cx="200" cy="150" rx="10" ry="60"/>
+        <path class="fillable" fill="#ffffff" d="M195 110 Q140 60 90 90 Q80 130 130 150 Q170 145 195 130 Z"/>
+        <path class="fillable" fill="#ffffff" d="M205 110 Q260 60 310 90 Q320 130 270 150 Q230 145 205 130 Z"/>
+        <path class="fillable" fill="#ffffff" d="M195 165 Q160 200 120 220 Q105 195 130 170 Q170 165 195 175 Z"/>
+        <path class="fillable" fill="#ffffff" d="M205 165 Q240 200 280 220 Q295 195 270 170 Q230 165 205 175 Z"/>
+        <circle class="fillable" fill="#ffffff" cx="130" cy="115" r="10"/>
+        <circle class="fillable" fill="#ffffff" cx="270" cy="115" r="10"/>
+        <circle class="fillable" fill="#ffffff" cx="155" cy="195" r="8"/>
+        <circle class="fillable" fill="#ffffff" cx="245" cy="195" r="8"/>
+        <path fill="none" d="M196 95 Q188 75 175 70"/>
+        <path fill="none" d="M204 95 Q212 75 225 70"/>
+        <circle fill="#1a1a1a" cx="175" cy="70" r="3"/>
+        <circle fill="#1a1a1a" cx="225" cy="70" r="3"/>
+      </g>`
+  },
+  fish: {
+    name: '小鱼',
+    svg: `
+      <g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+        <rect class="fillable" fill="#ffffff" x="0" y="0" width="400" height="300"/>
+        <path class="fillable" fill="#ffffff" d="M260 150 Q250 80 160 90 Q90 105 90 150 Q90 195 160 210 Q250 220 260 150 Z"/>
+        <path class="fillable" fill="#ffffff" d="M260 150 Q310 100 340 95 Q325 150 340 205 Q310 200 260 150 Z"/>
+        <path class="fillable" fill="#ffffff" d="M165 95 Q175 60 195 70 Q210 80 215 95 Z"/>
+        <path class="fillable" fill="#ffffff" d="M170 205 Q180 235 200 230 Q215 220 220 205 Z"/>
+        <path class="fillable" fill="#ffffff" d="M170 150 Q140 165 130 185 Q160 180 180 165 Z"/>
+        <circle class="fillable" fill="#ffffff" cx="135" cy="135" r="12"/>
+        <circle fill="#1a1a1a" cx="135" cy="138" r="5"/>
+        <path fill="none" d="M180 115 Q195 125 180 135"/>
+        <path fill="none" d="M210 115 Q225 125 210 135"/>
+        <path fill="none" d="M180 155 Q195 165 180 175"/>
+        <path fill="none" d="M210 155 Q225 165 210 175"/>
+        <path fill="none" d="M95 145 Q88 150 95 155"/>
+        <circle class="fillable" fill="#ffffff" cx="50" cy="80" r="10"/>
+        <circle class="fillable" fill="#ffffff" cx="65" cy="50" r="7"/>
+        <circle class="fillable" fill="#ffffff" cx="40" cy="40" r="5"/>
+      </g>`
+  },
+  rainbow: {
+    name: '彩虹',
+    svg: `
+      <g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+        <rect class="fillable" fill="#ffffff" x="0" y="0" width="400" height="300"/>
+        <path class="fillable" fill="#ffffff" d="M60 240 A140 140 0 0 1 340 240 L320 240 A120 120 0 0 0 80 240 Z"/>
+        <path class="fillable" fill="#ffffff" d="M80 240 A120 120 0 0 1 320 240 L300 240 A100 100 0 0 0 100 240 Z"/>
+        <path class="fillable" fill="#ffffff" d="M100 240 A100 100 0 0 1 300 240 L280 240 A80 80 0 0 0 120 240 Z"/>
+        <path class="fillable" fill="#ffffff" d="M120 240 A80 80 0 0 1 280 240 L260 240 A60 60 0 0 0 140 240 Z"/>
+        <path class="fillable" fill="#ffffff" d="M140 240 A60 60 0 0 1 260 240 L240 240 A40 40 0 0 0 160 240 Z"/>
+        <path class="fillable" fill="#ffffff" d="M160 240 A40 40 0 0 1 240 240 L220 240 A20 20 0 0 0 180 240 Z"/>
+        <path class="fillable" fill="#ffffff" d="M30 240 Q20 220 35 215 Q40 200 60 205 Q75 195 85 215 Q100 220 90 240 Z"/>
+        <path class="fillable" fill="#ffffff" d="M310 240 Q300 220 315 215 Q320 200 340 205 Q355 195 365 215 Q380 220 370 240 Z"/>
+        <circle class="fillable" fill="#ffffff" cx="320" cy="80" r="28"/>
+        <g stroke-width="2">
+          <line x1="320" y1="35" x2="320" y2="45"/>
+          <line x1="320" y1="115" x2="320" y2="125"/>
+          <line x1="275" y1="80" x2="285" y2="80"/>
+          <line x1="355" y1="80" x2="365" y2="80"/>
+          <line x1="290" y1="50" x2="296" y2="56"/>
+          <line x1="344" y1="104" x2="350" y2="110"/>
+        </g>
+        <rect class="fillable" fill="#ffffff" x="0" y="240" width="400" height="60"/>
+      </g>`
+  },
+  cake: {
+    name: '生日蛋糕',
+    svg: `
+      <g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+        <rect class="fillable" fill="#ffffff" x="0" y="0" width="400" height="300"/>
+        <ellipse class="fillable" fill="#ffffff" cx="200" cy="265" rx="120" ry="14"/>
+        <rect class="fillable" fill="#ffffff" x="100" y="200" width="200" height="60" rx="4"/>
+        <rect class="fillable" fill="#ffffff" x="130" y="150" width="140" height="55" rx="4"/>
+        <rect class="fillable" fill="#ffffff" x="155" y="105" width="90" height="50" rx="4"/>
+        <path class="fillable" fill="#ffffff" d="M100 210 Q115 225 130 210 Q145 225 160 210 Q175 225 190 210 Q205 225 220 210 Q235 225 250 210 Q265 225 280 210 Q295 225 300 210 L300 200 L100 200 Z"/>
+        <path class="fillable" fill="#ffffff" d="M130 160 Q145 175 160 160 Q175 175 190 160 Q205 175 220 160 Q235 175 250 160 Q265 175 270 160 L270 150 L130 150 Z"/>
+        <rect class="fillable" fill="#ffffff" x="195" y="65" width="10" height="40"/>
+        <path class="fillable" fill="#ffffff" d="M200 40 Q190 55 200 65 Q210 55 200 40 Z"/>
+        <circle class="fillable" fill="#ffffff" cx="170" cy="230" r="6"/>
+        <circle class="fillable" fill="#ffffff" cx="200" cy="230" r="6"/>
+        <circle class="fillable" fill="#ffffff" cx="230" cy="230" r="6"/>
+      </g>`
+  },
+  flower: {
+    name: '小花',
+    svg: `
+      <g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+        <rect class="fillable" fill="#ffffff" x="0" y="0" width="400" height="300"/>
+        <path class="fillable" fill="#ffffff" d="M195 280 L195 160 L205 160 L205 280 Z"/>
+        <path class="fillable" fill="#ffffff" d="M195 220 Q150 200 130 220 Q160 235 195 230 Z"/>
+        <path class="fillable" fill="#ffffff" d="M205 200 Q250 180 270 200 Q240 215 205 210 Z"/>
+        <circle class="fillable" fill="#ffffff" cx="200" cy="80" r="32"/>
+        <circle class="fillable" fill="#ffffff" cx="140" cy="120" r="32"/>
+        <circle class="fillable" fill="#ffffff" cx="260" cy="120" r="32"/>
+        <circle class="fillable" fill="#ffffff" cx="160" cy="170" r="30"/>
+        <circle class="fillable" fill="#ffffff" cx="240" cy="170" r="30"/>
+        <circle class="fillable" fill="#ffffff" cx="200" cy="135" r="28"/>
+        <path fill="none" d="M50 280 Q60 260 70 280"/>
+        <path fill="none" d="M80 280 Q90 265 100 280"/>
+        <path fill="none" d="M300 280 Q310 265 320 280"/>
+        <path fill="none" d="M330 280 Q340 260 350 280"/>
+        <circle class="fillable" fill="#ffffff" cx="60" cy="60" r="22"/>
+      </g>`
+  },
+  car: {
+    name: '小汽车',
+    svg: `
+      <g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+        <rect class="fillable" fill="#ffffff" x="0" y="0" width="400" height="300"/>
+        <rect class="fillable" fill="#ffffff" x="0" y="240" width="400" height="60"/>
+        <path class="fillable" fill="#ffffff" d="M60 220 L60 175 Q60 165 70 165 L120 165 L150 120 Q160 110 175 110 L260 110 Q275 110 285 120 L320 165 L340 165 Q350 165 350 175 L350 220 Z"/>
+        <path class="fillable" fill="#ffffff" d="M158 160 L180 125 Q185 120 195 120 L205 120 L205 160 Z"/>
+        <path class="fillable" fill="#ffffff" d="M215 120 L260 120 Q270 120 275 125 L295 160 L215 160 Z"/>
+        <line x1="210" y1="165" x2="210" y2="220"/>
+        <circle class="fillable" fill="#ffffff" cx="115" cy="230" r="28"/>
+        <circle class="fillable" fill="#ffffff" cx="285" cy="230" r="28"/>
+        <circle class="fillable" fill="#ffffff" cx="115" cy="230" r="10"/>
+        <circle class="fillable" fill="#ffffff" cx="285" cy="230" r="10"/>
+        <circle class="fillable" fill="#ffffff" cx="335" cy="190" r="8"/>
+        <circle class="fillable" fill="#ffffff" cx="60" cy="60" r="22"/>
+      </g>`
+  },
   blank: {
     name: '空白画板',
     svg: `<rect class="fillable" fill="#ffffff" x="0" y="0" width="400" height="300"/>`
@@ -516,20 +773,48 @@ brushSizeInput.addEventListener('input', e => {
 
 /* ========== Pages thumbnails ========== */
 function buildPages() {
+  pagesBox.innerHTML = '';
   Object.keys(PAGES).forEach(key => {
+    const page = PAGES[key];
     const div = document.createElement('div');
-    div.className = 'page-thumb' + (key === state.pageKey ? ' active' : '');
+    div.className = 'page-thumb' + (key === state.pageKey ? ' active' : '') + (page.custom ? ' custom' : '');
     div.dataset.key = key;
-    div.innerHTML = `<svg viewBox="0 0 400 300">${PAGES[key].svg}</svg>`;
-    div.title = PAGES[key].name;
-    div.addEventListener('click', () => loadPage(key));
+    if (page.custom && page.dataUrl) {
+      div.innerHTML = `<img src="${page.dataUrl}" alt="${page.name}">`;
+    } else {
+      div.innerHTML = `<svg viewBox="0 0 400 300">${page.svg}</svg>`;
+    }
+    div.title = page.name;
+    div.addEventListener('click', (e) => {
+      // tap the × badge area to delete a custom page
+      if (page.custom) {
+        const r = div.getBoundingClientRect();
+        const x = e.clientX - r.left, y = e.clientY - r.top;
+        if (x > r.width - 26 && y < 26) {
+          delete PAGES[key];
+          if (state.pageKey === key) loadPage('blank');
+          buildPages();
+          return;
+        }
+      }
+      loadPage(key);
+    });
     pagesBox.appendChild(div);
   });
 }
 function loadPage(key) {
+  const page = PAGES[key];
+  if (!page) return;
   state.pageKey = key;
   state.history = [];
-  svgEl.innerHTML = PAGES[key].svg;
+  if (page.custom && page.dataUrl) {
+    // Raster custom image: render inside SVG with one fillable bg behind it
+    svgEl.innerHTML =
+      `<rect class="fillable" fill="#ffffff" x="0" y="0" width="400" height="300"/>` +
+      `<image href="${page.dataUrl}" x="0" y="0" width="400" height="300" preserveAspectRatio="xMidYMid meet"/>`;
+  } else {
+    svgEl.innerHTML = page.svg;
+  }
   bindFillable();
   clearCanvas(false);
   document.querySelectorAll('.page-thumb').forEach(p => {
@@ -711,6 +996,58 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
   img.src = url;
 });
 
+/* ========== Custom images (upload / URL / google) ========== */
+let customCounter = 0;
+function addCustomPage(dataUrl, label) {
+  const key = 'custom_' + (++customCounter);
+  PAGES[key] = { name: label || ('我的图 ' + customCounter), custom: true, dataUrl };
+  buildPages();
+  loadPage(key);
+}
+
+document.getElementById('fileInput').addEventListener('change', (e) => {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => addCustomPage(reader.result, f.name.replace(/\.[^.]+$/, ''));
+  reader.readAsDataURL(f);
+  e.target.value = '';
+});
+
+document.getElementById('googleBtn').addEventListener('click', () => {
+  const q = encodeURIComponent('bluey coloring page');
+  window.open('https://www.google.com/search?tbm=isch&q=' + q, '_blank', 'noopener');
+});
+
+document.getElementById('urlLoadBtn').addEventListener('click', async () => {
+  const input = document.getElementById('urlInput');
+  const url = (input.value || '').trim();
+  if (!url) return;
+  try {
+    // Try fetching as blob so we can embed as data URL (avoids CORS taint on save)
+    const res = await fetch(url, { mode: 'cors' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const blob = await res.blob();
+    const reader = new FileReader();
+    reader.onload = () => { addCustomPage(reader.result, '网络图'); input.value = ''; };
+    reader.readAsDataURL(blob);
+  } catch (err) {
+    // Fallback: embed URL directly. May not save to PNG due to CORS.
+    if (confirm('这张图禁止跨站加载,只能预览/上色但不一定能保存。继续吗?')) {
+      addCustomPage(url, '网络图');
+      input.value = '';
+    }
+  }
+});
+
+/* ========== Help modal ========== */
+const helpModal = document.getElementById('helpModal');
+function openHelp() { helpModal.classList.add('show'); }
+function closeHelp() { helpModal.classList.remove('show'); }
+document.getElementById('helpBtn').addEventListener('click', openHelp);
+document.getElementById('helpClose').addEventListener('click', closeHelp);
+helpModal.addEventListener('click', (e) => { if (e.target === helpModal) closeHelp(); });
+
 /* ========== Boot ========== */
 buildPalette();
 buildPages();
@@ -720,6 +1057,14 @@ updateBrushPreview();
 canvas.classList.add('disabled');
 // Resize after layout settles
 requestAnimationFrame(syncCanvasSize);
+
+// First-run help popup
+try {
+  if (!localStorage.getItem('bluey_help_seen')) {
+    openHelp();
+    localStorage.setItem('bluey_help_seen', '1');
+  }
+} catch (_) {}
 
 /* Prevent iOS double-tap zoom on the stage */
 let lastTouch = 0;
