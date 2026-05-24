@@ -1788,10 +1788,10 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
   }
   body { display: flex; flex-direction: column; height: 100dvh; }
 
-  /* Top bar */
+  /* Top bar — its background extends into the iPhone notch area */
   header {
     display: flex; align-items: center; gap: 8px;
-    padding: 8px 12px;
+    padding: calc(8px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) 8px calc(12px + env(safe-area-inset-left));
     background: var(--accent); color: white;
     box-shadow: var(--shadow);
     flex-shrink: 0;
@@ -1909,9 +1909,12 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
   .stage-inner canvas { touch-action: none; pointer-events: none; }
   .stage-inner canvas.draw-mode { pointer-events: auto; cursor: crosshair; }
 
-  /* Bottom toolbar with tools + zoom */
+  /* Bottom toolbar with tools + zoom — lifts above iPhone home indicator */
   .bottom-bar {
-    position: absolute; left: 12px; right: 12px; bottom: 12px;
+    position: absolute;
+    left: calc(12px + env(safe-area-inset-left));
+    right: calc(12px + env(safe-area-inset-right));
+    bottom: calc(12px + env(safe-area-inset-bottom));
     display: flex; align-items: center; justify-content: space-between;
     gap: 8px; pointer-events: none;
   }
@@ -2084,21 +2087,128 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
   }
   .toast.show { opacity: 1; }
 
-  /* iPad and phone responsive */
-  @media (max-width: 900px) {
-    .palette { width: 160px; }
+  /* ===== Responsive ===== */
+
+  /* Smaller laptops + iPad portrait */
+  @media (max-width: 1024px) {
+    .palette { width: 168px; padding: 10px 8px 70px; }
     header h1 { font-size: 16px; }
-    .big-btn { padding: 8px 10px; font-size: 13px; min-width: 56px; }
+    .big-btn { padding: 8px 10px; font-size: 14px; min-width: 56px; }
   }
+
+  /* iPad portrait edge */
+  @media (max-width: 820px) {
+    .palette { width: 150px; }
+    .big-btn { padding: 7px 9px; font-size: 13px; min-width: 50px; min-height: 48px; gap: 4px; }
+    .timer-chip { font-size: 14px; padding: 5px 10px; min-height: 48px; }
+    header h1 { font-size: 15px; }
+  }
+
+  /* Phone portrait — column layout, palette is a top strip */
   @media (max-width: 640px) {
+    :root { --hit: 44px; }
+    body { font-size: 14px; }
+    header {
+      flex-wrap: wrap; padding: 6px 8px; gap: 6px;
+    }
+    header h1 { font-size: 14px; letter-spacing: 0; }
+    .header-spacer { display: none; }
+    .header-btns {
+      flex: 1; justify-content: flex-end; gap: 4px; flex-wrap: nowrap;
+    }
+    .timer-chip { font-size: 13px; padding: 4px 10px; min-height: 40px; gap: 4px; }
+    .big-btn {
+      padding: 6px 8px; font-size: 12px; min-height: 40px; min-width: 40px;
+      gap: 3px; border-radius: 10px;
+    }
+
     main { flex-direction: column; }
     .palette {
-      width: 100%; flex-shrink: 0; max-height: 38vh;
-      padding: 8px 10px 70px;
+      width: 100%; height: auto; flex-shrink: 0;
+      padding: 8px 10px;
+      flex-direction: row; overflow-x: auto; overflow-y: hidden;
+      gap: 14px; max-height: none;
     }
-    .stage-wrap { padding: 6px; }
-    header { gap: 4px; padding: 6px; }
+    .palette > div { flex-shrink: 0; min-width: 120px; }
+    .palette h3 { font-size: 10px; margin: 0 0 4px; letter-spacing: 0.5px; }
+    .swatches { display: flex; gap: 6px; }
+    .swatch { width: 32px; aspect-ratio: 1; flex-shrink: 0; }
+    .custom-color { margin-top: 4px; gap: 4px; }
+    .custom-color input[type=color] { width: 32px; height: 32px; }
+    .custom-color span { display: none; }
+    .pattern-grid { display: flex; gap: 4px; }
+    .pattern-tile { width: 42px; aspect-ratio: 1; padding: 3px; font-size: 9px; flex-shrink: 0; }
+    .brush-row { gap: 6px; min-width: 130px; }
+    .brush-row input[type=range] { min-width: 60px; }
+    .brush-preview { width: 34px; height: 34px; }
+
+    .stage-wrap { flex: 1; padding: 6px; min-height: 0; }
+    .bottom-bar {
+      left: 4px; right: 4px; bottom: 4px; gap: 4px;
+      flex-wrap: wrap;
+    }
+    .tools, .zoom-tools { padding: 4px; gap: 3px; border-radius: 12px; }
+    .tool {
+      min-width: 44px; min-height: 44px; padding: 4px;
+      font-size: 10px; border-width: 2px;
+    }
+    .tool svg { width: 20px; height: 20px; }
+    .zoom-tools .tool { min-width: 38px; }
+    .zoom-tools .tool span { font-size: 16px; }
+    .zoom-display { font-size: 10px; padding: 0 4px; min-width: 30px; }
+
+    /* Modals on phone: take full width */
+    .modal { padding: 6px; align-items: stretch; }
+    .modal-box {
+      max-height: 100%; height: 100%; max-width: 100%;
+      border-radius: 14px;
+    }
+    .modal-header { padding: 10px 12px; }
+    .modal-header h2 { font-size: 16px; }
+    .modal-close-x { width: 40px; height: 40px; font-size: 20px; }
+    .modal-body { padding: 10px 12px; }
+    .modal-footer { padding: 8px 12px; }
+    .primary-btn, .secondary-btn {
+      padding: 10px 16px; font-size: 14px; min-height: 44px;
+    }
+    .picker-grid { grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 8px; }
+    .picker-card { padding: 4px; }
+    .pc-label { font-size: 10px; }
+    .stamp-grid { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 6px; }
+    .cat-tabs { gap: 4px; padding-bottom: 8px; margin-bottom: 8px; }
+    .cat-tab { padding: 8px 12px; font-size: 13px; min-height: 40px; }
+    .upload-row { flex-direction: column; align-items: stretch; gap: 6px; }
+    .upload-row .ghost-btn { padding: 10px 12px; font-size: 14px; }
+    .timer-options { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .timer-options button { padding: 12px 4px; font-size: 14px; min-height: 44px; }
+  }
+
+  /* Tiny phone (iPhone SE etc) */
+  @media (max-width: 400px) {
     header h1 { display: none; }
+    .big-btn .btn-label { display: none; }
+    .big-btn .btn-icon { font-size: 18px; }
+    .big-btn { min-width: 38px; min-height: 40px; padding: 4px 6px; }
+    .timer-chip { font-size: 12px; padding: 3px 8px; gap: 3px; }
+    .palette { gap: 10px; padding: 6px 8px; }
+    .palette > div { min-width: 110px; }
+    .picker-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+    .stamp-grid { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); }
+  }
+
+  /* Phone landscape: header tighter so canvas keeps height */
+  @media (max-width: 900px) and (orientation: landscape) and (max-height: 500px) {
+    header { padding: 4px 8px; gap: 4px; }
+    header h1 { display: none; }
+    .timer-chip { font-size: 12px; min-height: 36px; padding: 3px 8px; }
+    .big-btn { font-size: 12px; min-height: 36px; padding: 4px 8px; }
+    .big-btn .btn-label { display: none; }
+    .palette {
+      padding: 4px 8px; gap: 10px; flex-direction: row;
+    }
+    .palette > div { min-width: 110px; }
+    .swatch { width: 28px; }
+    .pattern-tile { width: 36px; }
   }
 </style>
 </head>
@@ -2111,12 +2221,12 @@ HTML_BODY = r"""<body>
   <div class="timer-chip" id="timerChip" title="点击设置倒计时">⏱ <span id="timerText">10:00</span></div>
   <div class="header-spacer"></div>
   <div class="header-btns">
-    <button class="big-btn" id="pickPictureBtn">🖼️ 选图</button>
-    <button class="big-btn" id="pickStampBtn">⭐ 贴纸</button>
-    <button class="big-btn" id="undoBtn">↶ 撤销</button>
-    <button class="big-btn danger" id="clearBtn">🗑 清空</button>
-    <button class="big-btn" id="saveBtn">💾 保存</button>
-    <button class="big-btn" id="fullscreenBtn">⛶ 全屏</button>
+    <button class="big-btn" id="pickPictureBtn"><span class="btn-icon">🖼️</span><span class="btn-label">选图</span></button>
+    <button class="big-btn" id="pickStampBtn"><span class="btn-icon">⭐</span><span class="btn-label">贴纸</span></button>
+    <button class="big-btn" id="undoBtn"><span class="btn-icon">↶</span><span class="btn-label">撤销</span></button>
+    <button class="big-btn danger" id="clearBtn"><span class="btn-icon">🗑</span><span class="btn-label">清空</span></button>
+    <button class="big-btn" id="saveBtn"><span class="btn-icon">💾</span><span class="btn-label">保存</span></button>
+    <button class="big-btn" id="fullscreenBtn"><span class="btn-icon">⛶</span><span class="btn-label">全屏</span></button>
     <button class="big-btn" id="helpBtn">?</button>
   </div>
 </header>
