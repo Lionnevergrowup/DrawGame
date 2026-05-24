@@ -1,819 +1,19 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<title>卡通画图填色</title>
-<style>
-  :root {
-    --accent: #4ab3ff;
-    --accent-dark: #2a6db0;
-    --bg: #fff8e7;
-    --panel: #ffffff;
-    --shadow: 0 4px 14px rgba(0,0,0,.08);
-    --radius: 18px;
-    --hit: 56px;   /* min touch target */
-  }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body {
-    margin: 0; padding: 0; height: 100%;
-    font-family: -apple-system, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
-    background: var(--bg);
-    overscroll-behavior: none;
-    touch-action: manipulation;
-    user-select: none; -webkit-user-select: none;
-  }
-  body { display: flex; flex-direction: column; height: 100dvh; }
+"""All 100 coloring page templates.
 
-  /* Top bar — its background extends into the iPhone notch area */
-  header {
-    display: flex; align-items: center; gap: 8px;
-    padding: calc(8px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) 8px calc(12px + env(safe-area-inset-left));
-    background: var(--accent); color: white;
-    box-shadow: var(--shadow);
-    flex-shrink: 0;
-  }
-  header h1 { font-size: 18px; margin: 0; letter-spacing: 1px; flex-shrink: 0; }
-  .timer-chip {
-    background: rgba(255,255,255,.18); padding: 6px 12px; border-radius: 999px;
-    font-size: 16px; font-weight: 600; cursor: pointer; min-height: var(--hit);
-    display: inline-flex; align-items: center; gap: 6px;
-  }
-  .timer-chip.warn { background: rgba(255,180,0,.35); }
-  .timer-chip.danger { background: rgba(255,80,80,.5); animation: blink 1s infinite; }
-  @keyframes blink { 50% { opacity: .5; } }
-  .header-spacer { flex: 1; }
-  .header-btns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
-  .big-btn {
-    background: rgba(255,255,255,.22); border: none; color: white;
-    padding: 10px 14px; border-radius: 12px;
-    font-size: 15px; font-weight: 700;
-    min-height: var(--hit); min-width: 64px;
-    cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  }
-  .big-btn:active { background: rgba(255,255,255,.42); }
-  .big-btn.danger:active { background: rgba(255,80,80,.6); }
+Each call to add() registers one template:
+    add(key, display_name, category, svg_body)
+Categories must match those in CATEGORIES (see build.py).
+The svg_body is inline SVG inside a <g> wrapper; mark color-fillable
+regions with class="fillable" fill="#ffffff".
+"""
 
-  /* Main layout */
-  main {
-    flex: 1; display: flex; min-height: 0;
-  }
+TEMPLATES = []
+def add(key, name, cat, svg):
+    TEMPLATES.append((key, name, cat, svg.strip()))
 
-  /* Color/pattern palette on the left */
-  .palette {
-    width: 200px; padding: 12px 10px 80px;
-    background: var(--panel); box-shadow: var(--shadow);
-    overflow-y: auto; flex-shrink: 0;
-    display: flex; flex-direction: column; gap: 14px;
-  }
-  .palette h3 {
-    margin: 0 0 6px; font-size: 12px; color: #666;
-    text-transform: uppercase; letter-spacing: 1px;
-  }
-  .swatches {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
-  }
-  .swatch {
-    width: 100%; aspect-ratio: 1;
-    border-radius: 50%;
-    border: 3px solid #fff;
-    box-shadow: 0 1px 4px rgba(0,0,0,.18);
-    cursor: pointer;
-  }
-  .swatch.active {
-    outline: 4px solid var(--accent); outline-offset: 2px;
-  }
-  .custom-color {
-    display: flex; align-items: center; gap: 8px; margin-top: 6px;
-  }
-  .custom-color input[type=color] {
-    width: 48px; height: 48px; border: none; background: none; padding: 0; cursor: pointer;
-  }
-  /* Compact palette buttons that open popups */
-  .pop-btn {
-    display: flex; align-items: center; gap: 10px;
-    width: 100%; padding: 10px 12px;
-    background: #f8fafc; border: 2px solid #e3e7ed; border-radius: 14px;
-    cursor: pointer; min-height: 60px; text-align: left;
-  }
-  .pop-btn:active { background: #e6f3ff; border-color: var(--accent); }
-  .pop-swatch {
-    width: 38px; height: 38px; border-radius: 50%;
-    background: #4ab3ff; border: 2px solid #fff;
-    box-shadow: 0 1px 4px rgba(0,0,0,.2);
-    flex-shrink: 0;
-  }
-  .pop-swatch-pat { border-radius: 10px; overflow: hidden; background: #fff; }
-  .pop-swatch-pat svg { width: 100%; height: 100%; display: block; }
-  .pop-label { font-size: 14px; font-weight: 600; color: #333; }
-  .palette-section h3 {
-    margin: 0 0 6px; font-size: 12px; color: #666;
-    text-transform: uppercase; letter-spacing: 1px;
-  }
-  #colorPop .swatches {
-    grid-template-columns: repeat(5, 1fr); gap: 8px;
-  }
-  #colorPop .swatch { width: 100%; aspect-ratio: 1; }
-  .pattern-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
-  }
-  .pattern-tile {
-    aspect-ratio: 1; border-radius: 10px;
-    border: 3px solid #e3e7ed; background: #fff;
-    cursor: pointer; padding: 4px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 10px; color: #555;
-    flex-direction: column; gap: 2px;
-    overflow: hidden;
-  }
-  .pattern-tile.active { border-color: var(--accent); background: #e6f3ff; }
-  .pattern-tile svg { width: 100%; flex: 1; }
-  .brush-row { display: flex; align-items: center; gap: 10px; }
-  .brush-row input[type=range] {
-    flex: 1; height: 32px;
-  }
-  .brush-preview {
-    width: 44px; height: 44px;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .brush-dot { background: currentColor; border-radius: 50%; }
-
-  /* Center stage */
-  .stage-wrap {
-    flex: 1; min-width: 0; position: relative;
-    display: flex; align-items: center; justify-content: center;
-    padding: 12px; overflow: hidden;
-  }
-  .stage {
-    position: relative; background: white;
-    box-shadow: var(--shadow); border-radius: var(--radius);
-    overflow: hidden;
-    aspect-ratio: 4 / 3;
-    max-width: 100%; max-height: 100%;
-    width: 100%;
-  }
-  .stage-inner {
-    position: absolute; inset: 0;
-    transform-origin: 0 0;
-    transition: transform .12s ease-out;
-  }
-  .stage-inner.dragging { transition: none; }
-  .stage-inner svg, .stage-inner canvas {
-    position: absolute; inset: 0;
-    width: 100%; height: 100%;
-    display: block;
-  }
-  .stage-inner svg .fillable {
-    cursor: pointer;
-    transition: fill 0.15s ease;
-  }
-  .stage-inner svg .stamp-instance { cursor: pointer; }
-  .stage-inner canvas { touch-action: none; pointer-events: none; }
-  .stage-inner canvas.draw-mode { pointer-events: auto; cursor: crosshair; }
-
-  /* Bottom toolbar with tools + zoom — lifts above iPhone home indicator */
-  .bottom-bar {
-    position: absolute;
-    left: calc(12px + env(safe-area-inset-left));
-    right: calc(12px + env(safe-area-inset-right));
-    bottom: calc(12px + env(safe-area-inset-bottom));
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 8px; pointer-events: none;
-  }
-  .tools, .zoom-tools {
-    display: flex; gap: 6px;
-    background: rgba(255,255,255,.96);
-    padding: 6px; border-radius: 16px;
-    box-shadow: var(--shadow);
-    pointer-events: auto;
-  }
-  .tool {
-    min-width: var(--hit); min-height: var(--hit);
-    padding: 6px 10px;
-    background: transparent; border: 3px solid transparent; border-radius: 12px;
-    font-size: 12px; font-weight: 600; color: #333;
-    cursor: pointer;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 2px;
-  }
-  .tool svg { width: 26px; height: 26px; }
-  .tool.active { background: #e6f3ff; border-color: var(--accent); color: var(--accent-dark); }
-  .zoom-tools .tool { min-width: 48px; }
-  .zoom-tools .tool span { font-size: 18px; font-weight: 700; }
-
-  /* Floating action: zoom-reset */
-  .zoom-display {
-    font-size: 12px; color: #555; padding: 0 6px;
-    display: flex; align-items: center; font-variant-numeric: tabular-nums;
-  }
-
-  /* Modals */
-  .modal {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,.5);
-    display: none; align-items: center; justify-content: center;
-    z-index: 50; padding: 12px;
-  }
-  .modal.show { display: flex; }
-  .modal-box {
-    background: #fff; border-radius: 20px;
-    width: 100%; max-width: 920px;
-    max-height: 92vh; overflow: hidden;
-    display: flex; flex-direction: column;
-    box-shadow: 0 12px 40px rgba(0,0,0,.25);
-  }
-  .modal-header {
-    display: flex; align-items: center; gap: 10px;
-    padding: 14px 18px; border-bottom: 1px solid #eef1f5;
-    flex-shrink: 0;
-  }
-  .modal-header h2 { font-size: 20px; margin: 0; color: var(--accent-dark); flex: 1; }
-  .modal-close-x {
-    background: #f1f4f8; border: none; width: 44px; height: 44px;
-    border-radius: 50%; font-size: 22px; cursor: pointer; color: #333;
-  }
-  .modal-body {
-    overflow-y: auto; padding: 14px 18px;
-  }
-  .modal-footer {
-    padding: 12px 18px;
-    border-top: 1px solid #eef1f5;
-    display: flex; justify-content: flex-end; gap: 8px;
-    flex-shrink: 0;
-  }
-  .primary-btn {
-    background: var(--accent); color: #fff; border: none;
-    padding: 12px 24px; border-radius: 12px; font-size: 16px; font-weight: 700;
-    min-height: var(--hit); cursor: pointer;
-  }
-  .secondary-btn {
-    background: #f1f4f8; color: #333; border: none;
-    padding: 12px 24px; border-radius: 12px; font-size: 16px; font-weight: 600;
-    min-height: var(--hit); cursor: pointer;
-  }
-
-  /* Picture / Stamp picker */
-  .cat-tabs {
-    display: flex; gap: 6px; padding-bottom: 10px; flex-wrap: wrap;
-    position: sticky; top: 0; background: #fff; z-index: 2;
-    border-bottom: 1px solid #eef1f5; margin-bottom: 10px;
-  }
-  .cat-tab {
-    background: #f1f4f8; border: 2px solid transparent;
-    padding: 10px 14px; border-radius: 999px;
-    font-size: 14px; font-weight: 600; cursor: pointer;
-    min-height: 44px;
-  }
-  .cat-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .picker-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 10px;
-  }
-  .picker-card {
-    background: #f9fafc; border: 3px solid transparent;
-    border-radius: 14px; padding: 6px; cursor: pointer;
-    aspect-ratio: 4 / 3; position: relative;
-    display: flex; flex-direction: column;
-  }
-  .picker-card.active { border-color: var(--accent); background: #e6f3ff; }
-  .picker-card svg { width: 100%; flex: 1; }
-  .picker-card .pc-label {
-    font-size: 11px; color: #555; text-align: center; padding-top: 4px;
-  }
-  .picker-card.custom::after {
-    content: '×';
-    position: absolute; top: 4px; right: 4px;
-    width: 22px; height: 22px;
-    background: rgba(0,0,0,.55); color: #fff;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px; line-height: 1;
-  }
-  .picker-card.custom img { width: 100%; flex: 1; object-fit: contain; }
-
-  .stamp-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
-    gap: 8px;
-  }
-  .stamp-card {
-    background: #f9fafc; border: 3px solid transparent;
-    border-radius: 14px; padding: 6px; cursor: pointer;
-    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-  }
-  .stamp-card.active { border-color: var(--accent); background: #e6f3ff; }
-  .stamp-card svg { width: 80%; height: 80%; }
-
-  /* Search row in picture modal */
-  .search-row {
-    display: flex; gap: 6px; padding-bottom: 10px;
-    border-bottom: 1px solid #eef1f5; margin-bottom: 10px;
-    flex-wrap: wrap; align-items: center;
-  }
-  .search-row input[type=search] {
-    flex: 1; min-width: 180px;
-    padding: 10px 12px; font-size: 15px;
-    border: 1px solid #dde3ea; border-radius: 10px;
-    background: #fff;
-  }
-  .search-row .primary-btn { padding: 10px 18px; font-size: 14px; min-height: 44px; }
-  .search-row .ghost-btn { padding: 10px 14px; font-size: 15px; min-height: 44px; }
-  #searchResults:empty { display: none; }
-
-  /* Upload section in picture modal */
-  .upload-row {
-    display: flex; gap: 8px; flex-wrap: wrap;
-    padding: 0 0 12px;
-    border-bottom: 1px solid #eef1f5; margin-bottom: 10px;
-  }
-  .upload-row .ghost-btn {
-    background: #f1f4f8; border: 1px solid #dde3ea;
-    border-radius: 10px; padding: 10px 14px; font-size: 14px; cursor: pointer;
-    min-height: 44px; display: inline-flex; align-items: center; gap: 6px;
-  }
-  .upload-row input[type=url] {
-    flex: 1; min-width: 160px;
-    padding: 9px 10px; font-size: 14px;
-    border: 1px solid #dde3ea; border-radius: 10px;
-  }
-  .hint { font-size: 12px; color: #888; padding-top: 6px; }
-
-  /* Timer mode tabs */
-  .mode-tab {
-    flex: 1; padding: 10px 14px; font-size: 14px; font-weight: 600;
-    background: #f1f4f8; border: 2px solid transparent; border-radius: 12px;
-    cursor: pointer; min-height: 44px; color: #555;
-  }
-  .mode-tab.active { background: #e6f3ff; border-color: var(--accent); color: var(--accent-dark); }
-
-  /* Timer settings */
-  .timer-options {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
-    margin: 6px 0;
-  }
-  .timer-options button {
-    padding: 14px 4px; font-size: 16px; font-weight: 700;
-    background: #f1f4f8; border: 3px solid transparent; border-radius: 12px;
-    cursor: pointer; min-height: var(--hit);
-  }
-  .timer-options button.active { background: #e6f3ff; border-color: var(--accent); color: var(--accent-dark); }
-
-  /* Help modal */
-  .help-body h3 { margin: 14px 0 4px; font-size: 14px; color: #333; }
-  .help-body p, .help-body li { font-size: 14px; line-height: 1.6; color: #444; }
-  .help-body ul, .help-body ol { padding-left: 20px; margin: 4px 0; }
-
-  /* Toast / autosave indicator */
-  .toast {
-    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
-    background: rgba(0,0,0,.78); color: #fff;
-    padding: 10px 18px; border-radius: 999px;
-    font-size: 14px; z-index: 60;
-    opacity: 0; pointer-events: none;
-    transition: opacity .25s;
-  }
-  .toast.show { opacity: 1; }
-
-  /* ===== Responsive ===== */
-
-  /* Smaller laptops + iPad portrait */
-  @media (max-width: 1024px) {
-    .palette { width: 168px; padding: 10px 8px 70px; }
-    header h1 { font-size: 16px; }
-    .big-btn { padding: 8px 10px; font-size: 14px; min-width: 56px; }
-  }
-
-  /* iPad portrait edge */
-  @media (max-width: 820px) {
-    .palette { width: 150px; }
-    .big-btn { padding: 7px 9px; font-size: 13px; min-width: 50px; min-height: 48px; gap: 4px; }
-    .timer-chip { font-size: 14px; padding: 5px 10px; min-height: 48px; }
-    header h1 { font-size: 15px; }
-  }
-
-  /* Phone portrait — column layout, palette is a top strip */
-  @media (max-width: 640px) {
-    :root { --hit: 44px; }
-    body { font-size: 14px; }
-    header {
-      flex-wrap: wrap; padding: 6px 8px; gap: 6px;
-    }
-    header h1 { font-size: 14px; letter-spacing: 0; }
-    .header-spacer { display: none; }
-    .header-btns {
-      flex: 1; justify-content: flex-end; gap: 4px; flex-wrap: nowrap;
-    }
-    .timer-chip { font-size: 13px; padding: 4px 10px; min-height: 40px; gap: 4px; }
-    .big-btn {
-      padding: 6px 8px; font-size: 12px; min-height: 40px; min-width: 40px;
-      gap: 3px; border-radius: 10px;
-    }
-
-    main { flex-direction: column; }
-    .palette {
-      width: 100%; height: auto; flex-shrink: 0;
-      padding: 8px 10px;
-      flex-direction: row; overflow-x: auto; overflow-y: hidden;
-      gap: 14px; max-height: none;
-    }
-    .palette > * { flex-shrink: 0; }
-    .palette .pop-btn { min-width: 110px; padding: 6px 10px; min-height: 48px; }
-    .palette .pop-swatch { width: 28px; height: 28px; }
-    .palette .pop-label { font-size: 13px; }
-    .palette-section { min-width: 140px; }
-    .palette-section h3 { font-size: 10px; margin: 0 0 4px; }
-    .brush-row { gap: 6px; }
-    .brush-row input[type=range] { min-width: 70px; }
-    .brush-preview { width: 30px; height: 30px; }
-    /* Color popup on phones */
-    #colorPop .swatches { grid-template-columns: repeat(6, 1fr); }
-    .pattern-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
-    .pattern-tile { padding: 3px; font-size: 10px; }
-
-    .stage-wrap { flex: 1; padding: 6px; min-height: 0; }
-    .bottom-bar {
-      left: 4px; right: 4px; bottom: 4px; gap: 4px;
-      flex-wrap: wrap;
-    }
-    .tools, .zoom-tools { padding: 4px; gap: 3px; border-radius: 12px; }
-    .tool {
-      min-width: 44px; min-height: 44px; padding: 4px;
-      font-size: 10px; border-width: 2px;
-    }
-    .tool svg { width: 20px; height: 20px; }
-    .zoom-tools .tool { min-width: 38px; }
-    .zoom-tools .tool span { font-size: 16px; }
-    .zoom-display { font-size: 10px; padding: 0 4px; min-width: 30px; }
-
-    /* Modals on phone: take full width */
-    .modal { padding: 6px; align-items: stretch; }
-    .modal-box {
-      max-height: 100%; height: 100%; max-width: 100%;
-      border-radius: 14px;
-    }
-    .modal-header { padding: 10px 12px; }
-    .modal-header h2 { font-size: 16px; }
-    .modal-close-x { width: 40px; height: 40px; font-size: 20px; }
-    .modal-body { padding: 10px 12px; }
-    .modal-footer { padding: 8px 12px; }
-    .primary-btn, .secondary-btn {
-      padding: 10px 16px; font-size: 14px; min-height: 44px;
-    }
-    .picker-grid { grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 8px; }
-    .picker-card { padding: 4px; }
-    .pc-label { font-size: 10px; }
-    .stamp-grid { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 6px; }
-    .cat-tabs { gap: 4px; padding-bottom: 8px; margin-bottom: 8px; }
-    .cat-tab { padding: 8px 12px; font-size: 13px; min-height: 40px; }
-    .upload-row { flex-direction: column; align-items: stretch; gap: 6px; }
-    .upload-row .ghost-btn { padding: 10px 12px; font-size: 14px; }
-    .timer-options { grid-template-columns: repeat(3, 1fr); gap: 6px; }
-    .timer-options button { padding: 12px 4px; font-size: 14px; min-height: 44px; }
-  }
-
-  /* Tiny phone (iPhone SE etc) */
-  @media (max-width: 400px) {
-    header h1 { display: none; }
-    .big-btn .btn-label { display: none; }
-    .big-btn .btn-icon { font-size: 18px; }
-    .big-btn { min-width: 38px; min-height: 40px; padding: 4px 6px; }
-    .timer-chip { font-size: 12px; padding: 3px 8px; gap: 3px; }
-    .palette { gap: 10px; padding: 6px 8px; }
-    .palette > * { min-width: 100px; }
-    .palette .pop-label { font-size: 12px; }
-    .picker-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
-    .stamp-grid { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); }
-  }
-
-  /* Phone landscape: header tighter so canvas keeps height */
-  @media (max-width: 900px) and (orientation: landscape) and (max-height: 500px) {
-    header { padding: 4px 8px; gap: 4px; }
-    header h1 { display: none; }
-    .timer-chip { font-size: 12px; min-height: 36px; padding: 3px 8px; }
-    .big-btn { font-size: 12px; min-height: 36px; padding: 4px 8px; }
-    .big-btn .btn-label { display: none; }
-    .palette {
-      padding: 4px 8px; gap: 10px; flex-direction: row;
-    }
-    .palette > * { min-width: 100px; }
-    .palette .pop-btn { min-height: 40px; padding: 4px 8px; }
-    .palette .pop-swatch { width: 24px; height: 24px; }
-  }
-</style>
-</head>
-<body>
-
-<header>
-  <h1>🎨 画图填色</h1>
-  <div class="timer-chip" id="timerChip" title="点击设置倒计时">⏱ <span id="timerText">10:00</span></div>
-  <div class="header-spacer"></div>
-  <div class="header-btns">
-    <button class="big-btn" id="pickPictureBtn"><span class="btn-icon">🖼️</span><span class="btn-label">选图</span></button>
-    <button class="big-btn" id="undoBtn"><span class="btn-icon">↶</span><span class="btn-label">撤销</span></button>
-    <button class="big-btn danger" id="clearBtn"><span class="btn-icon">🗑</span><span class="btn-label">清空</span></button>
-    <button class="big-btn" id="saveBtn"><span class="btn-icon">💾</span><span class="btn-label">保存</span></button>
-    <button class="big-btn" id="fullscreenBtn"><span class="btn-icon">⛶</span><span class="btn-label">全屏</span></button>
-    <button class="big-btn" id="helpBtn">?</button>
-  </div>
-</header>
-
-<main>
-  <aside class="palette">
-    <button class="pop-btn" id="openColorPop" title="颜色">
-      <span class="pop-swatch" id="curColorSwatch"></span>
-      <span class="pop-label">颜色</span>
-    </button>
-    <button class="pop-btn" id="openPatternPop" title="纹路">
-      <span class="pop-swatch pop-swatch-pat"><svg viewBox="0 0 30 30" id="curPatternPreview"><rect width="30" height="30" fill="#4ab3ff"/></svg></span>
-      <span class="pop-label" id="curPatternName">纯色</span>
-    </button>
-    <div class="palette-section">
-      <h3>画笔粗细 <span id="brushSizeText" style="float:right;color:#555">10</span></h3>
-      <div class="brush-row">
-        <input type="range" id="brushSize" min="3" max="40" value="10" />
-        <div class="brush-preview" id="brushPreview"><div class="brush-dot"></div></div>
-      </div>
-    </div>
-    <div class="palette-section" id="stampSizeBox" style="display:none">
-      <h3>贴纸大小 <span id="stampSizeText" style="float:right;color:#555">50</span></h3>
-      <div class="brush-row">
-        <input type="range" id="stampSize" min="20" max="160" value="50" />
-      </div>
-    </div>
-  </aside>
-
-  <div class="stage-wrap">
-    <div class="stage" id="stage">
-      <div class="stage-inner" id="stageInner">
-        <svg id="coloringSvg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid meet"></svg>
-        <canvas id="drawCanvas"></canvas>
-      </div>
-    </div>
-
-    <div class="bottom-bar">
-      <div class="tools" id="tools">
-        <button class="tool active" data-tool="fill">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l9 9-7 7a3 3 0 01-4-4l2-2"/><path d="M19 14c0 2-2 4-2 4s-2-2-2-4a2 2 0 014 0z" fill="currentColor" stroke="none"/></svg>
-          填色
-        </button>
-        <button class="tool" data-tool="brush">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21s4-1 6-3l9-9-3-3-9 9c-2 2-3 6-3 6z"/></svg>
-          画笔
-        </button>
-        <button class="tool" data-tool="eraser">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6 6h12M16 3l5 5L9 20H3v-6z"/></svg>
-          橡皮
-        </button>
-        <button class="tool" data-tool="stamp">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2.5 5 5.5.8-4 4 .9 5.5L12 16l-4.9 2.3.9-5.5-4-4 5.5-.8z"/></svg>
-          贴纸
-        </button>
-      </div>
-
-      <div class="zoom-tools">
-        <button class="tool" id="zoomOut" title="缩小"><span>−</span></button>
-        <div class="zoom-display" id="zoomDisplay">100%</div>
-        <button class="tool" id="zoomIn" title="放大"><span>+</span></button>
-        <button class="tool" id="zoomReset" title="复位"><span>⌂</span></button>
-      </div>
-    </div>
-  </div>
-</main>
-
-<!-- Picture picker modal -->
-<div class="modal" id="pictureModal" role="dialog" aria-modal="true">
-  <div class="modal-box">
-    <div class="modal-header">
-      <h2>🖼️ 选一张图</h2>
-      <button class="modal-close-x" data-close="pictureModal">×</button>
-    </div>
-    <div class="modal-body">
-      <!-- Search row: Google Custom Search API (user provides key/cx) -->
-      <div class="search-row">
-        <input id="searchInput" type="search" placeholder="🔍 搜图: 熊猫 / 汽车 / 公主 …" />
-        <button class="ghost-btn primary-btn" id="searchBtn">搜图</button>
-        <button class="ghost-btn" id="searchCfgBtn" title="设置 Google API key">⚙️</button>
-      </div>
-      <div id="searchResults" class="picker-grid" style="margin-bottom:10px"></div>
-
-      <div class="upload-row">
-        <label class="ghost-btn">📁 上传图片
-          <input id="fileInput" type="file" accept="image/*" style="display:none" />
-        </label>
-        <button class="ghost-btn" id="googleBtn">🌐 在 Google 打开</button>
-        <input id="urlInput" type="url" placeholder="或粘贴图片网址…" />
-        <button class="ghost-btn" id="urlLoadBtn">载入</button>
-      </div>
-      <div class="cat-tabs" id="pictureCatTabs"></div>
-      <div class="picker-grid" id="pictureGrid"></div>
-    </div>
-  </div>
-</div>
-
-<!-- Search settings modal (one-time Google API setup) -->
-<div class="modal" id="searchCfgModal" role="dialog" aria-modal="true">
-  <div class="modal-box" style="max-width:520px">
-    <div class="modal-header">
-      <h2>⚙️ Google 搜图设置</h2>
-      <button class="modal-close-x" data-close="searchCfgModal">×</button>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:14px;line-height:1.6;color:#444">
-        Google 图片本身没有公开 API。我们用 Google 的 <b>Programmable Search Engine</b>(每天 100 次免费)。
-        一次性设置好,以后在上面框里输入关键词就能搜到图,点缩略图直接载入画板。
-      </p>
-      <ol style="font-size:14px;line-height:1.7;color:#444">
-        <li>建一个 <b>Programmable Search Engine</b>:
-          <a href="https://programmablesearchengine.google.com/" target="_blank" rel="noopener">programmablesearchengine.google.com</a>
-          → "Add" → 把 "Search the entire web" 打开 → 在 Search settings 把 "Image search" 打开。
-          创建后页面会显示 <b>Search engine ID(cx)</b>。
-        </li>
-        <li>申请一个 API key:
-          <a href="https://console.cloud.google.com/apis/library/customsearch.googleapis.com" target="_blank" rel="noopener">Google Cloud Console</a>
-          → "Enable" Custom Search API → 旁边 "Credentials" → "Create credentials" → "API key"。
-        </li>
-        <li>把两个值粘到这里(只存在你这台设备的浏览器里):</li>
-      </ol>
-      <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px">
-        <input id="gcsKeyInput" type="text" placeholder="API Key" autocomplete="off" style="padding:10px;border:1px solid #dde3ea;border-radius:8px;font-size:14px"/>
-        <input id="gcsCxInput" type="text" placeholder="Search engine ID (cx)" autocomplete="off" style="padding:10px;border:1px solid #dde3ea;border-radius:8px;font-size:14px"/>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="secondary-btn" id="gcsClear">清空</button>
-      <button class="primary-btn" id="gcsSave">保存</button>
-    </div>
-  </div>
-</div>
-
-<!-- Stamp picker modal -->
-<div class="modal" id="stampModal" role="dialog" aria-modal="true">
-  <div class="modal-box">
-    <div class="modal-header">
-      <h2>⭐ 选个贴纸,然后在画上点一下放上去</h2>
-      <button class="modal-close-x" data-close="stampModal">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="cat-tabs" id="stampCatTabs"></div>
-      <div class="stamp-grid" id="stampGrid"></div>
-      <div class="hint">小贴士:再点一次同一个贴纸可以取消选中。贴纸用当前颜色着色。</div>
-    </div>
-  </div>
-</div>
-
-<!-- Color popup -->
-<div class="modal" id="colorPop" role="dialog" aria-modal="true">
-  <div class="modal-box" style="max-width:480px">
-    <div class="modal-header">
-      <h2>🎨 选颜色</h2>
-      <button class="modal-close-x" data-close="colorPop">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="swatches" id="swatches"></div>
-      <div class="custom-color" style="margin-top:14px;padding-top:14px;border-top:1px solid #eef1f5">
-        <input type="color" id="customColor" value="#4ab3ff" />
-        <span style="font-size:14px;color:#555">自选任意颜色 →</span>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Pattern popup -->
-<div class="modal" id="patternPop" role="dialog" aria-modal="true">
-  <div class="modal-box" style="max-width:520px">
-    <div class="modal-header">
-      <h2>🎭 选纹路</h2>
-      <button class="modal-close-x" data-close="patternPop">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="pattern-grid" id="patternGrid"></div>
-    </div>
-  </div>
-</div>
-
-<!-- Timer modal -->
-<div class="modal" id="timerModal" role="dialog" aria-modal="true">
-  <div class="modal-box" style="max-width:460px">
-    <div class="modal-header">
-      <h2>⏱ 倒计时</h2>
-      <button class="modal-close-x" data-close="timerModal">×</button>
-    </div>
-    <div class="modal-body">
-      <div style="display:flex;gap:6px;margin-bottom:14px">
-        <button class="mode-tab active" data-mode="single">单人</button>
-        <button class="mode-tab" data-mode="multi">多人轮流</button>
-      </div>
-
-      <div id="singleModeBox">
-        <p style="margin:0 0 6px;color:#555">画多久?到时间会弹提示。</p>
-        <div class="timer-options" id="timerOptions">
-          <button data-min="5">5分钟</button>
-          <button data-min="10">10分钟</button>
-          <button data-min="15">15分钟</button>
-          <button data-min="20">20分钟</button>
-          <button data-min="30">30分钟</button>
-          <button data-min="45">45分钟</button>
-          <button data-min="60">60分钟</button>
-          <button data-min="0">关掉</button>
-        </div>
-      </div>
-
-      <div id="multiModeBox" style="display:none">
-        <p style="margin:0 0 6px;color:#555">每个人轮流画固定时间,时间一到提示换下一个人。</p>
-        <h4 style="margin:10px 0 4px;font-size:13px;color:#333">几个人?</h4>
-        <div class="timer-options" id="multiCountOpts">
-          <button data-n="2">2 人</button>
-          <button data-n="3">3 人</button>
-          <button data-n="4">4 人</button>
-          <button data-n="5">5 人</button>
-        </div>
-        <h4 style="margin:14px 0 4px;font-size:13px;color:#333">每人多长时间?</h4>
-        <div class="timer-options" id="multiTurnOpts">
-          <button data-min="1">1分钟</button>
-          <button data-min="2">2分钟</button>
-          <button data-min="3">3分钟</button>
-          <button data-min="5">5分钟</button>
-          <button data-min="10">10分钟</button>
-          <button data-min="15">15分钟</button>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="secondary-btn" id="timerReset">↺ 重置</button>
-      <button class="primary-btn" id="timerPauseResume">⏸ 暂停</button>
-    </div>
-  </div>
-</div>
-
-<!-- Timer-expired alert -->
-<div class="modal" id="timerExpiredModal" role="dialog" aria-modal="true">
-  <div class="modal-box" style="max-width:380px; text-align:center;">
-    <div class="modal-body" style="padding:32px 24px">
-      <div style="font-size:56px" id="timerExpiredIcon">⏰</div>
-      <h2 style="font-size:24px; margin:8px 0; color:var(--accent-dark)" id="timerExpiredTitle">时间到啦!</h2>
-      <p style="font-size:16px;color:#555;" id="timerExpiredSub">画得真棒 🎉</p>
-    </div>
-    <div class="modal-footer" style="justify-content:center;gap:10px" id="timerExpiredButtons">
-      <button class="secondary-btn" id="timerExpired10More">再加 10 分钟</button>
-      <button class="primary-btn" data-close="timerExpiredModal">好的</button>
-    </div>
-  </div>
-</div>
-
-<!-- Help modal -->
-<div class="modal" id="helpModal" role="dialog" aria-modal="true">
-  <div class="modal-box" style="max-width:560px">
-    <div class="modal-header">
-      <h2>怎么玩</h2>
-      <button class="modal-close-x" data-close="helpModal">×</button>
-    </div>
-    <div class="modal-body help-body">
-      <p>给小朋友的画图涂色游戏,在电脑/iPad/手机的浏览器里就能玩。</p>
-      <h3>🖼️ 选图</h3>
-      <p>点顶上 <b>选图</b> 按钮打开图库,有 50 张图按 🐾 动物 / 🌊 海洋 / 🦕 童话 / 🚗 交通 / 🌸 自然 / 🍰 食物 / 🎉 节日 分类。还可以上传你自己的图。</p>
-      <h3>🎨 涂色</h3>
-      <ul>
-        <li><b>填色</b>:选颜色,点图里的一块区域,自动填满。</li>
-        <li><b>纹路</b>:左边可以选小圆点、条纹、心形之类的纹路代替纯色。</li>
-        <li><b>画笔</b>:自由涂鸦,可调粗细。</li>
-        <li><b>橡皮</b>:擦掉画笔笔迹(不会擦掉填的颜色,要还原颜色用"撤销")。</li>
-        <li><b>贴纸</b>:点顶上 <b>贴纸</b> 选一个,在画上点一下就贴一个,可以重复贴。</li>
-      </ul>
-      <h3>🔍 放大缩小</h3>
-      <p>iPad 上两根手指捏合可放大缩小,捏住拖动可移动画面。电脑上用左下的 +/− 按钮,或滚轮 + Ctrl/Cmd。</p>
-      <h3>💾 自动保存</h3>
-      <p>每画一笔都自动存在浏览器里,关掉再打开,你画到一半的画会自动找回来。换图也会记住,不会丢。</p>
-      <h3>⏱ 倒计时</h3>
-      <p>顶上的 ⏱ 按钮设置画多久(默认 10 分钟),到时间会弹提示。</p>
-      <h3>⛶ 全屏</h3>
-      <p>点 ⛶ 按钮,浏览器进入全屏模式(iPad Safari 也可以从"分享 → 添加到主屏幕"装成 App)。</p>
-    </div>
-    <div class="modal-footer">
-      <button class="primary-btn" data-close="helpModal">明白了!</button>
-    </div>
-  </div>
-</div>
-
-<!-- SVG patterns (defs, hidden) -->
-<svg width="0" height="0" style="position:absolute" id="patternDefs">
-  <defs id="patternDefsContent"></defs>
-</svg>
-
-<!-- Toast -->
-<div class="toast" id="toast">已自动保存</div>
-<script>
-'use strict';
-
-/* =========================================================================
-   Data injected at build time
-   ========================================================================= */
-const PALETTE = ["#ff3b30", "#e0153a", "#ff2d92", "#ffb6d9", "#ff7eb9", "#ff9500", "#ffd1a3", "#cc7a00", "#a0522d", "#5a3a22", "#ffcc00", "#fff3a0", "#ffe66b", "#f5e6cb", "#d4a017", "#34c759", "#b8e0a3", "#2a9d3f", "#185a2d", "#7ed957", "#00c7be", "#a5d8ff", "#4ab3ff", "#0a84ff", "#2a6db0", "#5856d6", "#af52de", "#d4b3ff", "#7c3aed", "#3d1e6d", "#ffffff", "#e3e7ed", "#8e8e93", "#4a4a4a", "#1a1a1a"];
-const CATEGORIES = [["animal", "🐾 动物"], ["ocean", "🌊 海洋"], ["bug", "🐦 鸟和昆虫"], ["people", "👦 小人"], ["fantasy", "🦕 童话奇幻"], ["vehicle", "🚗 交通工具"], ["building", "🏡 房屋建筑"], ["nature", "🌸 自然"], ["food", "🍰 食物"], ["other", "🎉 节日和其他"]];
-const STAMP_CATEGORIES = [["people", "👦 小人"], ["nature", "🌳 自然"], ["animal", "🐶 小动物"], ["thing", "⭐ 装饰"], ["weather", "☀️ 天气"]];
-const PATTERNS = [["solid", "纯色", null], ["dots", "小圆点", "<pattern id=\"pat-dots\" patternUnits=\"userSpaceOnUse\" width=\"14\" height=\"14\"><rect width=\"14\" height=\"14\" fill=\"__BG__\"/><circle cx=\"7\" cy=\"7\" r=\"2.5\" fill=\"__FG__\"/></pattern>"], ["bigdots", "大圆点", "<pattern id=\"pat-bigdots\" patternUnits=\"userSpaceOnUse\" width=\"20\" height=\"20\"><rect width=\"20\" height=\"20\" fill=\"__BG__\"/><circle cx=\"10\" cy=\"10\" r=\"5\" fill=\"__FG__\"/></pattern>"], ["stripes", "斜条纹", "<pattern id=\"pat-stripes\" patternUnits=\"userSpaceOnUse\" width=\"12\" height=\"12\" patternTransform=\"rotate(45)\"><rect width=\"12\" height=\"12\" fill=\"__BG__\"/><rect x=\"0\" y=\"0\" width=\"6\" height=\"12\" fill=\"__FG__\"/></pattern>"], ["hstripes", "横条纹", "<pattern id=\"pat-hstripes\" patternUnits=\"userSpaceOnUse\" width=\"10\" height=\"10\"><rect width=\"10\" height=\"10\" fill=\"__BG__\"/><rect x=\"0\" y=\"0\" width=\"10\" height=\"5\" fill=\"__FG__\"/></pattern>"], ["grid", "网格", "<pattern id=\"pat-grid\" patternUnits=\"userSpaceOnUse\" width=\"14\" height=\"14\"><rect width=\"14\" height=\"14\" fill=\"__BG__\"/><path d=\"M0 0 H14 M0 0 V14\" stroke=\"__FG__\" stroke-width=\"2\" fill=\"none\"/></pattern>"], ["plaid", "格子", "<pattern id=\"pat-plaid\" patternUnits=\"userSpaceOnUse\" width=\"20\" height=\"20\"><rect width=\"20\" height=\"20\" fill=\"__BG__\"/><rect x=\"0\" y=\"0\" width=\"20\" height=\"6\" fill=\"__FG__\" opacity=\"0.5\"/><rect x=\"0\" y=\"0\" width=\"6\" height=\"20\" fill=\"__FG__\" opacity=\"0.5\"/></pattern>"], ["zigzag", "锯齿", "<pattern id=\"pat-zigzag\" patternUnits=\"userSpaceOnUse\" width=\"16\" height=\"10\"><rect width=\"16\" height=\"10\" fill=\"__BG__\"/><path d=\"M0 8 L4 2 L8 8 L12 2 L16 8\" stroke=\"__FG__\" stroke-width=\"2\" fill=\"none\"/></pattern>"], ["chevron", "V 形", "<pattern id=\"pat-chevron\" patternUnits=\"userSpaceOnUse\" width=\"20\" height=\"10\"><rect width=\"20\" height=\"10\" fill=\"__BG__\"/><path d=\"M0 0 L10 8 L20 0\" stroke=\"__FG__\" stroke-width=\"2.5\" fill=\"none\"/></pattern>"], ["hearts", "小爱心", "<pattern id=\"pat-hearts\" patternUnits=\"userSpaceOnUse\" width=\"18\" height=\"18\"><rect width=\"18\" height=\"18\" fill=\"__BG__\"/><path d=\"M9 14 Q3 9 6 5 Q9 4 9 7 Q9 4 12 5 Q15 9 9 14 Z\" fill=\"__FG__\"/></pattern>"], ["stars", "小星星", "<pattern id=\"pat-stars\" patternUnits=\"userSpaceOnUse\" width=\"20\" height=\"20\"><rect width=\"20\" height=\"20\" fill=\"__BG__\"/><path d=\"M10 3 L12 8 L17 8 L13 11 L14 16 L10 13 L6 16 L7 11 L3 8 L8 8 Z\" fill=\"__FG__\"/></pattern>"], ["triangles", "三角形", "<pattern id=\"pat-triangles\" patternUnits=\"userSpaceOnUse\" width=\"16\" height=\"14\"><rect width=\"16\" height=\"14\" fill=\"__BG__\"/><path d=\"M8 2 L14 12 L2 12 Z\" fill=\"__FG__\"/></pattern>"], ["bricks", "砖块", "<pattern id=\"pat-bricks\" patternUnits=\"userSpaceOnUse\" width=\"24\" height=\"14\"><rect width=\"24\" height=\"14\" fill=\"__BG__\"/><rect x=\"0\" y=\"0\" width=\"11\" height=\"6\" fill=\"none\" stroke=\"__FG__\" stroke-width=\"1.5\"/><rect x=\"13\" y=\"0\" width=\"11\" height=\"6\" fill=\"none\" stroke=\"__FG__\" stroke-width=\"1.5\"/><rect x=\"6\" y=\"8\" width=\"11\" height=\"6\" fill=\"none\" stroke=\"__FG__\" stroke-width=\"1.5\"/></pattern>"], ["cross", "十字", "<pattern id=\"pat-cross\" patternUnits=\"userSpaceOnUse\" width=\"16\" height=\"16\"><rect width=\"16\" height=\"16\" fill=\"__BG__\"/><path d=\"M8 3 V13 M3 8 H13\" stroke=\"__FG__\" stroke-width=\"2.5\"/></pattern>"], ["scales", "鱼鳞", "<pattern id=\"pat-scales\" patternUnits=\"userSpaceOnUse\" width=\"14\" height=\"10\"><rect width=\"14\" height=\"10\" fill=\"__BG__\"/><path d=\"M-1 10 A8 8 0 0 1 15 10\" stroke=\"__FG__\" stroke-width=\"2\" fill=\"none\"/><path d=\"M7 10 A8 8 0 0 1 23 10\" stroke=\"__FG__\" stroke-width=\"2\" fill=\"none\"/></pattern>"], ["waves", "波浪", "<pattern id=\"pat-waves\" patternUnits=\"userSpaceOnUse\" width=\"20\" height=\"10\"><rect width=\"20\" height=\"10\" fill=\"__BG__\"/><path d=\"M0 5 Q5 0 10 5 Q15 10 20 5\" stroke=\"__FG__\" stroke-width=\"2\" fill=\"none\"/></pattern>"], ["bubbles", "泡泡", "<pattern id=\"pat-bubbles\" patternUnits=\"userSpaceOnUse\" width=\"24\" height=\"24\"><rect width=\"24\" height=\"24\" fill=\"__BG__\"/><circle cx=\"6\" cy=\"6\" r=\"3\" fill=\"none\" stroke=\"__FG__\" stroke-width=\"1.5\"/><circle cx=\"18\" cy=\"10\" r=\"4.5\" fill=\"none\" stroke=\"__FG__\" stroke-width=\"1.5\"/><circle cx=\"10\" cy=\"20\" r=\"2.5\" fill=\"none\" stroke=\"__FG__\" stroke-width=\"1.5\"/></pattern>"], ["flowers", "小花", "<pattern id=\"pat-flowers\" patternUnits=\"userSpaceOnUse\" width=\"22\" height=\"22\"><rect width=\"22\" height=\"22\" fill=\"__BG__\"/><circle cx=\"11\" cy=\"6\" r=\"2.5\" fill=\"__FG__\"/><circle cx=\"16\" cy=\"11\" r=\"2.5\" fill=\"__FG__\"/><circle cx=\"11\" cy=\"16\" r=\"2.5\" fill=\"__FG__\"/><circle cx=\"6\" cy=\"11\" r=\"2.5\" fill=\"__FG__\"/><circle cx=\"11\" cy=\"11\" r=\"2\" fill=\"__FG__\"/></pattern>"], ["leopard", "豹纹", "<pattern id=\"pat-leopard\" patternUnits=\"userSpaceOnUse\" width=\"20\" height=\"20\"><rect width=\"20\" height=\"20\" fill=\"__BG__\"/><ellipse cx=\"6\" cy=\"6\" rx=\"3\" ry=\"2\" fill=\"__FG__\"/><ellipse cx=\"14\" cy=\"14\" rx=\"3\" ry=\"2.5\" fill=\"__FG__\"/><circle cx=\"14\" cy=\"5\" r=\"1.5\" fill=\"__FG__\"/><circle cx=\"4\" cy=\"15\" r=\"1.5\" fill=\"__FG__\"/></pattern>"], ["arrows", "箭头", "<pattern id=\"pat-arrows\" patternUnits=\"userSpaceOnUse\" width=\"16\" height=\"16\"><rect width=\"16\" height=\"16\" fill=\"__BG__\"/><path d=\"M3 8 L11 8 M8 5 L11 8 L8 11\" stroke=\"__FG__\" stroke-width=\"2\" fill=\"none\"/></pattern>"]];
-const PAGES = {
-  panda: { name: "🐼 熊猫吃竹子", category: "animal", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+# --- Animals (10) ---
+add('panda', '🐼 熊猫吃竹子', 'animal', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="50" r="20"/>
   <g stroke-width="2"><line x1="55" y1="20" x2="55" y2="26"/><line x1="55" y1="74" x2="55" y2="80"/><line x1="25" y1="50" x2="31" y2="50"/><line x1="79" y1="50" x2="85" y2="50"/><line x1="32" y1="27" x2="36" y2="32"/><line x1="74" y1="68" x2="78" y2="73"/><line x1="78" y1="27" x2="74" y2="32"/><line x1="36" y1="68" x2="32" y2="73"/></g>
   <path class="fillable" fill="#ffffff" d="M285 60 Q300 45 320 50 Q340 40 355 55 Q365 60 360 70 L285 70 Q275 65 285 60 Z"/>
@@ -855,8 +55,11 @@ const PAGES = {
   <g stroke-width="1.5" fill="none"><line x1="195" y1="195" x2="195" y2="207"/><line x1="208" y1="195" x2="208" y2="207"/></g>
   <path class="fillable" fill="#ffffff" d="M222 195 Q235 185 245 195 Q235 205 222 200 Z"/>
   <path class="fillable" fill="#ffffff" d="M222 207 Q235 215 245 207 Q235 200 222 205 Z"/>
-</g>` },
-  lion: { name: "🦁 小狮子", category: "animal", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('lion', '🦁 小狮子', 'animal', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="345" cy="50" r="20"/>
   <g stroke-width="2"><line x1="345" y1="20" x2="345" y2="26"/><line x1="345" y1="74" x2="345" y2="80"/><line x1="315" y1="50" x2="321" y2="50"/><line x1="369" y1="50" x2="375" y2="50"/></g>
   <path class="fillable" fill="#ffffff" d="M50 55 Q65 40 85 45 Q105 35 120 55 Q135 55 130 70 L50 70 Q40 65 50 55 Z"/>
@@ -888,8 +91,11 @@ const PAGES = {
   <g stroke-width="1.5" fill="none"><line x1="180" y1="152" x2="160" y2="148"/><line x1="180" y1="158" x2="158" y2="160"/><line x1="220" y1="152" x2="240" y2="148"/><line x1="220" y1="158" x2="242" y2="160"/></g>
   <path class="fillable" fill="#ffffff" d="M165 92 Q160 78 178 82 Q175 95 170 95 Z"/>
   <path class="fillable" fill="#ffffff" d="M235 92 Q240 78 222 82 Q225 95 230 95 Z"/>
-</g>` },
-  tiger: { name: "🐯 老虎", category: "animal", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('tiger', '🐯 老虎', 'animal', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="50" r="20"/>
   <g stroke-width="2" fill="none"><path d="M15 285 Q22 273 28 285"/><path d="M40 285 Q47 273 53 285"/><path d="M350 285 Q357 273 363 285"/><path d="M375 285 Q382 273 388 285"/></g>
   <ellipse class="fillable" fill="#ffffff" cx="200" cy="220" rx="80" ry="50"/>
@@ -924,8 +130,11 @@ const PAGES = {
   <path fill="none" d="M200 168 Q190 175 184 170"/>
   <path fill="none" d="M200 168 Q210 175 216 170"/>
   <g stroke-width="1.5" fill="none"><line x1="178" y1="155" x2="155" y2="150"/><line x1="178" y1="160" x2="155" y2="163"/><line x1="222" y1="155" x2="245" y2="150"/><line x1="222" y1="160" x2="245" y2="163"/></g>
-</g>` },
-  penguin: { name: "🐧 小企鹅", category: "animal", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('penguin', '🐧 小企鹅', 'animal', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="60" cy="50" r="20"/>
   <g stroke-width="1.5">
     <g transform="translate(120 50)" fill="none"><line x1="0" y1="-6" x2="0" y2="6"/><line x1="-6" y1="0" x2="6" y2="0"/><line x1="-4" y1="-4" x2="4" y2="4"/><line x1="-4" y1="4" x2="4" y2="-4"/></g>
@@ -957,8 +166,11 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M205 268 Q200 278 205 285 L237 285 Q242 278 232 268 Z"/>
   <path class="fillable" fill="#ffffff" d="M162 165 Q170 175 200 175 Q230 175 238 165 L238 180 Q200 190 162 180 Z"/>
   <path class="fillable" fill="#ffffff" d="M210 180 L218 205 L232 205 L222 180 Z"/>
-</g>` },
-  cat: { name: "🐱 小猫和毛线球", category: "animal", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('cat', '🐱 小猫和毛线球', 'animal', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="345" cy="55" r="20"/>
   <g stroke-width="2"><line x1="345" y1="25" x2="345" y2="31"/><line x1="345" y1="79" x2="345" y2="85"/><line x1="315" y1="55" x2="321" y2="55"/><line x1="369" y1="55" x2="375" y2="55"/></g>
   <ellipse class="fillable" fill="#ffffff" cx="195" cy="220" rx="80" ry="42"/>
@@ -988,8 +200,11 @@ const PAGES = {
   <circle class="fillable" fill="#ffffff" cx="320" cy="240" r="28"/>
   <g stroke-width="1.5" fill="none"><path d="M295 230 Q320 220 345 234"/><path d="M295 240 Q320 232 345 245"/><path d="M295 250 Q320 244 345 255"/><path d="M310 218 Q325 245 340 260"/><path d="M308 222 Q330 232 335 258"/></g>
   <path fill="none" d="M348 240 Q380 235 390 260"/>
-</g>` },
-  dog: { name: "🐶 小狗和骨头", category: "animal", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('dog', '🐶 小狗和骨头', 'animal', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="60" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M280 60 Q295 45 315 50 Q335 40 350 55 Q365 60 360 70 L280 70 Q270 65 280 60 Z"/>
   <ellipse class="fillable" fill="#ffffff" cx="195" cy="220" rx="80" ry="48"/>
@@ -1013,8 +228,11 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M192 174 Q200 200 208 174 Q210 184 200 188 Q190 184 192 174 Z"/>
   <path fill="none" d="M192 174 Q200 180 208 174"/>
   <path class="fillable" fill="#ffffff" d="M70 230 Q60 222 65 215 Q75 215 78 222 L100 222 Q103 215 113 215 Q118 222 108 230 Q118 238 113 245 Q103 245 100 238 L78 238 Q75 245 65 245 Q60 238 70 230 Z"/>
-</g>` },
-  rabbit: { name: "🐰 小兔子和胡萝卜", category: "animal", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('rabbit', '🐰 小兔子和胡萝卜', 'animal', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="345" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M50 60 Q65 45 85 50 Q105 40 120 55 Q135 60 130 70 L50 70 Q40 65 50 60 Z"/>
   <ellipse class="fillable" fill="#ffffff" cx="195" cy="225" rx="68" ry="48"/>
@@ -1042,8 +260,11 @@ const PAGES = {
   <g stroke-width="1.5" fill="none"><line x1="293" y1="248" x2="324" y2="232"/><line x1="298" y1="258" x2="328" y2="240"/><line x1="304" y1="268" x2="333" y2="252"/></g>
   <path class="fillable" fill="#ffffff" d="M323 232 Q335 215 350 222 Q345 230 335 235 Z"/>
   <path class="fillable" fill="#ffffff" d="M328 228 Q336 210 348 213 Q344 222 338 230 Z"/>
-</g>` },
-  fox: { name: "🦊 小狐狸", category: "animal", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('fox', '🦊 小狐狸', 'animal', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M280 60 Q295 45 315 50 Q335 40 350 55 Q365 60 360 70 L280 70 Q270 65 280 60 Z"/>
   <g stroke-width="2" fill="none"><path d="M25 285 Q30 275 35 285"/><path d="M45 285 Q50 273 55 285"/><path d="M345 285 Q350 275 355 285"/><path d="M365 285 Q370 273 375 285"/></g>
@@ -1068,8 +289,11 @@ const PAGES = {
   <path fill="none" d="M195 175 Q200 180 205 177"/>
   <path class="fillable" fill="#ffffff" d="M170 150 Q180 152 188 158 L188 160 Q175 156 170 154 Z"/>
   <path class="fillable" fill="#ffffff" d="M220 150 Q210 152 202 158 L202 160 Q215 156 220 154 Z"/>
-</g>` },
-  elephant: { name: "🐘 大象洗澡", category: "animal", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('elephant', '🐘 大象洗澡', 'animal', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="50" r="20"/>
   <path class="fillable" fill="#ffffff" d="M280 55 Q295 40 315 45 Q335 35 350 50 Q365 55 360 65 L280 65 Q270 60 280 55 Z"/>
   <ellipse class="fillable" fill="#ffffff" cx="200" cy="200" rx="90" ry="55"/>
@@ -1099,8 +323,11 @@ const PAGES = {
     <circle class="fillable" fill="#ffffff" cx="70" cy="115" r="3"/>
   </g>
   <path class="fillable" fill="#ffffff" d="M260 230 Q280 235 280 250 Q260 250 258 240 Z"/>
-</g>` },
-  owl: { name: "🦉 猫头鹰", category: "animal", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('owl', '🦉 猫头鹰', 'animal', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <g stroke-width="1.5">
     <path class="fillable" fill="#ffffff" d="M50 45 L52 52 L60 52 L54 56 L56 64 L50 60 L44 64 L46 56 L40 52 L48 52 Z"/>
     <path class="fillable" fill="#ffffff" d="M340 50 L342 57 L350 57 L344 61 L346 69 L340 65 L334 69 L336 61 L330 57 L338 57 Z"/>
@@ -1131,8 +358,12 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M220 255 L225 268 L212 268 L208 258 Z"/>
   <rect class="fillable" fill="#ffffff" x="80" y="265" width="240" height="14" rx="4"/>
   <g stroke-width="1.5" fill="none"><line x1="100" y1="265" x2="105" y2="279"/><line x1="140" y1="265" x2="145" y2="279"/><line x1="180" y1="265" x2="185" y2="279"/><line x1="220" y1="265" x2="225" y2="279"/><line x1="260" y1="265" x2="265" y2="279"/><line x1="300" y1="265" x2="305" y2="279"/></g>
-</g>` },
-  ocean: { name: "🐠 海底世界", category: "ocean", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+# --- Ocean (6) ---
+add('ocean', '🐠 海底世界', 'ocean', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <g stroke="#9bd0ff" stroke-width="2" stroke-dasharray="6 6" fill="none"><line x1="60" y1="0" x2="80" y2="80"/><line x1="180" y1="0" x2="160" y2="100"/><line x1="320" y1="0" x2="340" y2="90"/></g>
   <path class="fillable" fill="#ffffff" d="M0 250 Q80 235 160 245 Q240 258 320 240 Q380 245 400 252 L400 300 L0 300 Z"/>
   <path class="fillable" fill="#ffffff" d="M55 248 Q48 220 60 200 Q70 215 78 220 Q82 200 88 218 Q95 205 95 245 Z"/>
@@ -1163,8 +394,11 @@ const PAGES = {
   <circle fill="#1a1a1a" cx="313" cy="63" r="2"/>
   <path class="fillable" fill="#ffffff" d="M200 258 L208 244 L224 244 L211 254 L218 270 L200 260 L182 270 L189 254 L176 244 L192 244 Z"/>
   <g><circle class="fillable" fill="#ffffff" cx="105" cy="45" r="8"/><circle class="fillable" fill="#ffffff" cx="122" cy="25" r="5"/><circle class="fillable" fill="#ffffff" cx="98" cy="20" r="4"/><circle class="fillable" fill="#ffffff" cx="260" cy="40" r="6"/><circle class="fillable" fill="#ffffff" cx="245" cy="20" r="4"/></g>
-</g>` },
-  whale: { name: "🐋 鲸鱼", category: "ocean", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('whale', '🐋 鲸鱼', 'ocean', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="50" r="20"/>
   <path class="fillable" fill="#ffffff" d="M280 55 Q295 40 315 45 Q335 35 350 50 Q365 55 360 65 L280 65 Q270 60 280 55 Z"/>
   <path class="fillable" fill="#ffffff" d="M40 220 Q90 225 140 220 Q190 215 240 220 Q290 225 360 220 L360 240 L40 240 Z"/>
@@ -1188,8 +422,11 @@ const PAGES = {
   <circle class="fillable" fill="#ffffff" cx="195" cy="40" r="4"/>
   <circle class="fillable" fill="#ffffff" cx="145" cy="55" r="4"/>
   <circle class="fillable" fill="#ffffff" cx="160" cy="35" r="4"/>
-</g>` },
-  octopus: { name: "🐙 章鱼", category: "ocean", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('octopus', '🐙 章鱼', 'ocean', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <g stroke="#9bd0ff" stroke-width="2" stroke-dasharray="6 6" fill="none"><line x1="100" y1="0" x2="120" y2="80"/><line x1="300" y1="0" x2="280" y2="90"/></g>
   <ellipse class="fillable" fill="#ffffff" cx="200" cy="130" rx="80" ry="68"/>
   <path class="fillable" fill="#ffffff" d="M165 50 L170 25 L195 35 Q198 30 210 32 L222 22 L228 48 Q235 38 245 45 L242 65 Q235 55 225 60 L210 50 L200 60 L185 50 L172 58 Z"/>
@@ -1212,8 +449,11 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M155 178 Q140 165 130 175 Q145 185 158 188 Z"/>
   <g stroke-width="1.5"><circle class="fillable" fill="#ffffff" cx="125" cy="220" r="3"/><circle class="fillable" fill="#ffffff" cx="155" cy="245" r="3"/><circle class="fillable" fill="#ffffff" cx="180" cy="260" r="3"/><circle class="fillable" fill="#ffffff" cx="215" cy="260" r="3"/><circle class="fillable" fill="#ffffff" cx="240" cy="250" r="3"/><circle class="fillable" fill="#ffffff" cx="285" cy="225" r="3"/></g>
   <g><circle class="fillable" fill="#ffffff" cx="320" cy="80" r="6"/><circle class="fillable" fill="#ffffff" cx="335" cy="55" r="4"/><circle class="fillable" fill="#ffffff" cx="60" cy="90" r="5"/><circle class="fillable" fill="#ffffff" cx="50" cy="65" r="3"/></g>
-</g>` },
-  dolphin: { name: "🐬 海豚跳跃", category: "ocean", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('dolphin', '🐬 海豚跳跃', 'ocean', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="345" cy="50" r="20"/>
   <path class="fillable" fill="#ffffff" d="M50 60 Q65 45 85 50 Q105 40 120 55 Q135 60 130 70 L50 70 Q40 65 50 60 Z"/>
   <path class="fillable" fill="#ffffff" d="M0 230 Q40 220 80 230 Q120 240 160 230 Q200 220 240 230 Q280 240 320 230 Q360 220 400 230 L400 300 L0 300 Z"/>
@@ -1229,8 +469,11 @@ const PAGES = {
   <path fill="none" d="M85 175 Q70 180 75 190"/>
   <path fill="none" d="M85 175 Q70 178 78 168"/>
   <g><circle class="fillable" fill="#ffffff" cx="60" cy="225" r="6"/><circle class="fillable" fill="#ffffff" cx="70" cy="210" r="4"/><circle class="fillable" fill="#ffffff" cx="350" cy="220" r="5"/><circle class="fillable" fill="#ffffff" cx="340" cy="205" r="3"/></g>
-</g>` },
-  crab: { name: "🦀 螃蟹", category: "ocean", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('crab', '🦀 螃蟹', 'ocean', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M0 230 Q60 220 120 230 Q180 240 240 230 Q300 220 400 230 L400 300 L0 300 Z"/>
   <g><circle class="fillable" fill="#ffffff" cx="70" cy="270" r="4"/><circle class="fillable" fill="#ffffff" cx="320" cy="265" r="3"/><circle class="fillable" fill="#ffffff" cx="350" cy="280" r="4"/></g>
@@ -1256,8 +499,11 @@ const PAGES = {
   <path fill="none" d="M185 200 Q200 210 215 200"/>
   <g stroke-width="1.5" fill="none"><line x1="150" y1="180" x2="160" y2="195"/><line x1="180" y1="178" x2="185" y2="195"/><line x1="220" y1="178" x2="215" y2="195"/><line x1="250" y1="180" x2="240" y2="195"/></g>
   <g><circle class="fillable" fill="#ffffff" cx="170" cy="195" r="2"/><circle class="fillable" fill="#ffffff" cx="200" cy="190" r="2"/><circle class="fillable" fill="#ffffff" cx="230" cy="195" r="2"/></g>
-</g>` },
-  jellyfish: { name: "🪼 水母", category: "ocean", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('jellyfish', '🪼 水母', 'ocean', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <g stroke="#9bd0ff" stroke-width="2" stroke-dasharray="6 6" fill="none"><line x1="60" y1="0" x2="60" y2="40"/><line x1="180" y1="0" x2="180" y2="35"/><line x1="320" y1="0" x2="320" y2="40"/></g>
   <path class="fillable" fill="#ffffff" d="M110 145 Q110 65 200 60 Q290 65 290 145 Q280 160 200 160 Q120 160 110 145 Z"/>
   <path class="fillable" fill="#ffffff" d="M120 155 Q125 145 145 145 Q150 158 138 162 Z"/>
@@ -1281,8 +527,12 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M238 162 Q245 200 230 235 Q240 270 235 285 Q225 260 230 230 Q230 195 232 162 Z"/>
   <path class="fillable" fill="#ffffff" d="M268 160 Q275 200 268 240 Q258 280 270 290 Q275 270 280 235 Q282 195 274 160 Z"/>
   <g><circle class="fillable" fill="#ffffff" cx="80" cy="60" r="6"/><circle class="fillable" fill="#ffffff" cx="100" cy="40" r="4"/><circle class="fillable" fill="#ffffff" cx="330" cy="50" r="5"/><circle class="fillable" fill="#ffffff" cx="345" cy="30" r="3"/></g>
-</g>` },
-  dinosaur: { name: "🦖 霸王龙", category: "fantasy", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+# --- Fantasy (7) ---
+add('dinosaur', '🦖 霸王龙', 'fantasy', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="345" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M280 240 L330 130 Q335 125 340 125 L345 130 L395 240 Z"/>
   <path class="fillable" fill="#ffffff" d="M325 132 Q335 142 345 132 Q345 148 335 148 Q325 148 325 132 Z"/>
@@ -1318,8 +568,11 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M185 235 Q180 255 175 270 L195 270 Q200 255 200 240 Z"/>
   <ellipse class="fillable" fill="#ffffff" cx="280" cy="270" rx="14" ry="18"/>
   <ellipse class="fillable" fill="#ffffff" cx="310" cy="275" rx="14" ry="18"/>
-</g>` },
-  dragon: { name: "🐲 飞龙", category: "fantasy", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('dragon', '🐲 飞龙', 'fantasy', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="50" r="20"/>
   <g><circle class="fillable" fill="#ffffff" cx="350" cy="50" r="4"/><circle class="fillable" fill="#ffffff" cx="120" cy="40" r="3"/><circle class="fillable" fill="#ffffff" cx="280" cy="35" r="3"/></g>
   <path class="fillable" fill="#ffffff" d="M100 260 Q90 220 120 195 Q160 175 200 185 Q240 195 250 220 Q255 245 240 260 Z"/>
@@ -1344,8 +597,11 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M55 220 Q40 215 30 220 Q35 235 50 230 Z"/>
   <path class="fillable" fill="#ffffff" d="M40 230 Q25 232 20 245 Q35 250 45 240 Z"/>
   <path class="fillable" fill="#ffffff" d="M55 245 Q40 250 32 262 Q50 268 60 255 Z"/>
-</g>` },
-  unicorn: { name: "🦄 彩虹独角兽", category: "fantasy", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('unicorn', '🦄 彩虹独角兽', 'fantasy', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <g stroke-width="1.5"><path class="fillable" fill="#ffffff" d="M60 40 L63 50 L73 50 L65 56 L68 66 L60 60 L52 66 L55 56 L47 50 L57 50 Z"/><path class="fillable" fill="#ffffff" d="M345 45 L348 55 L358 55 L350 61 L353 71 L345 65 L337 71 L340 61 L332 55 L342 55 Z"/><path class="fillable" fill="#ffffff" d="M30 130 L32 137 L40 137 L34 142 L36 149 L30 145 L24 149 L26 142 L20 137 L28 137 Z"/><path class="fillable" fill="#ffffff" d="M370 150 L372 157 L380 157 L374 162 L376 169 L370 165 L364 169 L366 162 L360 157 L368 157 Z"/></g>
   <path class="fillable" fill="#ffffff" d="M40 250 A155 155 0 0 1 360 250 L345 250 A140 140 0 0 0 55 250 Z"/>
   <path class="fillable" fill="#ffffff" d="M55 250 A140 140 0 0 1 345 250 L330 250 A125 125 0 0 0 70 250 Z"/>
@@ -1381,8 +637,11 @@ const PAGES = {
   <rect class="fillable" fill="#ffffff" x="193" y="264" width="22" height="8"/>
   <rect class="fillable" fill="#ffffff" x="223" y="264" width="22" height="8"/>
   <rect class="fillable" fill="#ffffff" x="251" y="264" width="22" height="8"/>
-</g>` },
-  mermaid: { name: "🧜‍♀️ 美人鱼", category: "fantasy", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('mermaid', '🧜‍♀️ 美人鱼', 'fantasy', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <g stroke="#9bd0ff" stroke-width="2" stroke-dasharray="6 6" fill="none"><line x1="80" y1="0" x2="80" y2="60"/><line x1="320" y1="0" x2="320" y2="60"/></g>
   <ellipse class="fillable" fill="#ffffff" cx="200" cy="290" rx="180" ry="15"/>
   <path class="fillable" fill="#ffffff" d="M140 80 Q145 50 175 45 L195 35 L205 35 L225 45 Q255 50 260 80 Q260 110 240 130 Q200 140 160 130 Q140 110 140 80 Z"/>
@@ -1406,8 +665,11 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M163 282 Q130 270 110 285 Q140 295 168 290 Z"/>
   <path class="fillable" fill="#ffffff" d="M237 282 Q270 270 290 285 Q260 295 232 290 Z"/>
   <g><circle class="fillable" fill="#ffffff" cx="65" cy="80" r="5"/><circle class="fillable" fill="#ffffff" cx="335" cy="100" r="5"/><circle class="fillable" fill="#ffffff" cx="75" cy="60" r="3"/></g>
-</g>` },
-  castle: { name: "🏰 城堡", category: "fantasy", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('castle', '🏰 城堡', 'fantasy', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M280 45 Q295 30 315 35 Q335 25 350 45 Q365 45 360 60 L280 60 Q270 55 280 45 Z"/>
   <path class="fillable" fill="#ffffff" d="M0 240 Q100 220 200 235 Q300 250 400 225 L400 300 L0 300 Z"/>
@@ -1439,8 +701,11 @@ const PAGES = {
   <rect class="fillable" fill="#ffffff" x="98" y="180" width="16" height="22"/>
   <rect class="fillable" fill="#ffffff" x="286" y="180" width="16" height="22"/>
   <g stroke-width="1.5" fill="none"><line x1="120" y1="200" x2="280" y2="200"/><line x1="120" y1="220" x2="280" y2="220"/><line x1="140" y1="190" x2="140" y2="200"/><line x1="160" y1="200" x2="160" y2="220"/><line x1="180" y1="190" x2="180" y2="200"/><line x1="220" y1="200" x2="220" y2="220"/><line x1="240" y1="190" x2="240" y2="200"/><line x1="260" y1="200" x2="260" y2="220"/></g>
-</g>` },
-  princess: { name: "👸 公主", category: "fantasy", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('princess', '👸 公主', 'fantasy', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <g stroke-width="1.5"><path class="fillable" fill="#ffffff" d="M60 50 L63 60 L73 60 L65 66 L68 76 L60 70 L52 76 L55 66 L47 60 L57 60 Z"/><path class="fillable" fill="#ffffff" d="M340 50 L343 60 L353 60 L345 66 L348 76 L340 70 L332 76 L335 66 L327 60 L337 60 Z"/></g>
   <circle class="fillable" fill="#ffffff" cx="200" cy="115" r="42"/>
   <path class="fillable" fill="#ffffff" d="M160 90 Q170 60 200 50 Q230 60 240 90 L235 110 Q200 95 165 110 Z"/>
@@ -1466,8 +731,11 @@ const PAGES = {
   <circle class="fillable" fill="#ffffff" cx="138" cy="245" r="6"/>
   <line x1="138" y1="245" x2="138" y2="285"/>
   <path class="fillable" fill="#ffffff" d="M132 220 L138 200 L144 220 L138 235 Z"/>
-</g>` },
-  robot: { name: "🤖 机器人", category: "fantasy", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('robot', '🤖 机器人', 'fantasy', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <g stroke-width="1.5"><circle class="fillable" fill="#ffffff" cx="50" cy="40" r="3"/><circle class="fillable" fill="#ffffff" cx="350" cy="50" r="3"/><circle class="fillable" fill="#ffffff" cx="80" cy="60" r="2"/></g>
   <line x1="200" y1="55" x2="200" y2="35"/>
   <circle class="fillable" fill="#ffffff" cx="200" cy="32" r="6"/>
@@ -1493,8 +761,12 @@ const PAGES = {
   <rect class="fillable" fill="#ffffff" x="230" y="250" width="40" height="35" rx="4"/>
   <rect class="fillable" fill="#ffffff" x="125" y="285" width="50" height="10" rx="3"/>
   <rect class="fillable" fill="#ffffff" x="225" y="285" width="50" height="10" rx="3"/>
-</g>` },
-  car: { name: "🚗 小汽车", category: "vehicle", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+# --- Vehicles (7) ---
+add('car', '🚗 小汽车', 'vehicle', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="50" r="20"/>
   <path class="fillable" fill="#ffffff" d="M280 55 Q295 40 315 45 Q335 35 350 50 Q365 55 360 65 L280 65 Q270 60 280 55 Z"/>
   <path class="fillable" fill="#ffffff" d="M0 250 L400 250 L400 285 L0 285 Z"/>
@@ -1516,8 +788,11 @@ const PAGES = {
   <circle class="fillable" fill="#ffffff" cx="332" cy="195" r="7"/>
   <circle class="fillable" fill="#ffffff" cx="68" cy="195" r="7"/>
   <rect class="fillable" fill="#ffffff" x="55" y="208" width="14" height="6" rx="2"/>
-</g>` },
-  train: { name: "🚂 小火车", category: "vehicle", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('train', '🚂 小火车', 'vehicle', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="40" r="18"/>
   <g stroke-width="2" fill="none"><path d="M120 280 L380 280"/></g>
   <g stroke-width="2"><line x1="130" y1="278" x2="130" y2="288"/><line x1="160" y1="278" x2="160" y2="288"/><line x1="190" y1="278" x2="190" y2="288"/><line x1="220" y1="278" x2="220" y2="288"/><line x1="250" y1="278" x2="250" y2="288"/><line x1="280" y1="278" x2="280" y2="288"/><line x1="310" y1="278" x2="310" y2="288"/><line x1="340" y1="278" x2="340" y2="288"/><line x1="370" y1="278" x2="370" y2="288"/></g>
@@ -1549,8 +824,11 @@ const PAGES = {
   <circle class="fillable" fill="#ffffff" cx="350" cy="275" r="16"/>
   <circle class="fillable" fill="#ffffff" cx="300" cy="275" r="6"/>
   <circle class="fillable" fill="#ffffff" cx="350" cy="275" r="6"/>
-</g>` },
-  airplane: { name: "✈️ 飞机", category: "vehicle", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('airplane', '✈️ 飞机', 'vehicle', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M260 60 Q280 40 305 50 Q330 35 350 55 Q365 60 360 75 L260 75 Q250 65 260 60 Z"/>
   <path class="fillable" fill="#ffffff" d="M60 200 Q90 195 130 200 Q170 205 200 200 L260 195 Q300 192 340 195 Q365 190 360 175 Q330 165 290 168 Q230 160 200 160 L130 155 Q90 150 60 165 Q50 180 60 200 Z"/>
@@ -1568,8 +846,11 @@ const PAGES = {
   <ellipse class="fillable" fill="#ffffff" cx="315" cy="178" rx="9" ry="12"/>
   <g><circle class="fillable" fill="#ffffff" cx="40" cy="100" r="4"/><circle class="fillable" fill="#ffffff" cx="60" cy="85" r="3"/><circle class="fillable" fill="#ffffff" cx="80" cy="105" r="3"/></g>
   <g><circle class="fillable" fill="#ffffff" cx="370" cy="240" r="4"/><circle class="fillable" fill="#ffffff" cx="350" cy="265" r="3"/></g>
-</g>` },
-  rocket: { name: "🚀 太空火箭", category: "vehicle", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('rocket', '🚀 太空火箭', 'vehicle', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <g stroke-width="1.5"><path class="fillable" fill="#ffffff" d="M50 50 L53 60 L63 60 L55 66 L58 76 L50 70 L42 76 L45 66 L37 60 L47 60 Z"/><path class="fillable" fill="#ffffff" d="M340 60 L343 70 L353 70 L345 76 L348 86 L340 80 L332 86 L335 76 L327 70 L337 70 Z"/><path class="fillable" fill="#ffffff" d="M80 230 L83 240 L93 240 L85 246 L88 256 L80 250 L72 256 L75 246 L67 240 L77 240 Z"/><path class="fillable" fill="#ffffff" d="M320 250 L323 260 L333 260 L325 266 L328 276 L320 270 L312 276 L315 266 L307 260 L317 260 Z"/><circle class="fillable" fill="#ffffff" cx="30" cy="120" r="3"/><circle class="fillable" fill="#ffffff" cx="100" cy="160" r="2.5"/><circle class="fillable" fill="#ffffff" cx="370" cy="130" r="3"/><circle class="fillable" fill="#ffffff" cx="50" cy="200" r="2.5"/><circle class="fillable" fill="#ffffff" cx="280" cy="190" r="2.5"/><circle class="fillable" fill="#ffffff" cx="125" cy="80" r="2"/><circle class="fillable" fill="#ffffff" cx="265" cy="60" r="2"/></g>
   <circle class="fillable" fill="#ffffff" cx="335" cy="105" r="24"/>
   <ellipse fill="none" cx="335" cy="105" rx="40" ry="9"/>
@@ -1592,8 +873,11 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M180 248 Q174 278 188 290 Q190 270 186 248 Z"/>
   <path class="fillable" fill="#ffffff" d="M195 250 Q189 290 200 298 Q211 290 205 250 Z"/>
   <path class="fillable" fill="#ffffff" d="M214 248 Q220 278 212 290 Q210 270 214 248 Z"/>
-</g>` },
-  pirate: { name: "🏴‍☠️ 海盗船", category: "vehicle", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('pirate', '🏴‍☠️ 海盗船', 'vehicle', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="50" r="20"/>
   <path class="fillable" fill="#ffffff" d="M280 50 Q295 35 315 40 Q335 30 350 50 Q365 50 360 65 L280 65 Q270 60 280 50 Z"/>
   <path class="fillable" fill="#ffffff" d="M0 200 Q40 195 80 200 Q120 205 160 200 Q200 195 240 200 Q280 205 320 200 Q360 195 400 200 L400 300 L0 300 Z"/>
@@ -1618,8 +902,11 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M188 215 L188 200 Q188 195 200 195 Q212 195 212 200 L212 215 Z"/>
   <rect class="fillable" fill="#ffffff" x="60" y="245" width="22" height="20"/>
   <g stroke-width="1.5" fill="none"><line x1="60" y1="252" x2="82" y2="252"/><line x1="60" y1="258" x2="82" y2="258"/></g>
-</g>` },
-  fire_truck: { name: "🚒 消防车", category: "vehicle", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('fire_truck', '🚒 消防车', 'vehicle', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="50" r="20"/>
   <path class="fillable" fill="#ffffff" d="M0 250 L400 250 L400 285 L0 285 Z"/>
   <g stroke="#1a1a1a" stroke-width="3" stroke-dasharray="14 14" fill="none"><line x1="0" y1="268" x2="400" y2="268"/></g>
@@ -1648,8 +935,11 @@ const PAGES = {
   <circle class="fillable" fill="#ffffff" cx="170" cy="270" r="10"/>
   <circle class="fillable" fill="#ffffff" cx="270" cy="270" r="10"/>
   <circle class="fillable" fill="#ffffff" cx="320" cy="270" r="10"/>
-</g>` },
-  balloon: { name: "🎈 热气球", category: "vehicle", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('balloon', '🎈 热气球', 'vehicle', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M280 50 Q295 35 315 40 Q335 30 350 50 Q365 50 360 65 L280 65 Q270 60 280 50 Z"/>
   <path class="fillable" fill="#ffffff" d="M0 280 Q60 260 120 270 Q180 280 240 270 Q300 260 400 275 L400 300 L0 300 Z"/>
@@ -1665,8 +955,12 @@ const PAGES = {
   <circle class="fillable" fill="#ffffff" cx="180" cy="270" r="5"/>
   <circle class="fillable" fill="#ffffff" cx="200" cy="272" r="5"/>
   <circle class="fillable" fill="#ffffff" cx="220" cy="270" r="5"/>
-</g>` },
-  garden: { name: "🌻 花园", category: "nature", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+# --- Nature (7) ---
+add('garden', '🌻 花园', 'nature', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="22"/>
   <g stroke-width="2"><line x1="55" y1="20" x2="55" y2="27"/><line x1="55" y1="83" x2="55" y2="90"/><line x1="22" y1="55" x2="30" y2="55"/><line x1="80" y1="55" x2="88" y2="55"/></g>
   <path class="fillable" fill="#ffffff" d="M250 45 Q265 30 285 35 Q305 25 320 45 Q335 45 330 60 L250 60 Q240 55 250 45 Z"/>
@@ -1705,8 +999,11 @@ const PAGES = {
   <g><ellipse class="fillable" fill="#ffffff" cx="135" cy="100" rx="2" ry="8"/><path class="fillable" fill="#ffffff" d="M133 95 Q120 87 117 96 Q120 105 133 102 Z"/><path class="fillable" fill="#ffffff" d="M137 95 Q150 87 153 96 Q150 105 137 102 Z"/></g>
   <g><ellipse class="fillable" fill="#ffffff" cx="290" cy="85" rx="2" ry="8"/><path class="fillable" fill="#ffffff" d="M288 80 Q275 72 272 81 Q275 90 288 87 Z"/><path class="fillable" fill="#ffffff" d="M292 80 Q305 72 308 81 Q305 90 292 87 Z"/></g>
   <g><ellipse class="fillable" fill="#ffffff" cx="200" cy="105" rx="14" ry="8"/><path class="fillable" fill="#ffffff" d="M192 99 L196 99 L196 111 L192 111 Z"/><path class="fillable" fill="#ffffff" d="M204 99 L208 99 L208 111 L204 111 Z"/><circle fill="#1a1a1a" cx="187" cy="103" r="1.5"/></g>
-</g>` },
-  tree: { name: "🌳 苹果树", category: "nature", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('tree', '🌳 苹果树', 'nature', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M280 60 Q295 45 315 50 Q335 40 350 55 Q365 60 360 70 L280 70 Q270 65 280 60 Z"/>
   <path class="fillable" fill="#ffffff" d="M0 250 Q100 240 200 250 Q300 260 400 245 L400 300 L0 300 Z"/>
@@ -1735,8 +1032,11 @@ const PAGES = {
   <circle class="fillable" fill="#ffffff" cx="280" cy="262" r="10"/>
   <circle class="fillable" fill="#ffffff" cx="320" cy="270" r="10"/>
   <g><line x1="115" y1="256" x2="115" y2="251"/><line x1="280" y1="253" x2="280" y2="248"/><line x1="320" y1="261" x2="320" y2="256"/></g>
-</g>` },
-  rainbow: { name: "🌈 彩虹", category: "nature", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('rainbow', '🌈 彩虹', 'nature', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="335" cy="60" r="22"/>
   <g stroke-width="2"><line x1="335" y1="22" x2="335" y2="32"/><line x1="335" y1="88" x2="335" y2="98"/><line x1="295" y1="60" x2="305" y2="60"/><line x1="365" y1="60" x2="375" y2="60"/></g>
   <path class="fillable" fill="#ffffff" d="M40 240 A155 155 0 0 1 360 240 L345 240 A140 140 0 0 0 55 240 Z"/>
@@ -1752,8 +1052,11 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M170 250 Q165 280 200 282 Q235 280 230 250 Z"/>
   <g><circle class="fillable" fill="#ffffff" cx="180" cy="262" r="3"/><circle class="fillable" fill="#ffffff" cx="200" cy="265" r="3"/><circle class="fillable" fill="#ffffff" cx="220" cy="262" r="3"/></g>
   <g stroke-width="1.5"><path class="fillable" fill="#ffffff" d="M50 130 L52 137 L60 137 L54 141 L56 149 L50 145 L44 149 L46 141 L40 137 L48 137 Z"/><path class="fillable" fill="#ffffff" d="M150 90 L152 97 L160 97 L154 101 L156 109 L150 105 L144 109 L146 101 L140 97 L148 97 Z"/><path class="fillable" fill="#ffffff" d="M250 100 L252 107 L260 107 L254 111 L256 119 L250 115 L244 119 L246 111 L240 107 L248 107 Z"/></g>
-</g>` },
-  beach: { name: "🏖️ 海滩", category: "nature", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('beach', '🏖️ 海滩', 'nature', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="50" r="22"/>
   <path class="fillable" fill="#ffffff" d="M260 50 Q275 35 295 40 Q315 30 330 50 Q345 50 340 65 L260 65 Q250 60 260 50 Z"/>
   <path class="fillable" fill="#ffffff" d="M0 200 Q40 195 80 200 Q120 205 160 200 Q200 195 240 200 Q280 205 320 200 Q360 195 400 200 L400 230 L0 230 Z"/>
@@ -1781,8 +1084,11 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M345 252 Q330 270 345 288"/>
   <path class="fillable" fill="#ffffff" d="M345 252 Q360 270 345 288"/>
   <g><path class="fillable" fill="#ffffff" d="M30 268 L36 258 L42 268 L48 258 L54 268 L60 258 L66 268 Z"/></g>
-</g>` },
-  mountain: { name: "🏔️ 雪山湖泊", category: "nature", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('mountain', '🏔️ 雪山湖泊', 'nature', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="335" cy="60" r="22"/>
   <g stroke-width="2"><line x1="335" y1="22" x2="335" y2="32"/><line x1="335" y1="88" x2="335" y2="98"/><line x1="295" y1="60" x2="305" y2="60"/><line x1="365" y1="60" x2="375" y2="60"/></g>
   <path class="fillable" fill="#ffffff" d="M60 60 Q75 45 95 50 Q115 40 130 60 Q145 60 140 75 L60 75 Q50 70 60 60 Z"/>
@@ -1799,8 +1105,11 @@ const PAGES = {
   <line x1="195" y1="248" x2="195" y2="225"/>
   <path class="fillable" fill="#ffffff" d="M195 225 L222 240 L195 245 Z"/>
   <g stroke-width="2" fill="none"><path d="M40 245 Q80 240 120 245"/><path d="M260 250 Q300 245 340 250"/><path d="M40 265 Q80 260 120 265"/><path d="M260 270 Q300 265 340 270"/></g>
-</g>` },
-  snowman: { name: "⛄ 雪人", category: "nature", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('snowman', '⛄ 雪人', 'nature', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <g stroke-width="1.5">
     <g transform="translate(50 50)" fill="none"><line x1="0" y1="-8" x2="0" y2="8"/><line x1="-8" y1="0" x2="8" y2="0"/><line x1="-5" y1="-5" x2="5" y2="5"/><line x1="-5" y1="5" x2="5" y2="-5"/></g>
     <g transform="translate(150 60)" fill="none"><line x1="0" y1="-6" x2="0" y2="6"/><line x1="-6" y1="0" x2="6" y2="0"/></g>
@@ -1832,8 +1141,11 @@ const PAGES = {
   <g stroke-width="2"><line x1="120" y1="155" x2="110" y2="145"/><line x1="125" y1="160" x2="118" y2="170"/><line x1="115" y1="148" x2="105" y2="135"/></g>
   <line x1="245" y1="170" x2="285" y2="150"/>
   <g stroke-width="2"><line x1="280" y1="155" x2="290" y2="145"/><line x1="275" y1="160" x2="282" y2="170"/><line x1="285" y1="148" x2="295" y2="135"/></g>
-</g>` },
-  butterfly_meadow: { name: "🦋 蝴蝶草地", category: "nature", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('butterfly_meadow', '🦋 蝴蝶草地', 'nature', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="50" r="20"/>
   <path class="fillable" fill="#ffffff" d="M280 55 Q295 40 315 45 Q335 35 350 50 Q365 55 360 65 L280 65 Q270 60 280 55 Z"/>
   <path class="fillable" fill="#ffffff" d="M0 240 Q100 230 200 240 Q300 250 400 235 L400 300 L0 300 Z"/>
@@ -1879,8 +1191,12 @@ const PAGES = {
   <ellipse class="fillable" fill="#ffffff" cx="335" cy="210" rx="8" ry="5"/>
   <ellipse class="fillable" fill="#ffffff" cx="365" cy="210" rx="8" ry="5"/>
   <path fill="none" d="M350 222 Q350 245 348 280"/>
-</g>` },
-  cake: { name: "🎂 生日蛋糕", category: "food", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+# --- Food (6) ---
+add('cake', '🎂 生日蛋糕', 'food', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <path fill="none" d="M10 30 Q200 55 390 30"/>
   <path class="fillable" fill="#ffffff" d="M28 32 L42 32 L35 50 Z"/>
   <path class="fillable" fill="#ffffff" d="M68 38 L82 38 L75 56 Z"/>
@@ -1919,8 +1235,11 @@ const PAGES = {
     <circle class="fillable" fill="#ffffff" cx="200" cy="200" r="4"/>
     <circle class="fillable" fill="#ffffff" cx="250" cy="195" r="4"/>
   </g>
-</g>` },
-  icecream: { name: "🍨 冰淇淋圣代", category: "food", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('icecream', '🍨 冰淇淋圣代', 'food', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <g stroke-width="1.5"><path class="fillable" fill="#ffffff" d="M70 60 L72 67 L79 67 L73 71 L75 78 L70 74 L65 78 L67 71 L61 67 L68 67 Z"/><path class="fillable" fill="#ffffff" d="M330 50 L332 57 L339 57 L333 61 L335 68 L330 64 L325 68 L327 61 L321 57 L328 57 Z"/></g>
   <ellipse class="fillable" fill="#ffffff" cx="200" cy="280" rx="130" ry="15"/>
   <path class="fillable" fill="#ffffff" d="M140 215 L260 215 L240 275 L160 275 Z"/>
@@ -1944,8 +1263,11 @@ const PAGES = {
     <ellipse class="fillable" fill="#ffffff" cx="175" cy="195" rx="3" ry="2" transform="rotate(45 175 195)"/>
     <ellipse class="fillable" fill="#ffffff" cx="220" cy="200" rx="3" ry="2" transform="rotate(-15 220 200)"/>
   </g>
-</g>` },
-  pizza: { name: "🍕 披萨", category: "food", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('pizza', '🍕 披萨', 'food', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="200" cy="155" r="135"/>
   <circle class="fillable" fill="#ffffff" cx="200" cy="155" r="120"/>
   <g stroke-width="2" fill="none">
@@ -1979,8 +1301,11 @@ const PAGES = {
     <path class="fillable" fill="#ffffff" d="M155 175 Q153 180 159 183 Q163 177 155 175 Z"/>
     <path class="fillable" fill="#ffffff" d="M240 175 Q238 180 244 183 Q248 177 240 175 Z"/>
   </g>
-</g>` },
-  fruit: { name: "🍎 水果盘", category: "food", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('fruit', '🍎 水果盘', 'food', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <ellipse class="fillable" fill="#ffffff" cx="200" cy="270" rx="160" ry="20"/>
   <path class="fillable" fill="#ffffff" d="M50 200 Q200 215 350 200 L335 270 Q200 285 65 270 Z"/>
   <g stroke-width="1.5" fill="none"><line x1="80" y1="245" x2="320" y2="245"/></g>
@@ -2019,8 +1344,11 @@ const PAGES = {
     <line x1="235" y1="187" x2="228" y2="178"/>
     <line x1="218" y1="180" x2="228" y2="178"/>
   </g>
-</g>` },
-  donut: { name: "🍩 甜甜圈", category: "food", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('donut', '🍩 甜甜圈', 'food', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <ellipse class="fillable" fill="#ffffff" cx="200" cy="262" rx="160" ry="14"/>
   <circle class="fillable" fill="#ffffff" cx="200" cy="160" r="110"/>
   <circle class="fillable" fill="#ffffff" cx="200" cy="160" r="35"/>
@@ -2048,8 +1376,11 @@ const PAGES = {
     <ellipse class="fillable" fill="#ffffff" cx="225" cy="125" rx="6" ry="3" transform="rotate(20 225 125)"/>
     <ellipse class="fillable" fill="#ffffff" cx="245" cy="180" rx="6" ry="3" transform="rotate(60 245 180)"/>
   </g>
-</g>` },
-  hamburger: { name: "🍔 汉堡", category: "food", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('hamburger', '🍔 汉堡', 'food', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <ellipse class="fillable" fill="#ffffff" cx="200" cy="280" rx="155" ry="12"/>
   <path class="fillable" fill="#ffffff" d="M60 130 Q60 60 200 60 Q340 60 340 130 Z"/>
   <g>
@@ -2075,8 +1406,12 @@ const PAGES = {
   <ellipse class="fillable" fill="#ffffff" cx="310" cy="200" r="9"/>
   <path class="fillable" fill="#ffffff" d="M55 215 Q60 240 100 245 Q150 252 200 250 Q250 252 300 245 Q340 240 345 215 Z"/>
   <g stroke-width="1.5" fill="none"><path d="M80 230 Q90 232 100 230"/><path d="M150 235 Q160 237 170 235"/><path d="M230 235 Q240 237 250 235"/><path d="M300 230 Q310 232 320 230"/></g>
-</g>` },
-  christmas: { name: "🎄 圣诞树", category: "other", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+# --- Other / Holidays (7) ---
+add('christmas', '🎄 圣诞树', 'other', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <g stroke-width="1.5"><circle class="fillable" fill="#ffffff" cx="40" cy="80" r="3"/><circle class="fillable" fill="#ffffff" cx="360" cy="60" r="3"/><circle class="fillable" fill="#ffffff" cx="80" cy="220" r="3"/><circle class="fillable" fill="#ffffff" cx="330" cy="200" r="3"/></g>
   <path class="fillable" fill="#ffffff" d="M200 30 L214 60 L246 60 L222 78 L232 110 L200 90 L168 110 L178 78 L154 60 L186 60 Z"/>
   <path class="fillable" fill="#ffffff" d="M200 85 L165 130 L235 130 Z"/>
@@ -2111,8 +1446,11 @@ const PAGES = {
   <rect class="fillable" fill="#ffffff" x="301" y="245" width="8" height="45"/>
   <path class="fillable" fill="#ffffff" d="M305 245 Q292 232 285 238 Q292 248 305 250 Z"/>
   <path class="fillable" fill="#ffffff" d="M305 245 Q318 232 325 238 Q318 248 305 250 Z"/>
-</g>` },
-  halloween: { name: "🎃 万圣节南瓜", category: "other", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('halloween', '🎃 万圣节南瓜', 'other', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="345" cy="55" r="22"/>
   <g><g><path class="fillable" fill="#ffffff" d="M70 70 L72 78 L67 73 Z"/><path class="fillable" fill="#ffffff" d="M68 73 L73 78 L65 76 Z"/></g><g transform="translate(280 90)"><path class="fillable" fill="#ffffff" d="M0 0 L2 8 L-3 3 Z"/><path class="fillable" fill="#ffffff" d="M-2 3 L3 8 L-5 6 Z"/></g><g transform="translate(120 50)"><path class="fillable" fill="#ffffff" d="M0 0 L2 8 L-3 3 Z"/><path class="fillable" fill="#ffffff" d="M-2 3 L3 8 L-5 6 Z"/></g></g>
   <path class="fillable" fill="#ffffff" d="M50 175 Q40 110 110 100 L120 95 L130 100 Q160 90 200 90 Q240 90 270 100 L280 95 L290 100 Q360 110 350 175 Q360 245 290 260 Q200 280 110 260 Q40 245 50 175 Z"/>
@@ -2138,8 +1476,11 @@ const PAGES = {
     <path class="fillable" fill="#ffffff" d="M0 0 Q-10 5 -12 -5 Q-5 -10 5 -5 Q10 -10 15 -5 Q12 5 5 5 Z"/>
     <line x1="0" y1="5" x2="0" y2="15"/>
   </g>
-</g>` },
-  easter: { name: "🐰 复活节彩蛋", category: "other", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('easter', '🐰 复活节彩蛋', 'other', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M280 55 Q295 40 315 45 Q335 35 350 50 Q365 55 360 65 L280 65 Q270 60 280 55 Z"/>
   <path class="fillable" fill="#ffffff" d="M60 290 Q60 220 200 215 Q340 220 340 290 Z"/>
@@ -2169,8 +1510,11 @@ const PAGES = {
     <g stroke-width="1.5" fill="none"><line x1="275" y1="160" x2="305" y2="155"/><line x1="278" y1="172" x2="305" y2="168"/><line x1="278" y1="185" x2="305" y2="180"/><line x1="280" y1="195" x2="302" y2="192"/></g>
   </g>
   <g><path class="fillable" fill="#ffffff" d="M70 215 Q60 200 75 195 Q80 205 85 215 Z"/><path class="fillable" fill="#ffffff" d="M330 215 Q340 200 325 195 Q320 205 315 215 Z"/></g>
-</g>` },
-  party: { name: "🎉 派对场景", category: "other", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('party', '🎉 派对场景', 'other', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <ellipse class="fillable" fill="#ffffff" cx="200" cy="262" rx="100" ry="10"/>
   <path fill="none" d="M10 30 Q200 55 390 30"/>
   <path class="fillable" fill="#ffffff" d="M28 32 L42 32 L35 50 Z"/>
@@ -2216,8 +1560,11 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M352 240 Q340 228 333 235 Q340 247 352 245 Z"/>
   <path class="fillable" fill="#ffffff" d="M353 240 Q365 228 372 235 Q365 247 353 245 Z"/>
   <g stroke-width="1.5"><circle class="fillable" fill="#ffffff" cx="150" cy="40" r="2.5"/><circle class="fillable" fill="#ffffff" cx="250" cy="48" r="2.5"/><circle class="fillable" fill="#ffffff" cx="80" cy="180" r="2.5"/><circle class="fillable" fill="#ffffff" cx="320" cy="190" r="2.5"/></g>
-</g>` },
-  house: { name: "🏡 房子和花园", category: "other", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('house', '🏡 房子和花园', 'other', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M280 60 Q295 45 315 50 Q335 40 350 55 Q365 60 360 70 L280 70 Q270 65 280 60 Z"/>
   <path class="fillable" fill="#ffffff" d="M0 240 Q100 230 200 240 Q300 250 400 235 L400 300 L0 300 Z"/>
@@ -2240,8 +1587,11 @@ const PAGES = {
   <g><circle class="fillable" fill="#ffffff" cx="320" cy="240" r="8"/><circle class="fillable" fill="#ffffff" cx="320" cy="225" r="8"/><line x1="320" y1="248" x2="320" y2="280"/></g>
   <g><circle class="fillable" fill="#ffffff" cx="60" cy="265" r="6"/><circle class="fillable" fill="#ffffff" cx="60" cy="252" r="6"/><line x1="60" y1="271" x2="60" y2="285"/></g>
   <g><rect class="fillable" fill="#ffffff" x="305" y="285" width="14" height="6"/><rect class="fillable" fill="#ffffff" x="325" y="285" width="14" height="6"/><rect class="fillable" fill="#ffffff" x="345" y="285" width="14" height="6"/></g>
-</g>` },
-  space: { name: "🪐 太空场景", category: "other", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('space', '🪐 太空场景', 'other', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <g stroke-width="1.5">
     <path class="fillable" fill="#ffffff" d="M40 50 L42 57 L50 57 L44 61 L46 69 L40 65 L34 69 L36 61 L30 57 L38 57 Z"/>
     <path class="fillable" fill="#ffffff" d="M120 90 L122 97 L130 97 L124 101 L126 109 L120 105 L114 109 L116 101 L110 97 L118 97 Z"/>
@@ -2271,9 +1621,18 @@ const PAGES = {
   <line x1="210" y1="218" x2="190" y2="240"/>
   <line x1="200" y1="208" x2="180" y2="230"/>
   <path class="fillable" fill="#ffffff" d="M260 195 L290 180 L295 195 Q280 200 268 200 Z"/>
-</g>` },
-  blank: { name: "⬜ 空白画板", category: "other", svg: `<g><rect class="fillable" fill="#ffffff" x="0" y="0" width="400" height="300"/></g>` },
-  shark: { name: "🦈 鲨鱼", category: "ocean", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('blank', '⬜ 空白画板', 'other', '<g><rect class="fillable" fill="#ffffff" x="0" y="0" width="400" height="300"/></g>')
+
+# =============================================================================
+# 50 more templates to bring totals to ≥10 per category (100 total)
+# =============================================================================
+
+# --- Ocean: +4 ---
+add('shark', '🦈 鲨鱼', 'ocean', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <g stroke="#9bd0ff" stroke-width="2" stroke-dasharray="6 6" fill="none"><line x1="60" y1="0" x2="80" y2="60"/><line x1="300" y1="0" x2="320" y2="60"/></g>
   <path class="fillable" fill="#ffffff" d="M0 240 Q60 230 120 240 Q180 250 240 240 Q300 230 400 245 L400 300 L0 300 Z"/>
   <g stroke-width="2" fill="none"><path d="M0 260 Q60 252 120 260 Q180 268 240 260 Q300 252 400 263"/><path d="M0 280 Q60 272 120 280 Q180 288 240 280 Q300 272 400 283"/></g>
@@ -2289,8 +1648,11 @@ const PAGES = {
   <circle fill="#1a1a1a" cx="136" cy="142" r="3"/>
   <path class="fillable" fill="#ffffff" d="M80 178 Q100 185 145 188 L145 200 Q105 200 80 195 Z"/>
   <g stroke-width="1.5"><path class="fillable" fill="#ffffff" d="M92 184 L96 192 L100 184 Z"/><path class="fillable" fill="#ffffff" d="M104 186 L108 194 L112 186 Z"/><path class="fillable" fill="#ffffff" d="M116 188 L120 196 L124 188 Z"/><path class="fillable" fill="#ffffff" d="M128 188 L132 196 L136 188 Z"/></g>
-</g>` },
-  seahorse: { name: "🌊 海马", category: "ocean", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('seahorse', '🌊 海马', 'ocean', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <g stroke="#9bd0ff" stroke-width="2" stroke-dasharray="6 6" fill="none"><line x1="80" y1="0" x2="80" y2="50"/><line x1="320" y1="0" x2="320" y2="50"/></g>
   <path class="fillable" fill="#ffffff" d="M180 50 Q220 50 235 80 Q245 110 235 140 Q220 170 210 195 Q205 220 215 245 Q225 265 235 270 Q250 270 245 255 Q235 240 230 220 Q230 200 245 175 Q265 145 260 110 Q255 75 230 55 Q205 38 180 50 Z"/>
   <path class="fillable" fill="#ffffff" d="M178 55 Q160 60 150 75 Q165 75 178 70 Z"/>
@@ -2306,8 +1668,11 @@ const PAGES = {
   <circle class="fillable" fill="#ffffff" cx="218" cy="70" r="6"/>
   <circle fill="#1a1a1a" cx="220" cy="71" r="2.5"/>
   <g><circle class="fillable" fill="#ffffff" cx="100" cy="100" r="6"/><circle class="fillable" fill="#ffffff" cx="115" cy="80" r="4"/><circle class="fillable" fill="#ffffff" cx="320" cy="170" r="5"/><circle class="fillable" fill="#ffffff" cx="335" cy="190" r="3"/><circle class="fillable" fill="#ffffff" cx="90" cy="200" r="4"/></g>
-</g>` },
-  lobster: { name: "🦞 龙虾", category: "ocean", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('lobster', '🦞 龙虾', 'ocean', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <path class="fillable" fill="#ffffff" d="M0 250 Q100 240 200 250 Q300 260 400 245 L400 300 L0 300 Z"/>
   <g><circle class="fillable" fill="#ffffff" cx="50" cy="280" r="3"/><circle class="fillable" fill="#ffffff" cx="350" cy="275" r="3"/></g>
   <ellipse class="fillable" fill="#ffffff" cx="200" cy="180" rx="50" ry="40"/>
@@ -2331,8 +1696,11 @@ const PAGES = {
   <circle fill="#1a1a1a" cx="188" cy="172" r="2"/>
   <circle fill="#1a1a1a" cx="214" cy="172" r="2"/>
   <g stroke-width="1.5" fill="none"><line x1="180" y1="155" x2="195" y2="155"/><line x1="205" y1="155" x2="220" y2="155"/></g>
-</g>` },
-  scuba: { name: "🤿 潜水员", category: "ocean", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('scuba', '🤿 潜水员', 'ocean', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <g stroke="#9bd0ff" stroke-width="2" stroke-dasharray="6 6" fill="none"><line x1="60" y1="0" x2="60" y2="60"/><line x1="200" y1="0" x2="200" y2="50"/><line x1="340" y1="0" x2="340" y2="60"/></g>
   <path class="fillable" fill="#ffffff" d="M0 260 Q100 250 200 260 Q300 270 400 255 L400 300 L0 300 Z"/>
   <circle class="fillable" fill="#ffffff" cx="190" cy="120" r="42"/>
@@ -2354,8 +1722,12 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M245 175 L290 175 L290 230 L245 230 Z"/>
   <line x1="245" y1="195" x2="290" y2="195"/>
   <g><circle class="fillable" fill="#ffffff" cx="80" cy="100" r="7"/><circle class="fillable" fill="#ffffff" cx="100" cy="80" r="5"/><circle class="fillable" fill="#ffffff" cx="320" cy="120" r="6"/><circle class="fillable" fill="#ffffff" cx="335" cy="100" r="4"/></g>
-</g>` },
-  witch: { name: "🧙‍♀️ 女巫和扫帚", category: "fantasy", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+# --- Fantasy: +3 ---
+add('witch', '🧙‍♀️ 女巫和扫帚', 'fantasy', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="50" r="22"/>
   <g stroke-width="1.5"><circle class="fillable" fill="#ffffff" cx="120" cy="60" r="2.5"/><circle class="fillable" fill="#ffffff" cx="320" cy="80" r="2.5"/><circle class="fillable" fill="#ffffff" cx="370" cy="120" r="3"/></g>
   <path class="fillable" fill="#ffffff" d="M150 110 L250 95 L210 30 Z"/>
@@ -2374,8 +1746,11 @@ const PAGES = {
   <line x1="270" y1="250" x2="360" y2="180"/>
   <path class="fillable" fill="#ffffff" d="M340 180 L380 165 L390 175 L355 195 Z"/>
   <g stroke-width="1.5"><line x1="345" y1="188" x2="375" y2="178"/><line x1="350" y1="195" x2="380" y2="185"/><line x1="355" y1="202" x2="383" y2="192"/></g>
-</g>` },
-  fairy: { name: "🧚 小仙女", category: "fantasy", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('fairy', '🧚 小仙女', 'fantasy', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <g stroke-width="1.5"><path class="fillable" fill="#ffffff" d="M50 40 L52 47 L60 47 L54 51 L56 59 L50 55 L44 59 L46 51 L40 47 L48 47 Z"/><path class="fillable" fill="#ffffff" d="M340 50 L342 57 L350 57 L344 61 L346 69 L340 65 L334 69 L336 61 L330 57 L338 57 Z"/><circle class="fillable" fill="#ffffff" cx="80" cy="120" r="3"/><circle class="fillable" fill="#ffffff" cx="320" cy="160" r="3"/></g>
   <path class="fillable" fill="#ffffff" d="M155 130 Q120 100 95 130 Q105 165 145 175 Q160 165 160 145 Z"/>
   <path class="fillable" fill="#ffffff" d="M245 130 Q280 100 305 130 Q295 165 255 175 Q240 165 240 145 Z"/>
@@ -2397,8 +1772,11 @@ const PAGES = {
   <g stroke-width="1.5"><line x1="255" y1="155" x2="248" y2="148"/><line x1="265" y1="150" x2="270" y2="143"/><line x1="270" y1="160" x2="280" y2="160"/></g>
   <path class="fillable" fill="#ffffff" d="M195 230 L195 260 L180 260 Z"/>
   <path class="fillable" fill="#ffffff" d="M205 230 L205 260 L220 260 Z"/>
-</g>` },
-  genie_lamp: { name: "🪔 神灯", category: "fantasy", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('genie_lamp', '🪔 神灯', 'fantasy', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <ellipse class="fillable" fill="#ffffff" cx="200" cy="280" rx="120" ry="12"/>
   <path class="fillable" fill="#ffffff" d="M120 250 Q120 200 200 195 Q280 200 280 250 Q280 275 200 275 Q120 275 120 250 Z"/>
   <ellipse class="fillable" fill="#ffffff" cx="200" cy="200" rx="55" ry="10"/>
@@ -2411,8 +1789,12 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M200 110 Q210 95 200 80 Q190 65 200 50 Q220 65 215 85 Q220 100 210 110 Z"/>
   <g stroke-width="1.5"><circle class="fillable" fill="#ffffff" cx="160" cy="130" r="3"/><circle class="fillable" fill="#ffffff" cx="245" cy="120" r="3"/><circle class="fillable" fill="#ffffff" cx="170" cy="90" r="2.5"/><circle class="fillable" fill="#ffffff" cx="235" cy="80" r="2.5"/></g>
   <g stroke-width="1.5"><circle class="fillable" fill="#ffffff" cx="170" cy="240" r="3"/><circle class="fillable" fill="#ffffff" cx="200" cy="245" r="3"/><circle class="fillable" fill="#ffffff" cx="230" cy="240" r="3"/></g>
-</g>` },
-  bicycle: { name: "🚲 自行车", category: "vehicle", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+# --- Vehicle: +3 ---
+add('bicycle', '🚲 自行车', 'vehicle', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M0 240 Q100 232 200 240 Q300 248 400 235 L400 300 L0 300 Z"/>
   <circle class="fillable" fill="#ffffff" cx="100" cy="220" r="48"/>
@@ -2444,8 +1826,11 @@ const PAGES = {
   <rect class="fillable" fill="#ffffff" x="180" y="240" width="12" height="4"/>
   <rect class="fillable" fill="#ffffff" x="208" y="196" width="12" height="4"/>
   <path class="fillable" fill="#ffffff" d="M200 165 L205 145 L215 145 L210 165 Z"/>
-</g>` },
-  sailboat: { name: "⛵ 帆船", category: "vehicle", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('sailboat', '⛵ 帆船', 'vehicle', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M280 50 Q295 35 315 40 Q335 30 350 50 Q365 50 360 65 L280 65 Q270 60 280 50 Z"/>
   <path class="fillable" fill="#ffffff" d="M0 220 Q50 210 100 220 Q150 230 200 220 Q250 210 300 220 Q350 230 400 215 L400 300 L0 300 Z"/>
@@ -2458,8 +1843,11 @@ const PAGES = {
   <g stroke-width="1.5" fill="none"><line x1="170" y1="130" x2="170" y2="200"/><line x1="140" y1="170" x2="140" y2="200"/><line x1="230" y1="130" x2="230" y2="200"/><line x1="260" y1="170" x2="260" y2="200"/></g>
   <rect class="fillable" fill="#ffffff" x="200" y="55" width="35" height="18"/>
   <path class="fillable" fill="#ffffff" d="M200 73 L235 73 L228 80 L207 80 Z"/>
-</g>` },
-  helicopter: { name: "🚁 直升机", category: "vehicle", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('helicopter', '🚁 直升机', 'vehicle', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="60" r="20"/>
   <path class="fillable" fill="#ffffff" d="M280 55 Q295 40 315 45 Q335 35 350 55 Q365 60 360 70 L280 70 Q270 65 280 55 Z"/>
   <path class="fillable" fill="#ffffff" d="M70 200 Q70 130 200 130 Q300 130 320 175 L320 210 Q200 230 80 215 Z"/>
@@ -2482,8 +1870,12 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M50 130 L160 138 L160 142 L50 138 Z"/>
   <path class="fillable" fill="#ffffff" d="M170 138 L300 130 L300 134 L170 142 Z"/>
   <circle class="fillable" fill="#ffffff" cx="160" cy="138" r="5"/>
-</g>` },
-  cactus: { name: "🌵 仙人掌", category: "nature", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+# --- Nature: +3 ---
+add('cactus', '🌵 仙人掌', 'nature', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="345" cy="60" r="22"/>
   <path class="fillable" fill="#ffffff" d="M0 250 Q60 240 120 250 Q180 260 240 250 Q300 240 400 255 L400 300 L0 300 Z"/>
   <g stroke-width="1.5" fill="none"><path d="M30 285 L40 275"/><path d="M55 290 L65 280"/><path d="M340 285 L350 275"/><path d="M365 285 L375 275"/></g>
@@ -2503,8 +1895,11 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M40 250 L40 200 Q40 188 50 188 Q60 188 60 200 L60 250 Z"/>
   <g stroke-width="1.5" fill="none"><line x1="45" y1="210" x2="45" y2="215"/><line x1="55" y1="220" x2="55" y2="225"/></g>
   <path class="fillable" fill="#ffffff" d="M310 250 L310 215 Q310 208 320 208 Q330 208 330 215 L330 250 Z"/>
-</g>` },
-  palm_island: { name: "🏝️ 椰子树小岛", category: "nature", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('palm_island', '🏝️ 椰子树小岛', 'nature', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="22"/>
   <path class="fillable" fill="#ffffff" d="M0 220 Q40 215 80 220 Q120 225 160 220 Q200 215 240 220 Q280 225 320 220 Q360 215 400 220 L400 300 L0 300 Z"/>
   <g stroke-width="2" fill="none"><path d="M0 240 Q40 235 80 240 Q120 245 160 240 Q200 235 240 240 Q280 245 320 240 Q360 235 400 240"/><path d="M0 265 Q40 260 80 265 Q120 270 160 265 Q200 260 240 265 Q280 270 320 265 Q360 260 400 265"/></g>
@@ -2519,8 +1914,11 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M340 240 L348 215 L356 240 Z"/>
   <line x1="348" y1="215" x2="348" y2="200"/>
   <path class="fillable" fill="#ffffff" d="M345 200 L360 205 L345 210 Z"/>
-</g>` },
-  mushroom_garden: { name: "🍄 蘑菇林", category: "nature", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('mushroom_garden', '🍄 蘑菇林', 'nature', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M0 240 Q100 232 200 240 Q300 248 400 235 L400 300 L0 300 Z"/>
   <g stroke-width="2" fill="none"><path d="M30 285 L40 270"/><path d="M55 285 L65 270"/><path d="M340 285 L350 270"/><path d="M370 285 L380 270"/></g>
@@ -2535,8 +1933,12 @@ const PAGES = {
   <g><circle class="fillable" fill="#ffffff" cx="325" cy="252" r="4"/><circle class="fillable" fill="#ffffff" cx="345" cy="250" r="4"/></g>
   <path class="fillable" fill="#ffffff" d="M325 260 L325 280 Q325 285 335 285 Q345 285 345 280 L345 260 Z"/>
   <g><path class="fillable" fill="#ffffff" d="M280 260 Q280 248 295 248 Q310 248 310 260 Z"/><path class="fillable" fill="#ffffff" d="M290 260 L290 275 L300 275 L300 260 Z"/></g>
-</g>` },
-  candy: { name: "🍬 一堆糖果", category: "food", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+# --- Food: +4 ---
+add('candy', '🍬 一堆糖果', 'food', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <ellipse class="fillable" fill="#ffffff" cx="200" cy="270" rx="160" ry="15"/>
   <ellipse class="fillable" fill="#ffffff" cx="100" cy="200" rx="40" ry="22"/>
   <path class="fillable" fill="#ffffff" d="M60 200 L40 185 L40 215 Z"/>
@@ -2558,8 +1960,11 @@ const PAGES = {
   <circle class="fillable" fill="#ffffff" cx="220" cy="245" r="13"/>
   <g><circle class="fillable" fill="#ffffff" cx="218" cy="242" r="3"/><circle class="fillable" fill="#ffffff" cx="224" cy="248" r="3"/></g>
   <circle class="fillable" fill="#ffffff" cx="245" cy="240" r="10"/>
-</g>` },
-  cookies: { name: "🍪 巧克力饼干", category: "food", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('cookies', '🍪 巧克力饼干', 'food', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <ellipse class="fillable" fill="#ffffff" cx="200" cy="265" rx="160" ry="15"/>
   <ellipse class="fillable" fill="#ffffff" cx="200" cy="220" rx="155" ry="32"/>
   <g stroke-width="1.5" fill="none"><line x1="60" y1="240" x2="340" y2="240"/></g>
@@ -2570,8 +1975,11 @@ const PAGES = {
   <circle class="fillable" fill="#ffffff" cx="310" cy="190" r="42"/>
   <g><circle class="fillable" fill="#ffffff" cx="295" cy="180" r="5"/><circle class="fillable" fill="#ffffff" cx="320" cy="185" r="6"/><circle class="fillable" fill="#ffffff" cx="325" cy="200" r="4"/><circle class="fillable" fill="#ffffff" cx="300" cy="205" r="5"/><circle class="fillable" fill="#ffffff" cx="312" cy="170" r="4"/></g>
   <g><circle class="fillable" fill="#ffffff" cx="80" cy="250" r="4"/><circle class="fillable" fill="#ffffff" cx="170" cy="252" r="4"/><circle class="fillable" fill="#ffffff" cx="260" cy="250" r="4"/><circle class="fillable" fill="#ffffff" cx="350" cy="252" r="4"/></g>
-</g>` },
-  watermelon: { name: "🍉 西瓜", category: "food", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('watermelon', '🍉 西瓜', 'food', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <path class="fillable" fill="#ffffff" d="M50 70 A180 180 0 0 1 350 70 Z"/>
   <path class="fillable" fill="#ffffff" d="M55 70 A175 175 0 0 1 345 70 L335 70 A165 165 0 0 0 65 70 Z"/>
   <path class="fillable" fill="#ffffff" d="M65 70 A165 165 0 0 1 335 70 L325 70 A155 155 0 0 0 75 70 Z"/>
@@ -2596,8 +2004,11 @@ const PAGES = {
   <ellipse class="fillable" fill="#ffffff" cx="200" cy="240" rx="140" ry="14"/>
   <path class="fillable" fill="#ffffff" d="M70 260 Q200 250 330 260 L335 285 Q200 295 65 285 Z"/>
   <g><circle class="fillable" fill="#ffffff" cx="100" cy="278" r="3"/><circle class="fillable" fill="#ffffff" cx="160" cy="278" r="3"/><circle class="fillable" fill="#ffffff" cx="240" cy="278" r="3"/><circle class="fillable" fill="#ffffff" cx="300" cy="278" r="3"/></g>
-</g>` },
-  lollipop: { name: "🍭 棒棒糖", category: "food", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('lollipop', '🍭 棒棒糖', 'food', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <g stroke-width="1.5"><circle class="fillable" fill="#ffffff" cx="50" cy="50" r="3"/><circle class="fillable" fill="#ffffff" cx="350" cy="60" r="3"/><circle class="fillable" fill="#ffffff" cx="80" cy="220" r="3"/></g>
   <rect class="fillable" fill="#ffffff" x="125" y="160" width="8" height="120"/>
   <rect class="fillable" fill="#ffffff" x="195" y="180" width="8" height="100"/>
@@ -2609,8 +2020,12 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M199 105 L208 132 L235 132 L213 148 L222 175 L199 158 L176 175 L185 148 L163 132 L190 132 Z"/>
   <circle class="fillable" fill="#ffffff" cx="269" cy="130" r="46"/>
   <g><circle class="fillable" fill="#ffffff" cx="250" cy="115" r="5"/><circle class="fillable" fill="#ffffff" cx="275" cy="110" r="5"/><circle class="fillable" fill="#ffffff" cx="295" cy="120" r="5"/><circle class="fillable" fill="#ffffff" cx="255" cy="140" r="5"/><circle class="fillable" fill="#ffffff" cx="285" cy="145" r="5"/><circle class="fillable" fill="#ffffff" cx="270" cy="130" r="5"/><circle class="fillable" fill="#ffffff" cx="240" cy="130" r="4"/><circle class="fillable" fill="#ffffff" cx="295" cy="135" r="4"/></g>
-</g>` },
-  gift_stack: { name: "🎁 礼物堆", category: "other", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+# --- Other: +3 ---
+add('gift_stack', '🎁 礼物堆', 'other', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <ellipse class="fillable" fill="#ffffff" cx="200" cy="285" rx="180" ry="12"/>
   <rect class="fillable" fill="#ffffff" x="60" y="220" width="120" height="60"/>
   <rect class="fillable" fill="#ffffff" x="115" y="220" width="14" height="60"/>
@@ -2629,8 +2044,11 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M151 130 Q135 110 125 120 Q135 132 151 132 Z"/>
   <path class="fillable" fill="#ffffff" d="M151 130 Q167 110 177 120 Q167 132 151 132 Z"/>
   <g stroke-width="1.5" fill="none"><line x1="110" y1="195" x2="120" y2="205"/><line x1="180" y1="195" x2="190" y2="205"/></g>
-</g>` },
-  fireworks: { name: "🎆 烟花", category: "other", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('fireworks', '🎆 烟花', 'other', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <g stroke-width="1.5"><circle class="fillable" fill="#ffffff" cx="40" cy="180" r="2"/><circle class="fillable" fill="#ffffff" cx="370" cy="160" r="2"/></g>
   <path class="fillable" fill="#ffffff" d="M0 220 L50 220 L80 200 L120 220 L160 200 L200 220 L240 200 L280 220 L320 200 L360 220 L400 220 L400 300 L0 300 Z"/>
   <g stroke-width="1.5" fill="none">
@@ -2662,8 +2080,11 @@ const PAGES = {
     <g stroke-width="2"><line x1="340" y1="54" x2="340" y2="35"/><line x1="334" y1="60" x2="315" y2="60"/><line x1="346" y1="60" x2="365" y2="60"/><line x1="336" y1="56" x2="324" y2="44"/><line x1="344" y1="56" x2="356" y2="44"/></g>
     <g><circle class="fillable" fill="#ffffff" cx="340" cy="33" r="3"/><circle class="fillable" fill="#ffffff" cx="313" cy="60" r="3"/><circle class="fillable" fill="#ffffff" cx="367" cy="60" r="3"/></g>
   </g>
-</g>` },
-  balloon_bunch: { name: "🎈 一束气球", category: "other", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('balloon_bunch', '🎈 一束气球', 'other', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <ellipse class="fillable" fill="#ffffff" cx="100" cy="80" rx="32" ry="40"/>
   <path class="fillable" fill="#ffffff" d="M95 117 L100 124 L105 117 Z"/>
@@ -2686,8 +2107,12 @@ const PAGES = {
     <path d="M275 188 Q240 220 200 250"/>
   </g>
   <path class="fillable" fill="#ffffff" d="M190 250 L210 250 L210 280 L190 280 Z"/>
-</g>` },
-  family: { name: "👨‍👩‍👧 一家四口", category: "people", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+# --- People (10) ---
+add('family', '👨‍👩‍👧 一家四口', 'people', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="50" r="20"/>
   <path class="fillable" fill="#ffffff" d="M280 50 Q295 35 315 40 Q335 30 350 50 Q365 55 360 65 L280 65 Q270 60 280 50 Z"/>
   <path class="fillable" fill="#ffffff" d="M0 250 Q100 240 200 250 Q300 260 400 245 L400 300 L0 300 Z"/>
@@ -2723,8 +2148,11 @@ const PAGES = {
   <circle fill="#1a1a1a" cx="316" cy="180" r="1.5"/><circle fill="#1a1a1a" cx="324" cy="180" r="1.5"/>
   <path fill="none" d="M316 187 Q320 190 324 187"/>
   <line x1="308" y1="210" x2="275" y2="200"/>
-</g>` },
-  baby: { name: "👶 小宝宝", category: "people", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('baby', '👶 小宝宝', 'people', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M0 270 Q100 260 200 270 Q300 280 400 265 L400 300 L0 300 Z"/>
   <circle class="fillable" fill="#ffffff" cx="200" cy="125" r="78"/>
@@ -2749,8 +2177,11 @@ const PAGES = {
   <circle class="fillable" fill="#ffffff" cx="175" cy="265" r="4"/>
   <circle class="fillable" fill="#ffffff" cx="225" cy="265" r="4"/>
   <g><circle class="fillable" fill="#ffffff" cx="320" cy="60" r="6"/><circle class="fillable" fill="#ffffff" cx="340" cy="40" r="4"/><circle class="fillable" fill="#ffffff" cx="60" cy="100" r="4"/></g>
-</g>` },
-  chef: { name: "👨‍🍳 厨师", category: "people", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('chef', '👨‍🍳 厨师', 'people', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <path class="fillable" fill="#ffffff" d="M0 260 Q100 252 200 260 Q300 268 400 255 L400 300 L0 300 Z"/>
   <path class="fillable" fill="#ffffff" d="M140 80 Q120 80 120 60 Q120 40 140 40 Q145 25 165 30 Q180 18 200 30 Q220 18 235 30 Q255 25 260 40 Q280 40 280 60 Q280 80 260 80 Z"/>
   <rect class="fillable" fill="#ffffff" x="140" y="80" width="120" height="20"/>
@@ -2767,8 +2198,11 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M275 220 L300 270 L270 270 Z"/>
   <path class="fillable" fill="#ffffff" d="M260 165 L290 200 L310 195 L320 205 L295 230 L260 195 Z"/>
   <circle class="fillable" fill="#ffffff" cx="310" cy="200" r="12"/>
-</g>` },
-  doctor: { name: "👩‍⚕️ 医生", category: "people", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('doctor', '👩‍⚕️ 医生', 'people', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <path class="fillable" fill="#ffffff" d="M0 260 Q100 252 200 260 Q300 268 400 255 L400 300 L0 300 Z"/>
   <circle class="fillable" fill="#ffffff" cx="200" cy="110" r="42"/>
   <path class="fillable" fill="#ffffff" d="M158 100 Q165 65 200 60 Q235 65 242 100 L240 80 Q200 70 160 80 Z"/>
@@ -2791,8 +2225,11 @@ const PAGES = {
   <rect class="fillable" fill="#ffffff" x="259" y="195" width="20" height="6"/>
   <line x1="269" y1="208" x2="269" y2="227"/>
   <line x1="259" y1="217" x2="279" y2="217"/>
-</g>` },
-  fireman: { name: "👨‍🚒 消防员", category: "people", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('fireman', '👨‍🚒 消防员', 'people', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <path class="fillable" fill="#ffffff" d="M0 260 Q100 252 200 260 Q300 268 400 255 L400 300 L0 300 Z"/>
   <path class="fillable" fill="#ffffff" d="M158 95 Q158 65 200 60 Q242 65 242 95 L242 110 L158 110 Z"/>
   <rect class="fillable" fill="#ffffff" x="155" y="105" width="90" height="14"/>
@@ -2816,8 +2253,11 @@ const PAGES = {
   <line x1="100" y1="160" x2="85" y2="170"/>
   <line x1="85" y1="170" x2="100" y2="180"/>
   <line x1="100" y1="180" x2="100" y2="160"/>
-</g>` },
-  astronaut: { name: "👨‍🚀 宇航员", category: "people", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('astronaut', '👨‍🚀 宇航员', 'people', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <g stroke-width="1.5"><path class="fillable" fill="#ffffff" d="M40 50 L42 57 L50 57 L44 61 L46 69 L40 65 L34 69 L36 61 L30 57 L38 57 Z"/><path class="fillable" fill="#ffffff" d="M350 60 L352 67 L360 67 L354 71 L356 79 L350 75 L344 79 L346 71 L340 67 L348 67 Z"/><circle class="fillable" fill="#ffffff" cx="80" cy="200" r="3"/><circle class="fillable" fill="#ffffff" cx="320" cy="180" r="3"/><circle class="fillable" fill="#ffffff" cx="120" cy="80" r="2"/><circle class="fillable" fill="#ffffff" cx="280" cy="40" r="2"/></g>
   <circle class="fillable" fill="#ffffff" cx="200" cy="120" r="58"/>
   <circle class="fillable" fill="#ffffff" cx="200" cy="125" r="38"/>
@@ -2837,8 +2277,11 @@ const PAGES = {
   <rect class="fillable" fill="#ffffff" x="250" y="232" width="35" height="22" rx="4"/>
   <path class="fillable" fill="#ffffff" d="M165 272 L165 285 L195 285 L195 272 Z"/>
   <path class="fillable" fill="#ffffff" d="M205 272 L205 285 L235 285 L235 272 Z"/>
-</g>` },
-  superhero: { name: "🦸 超级英雄", category: "people", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('superhero', '🦸 超级英雄', 'people', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <path class="fillable" fill="#ffffff" d="M0 270 Q100 262 200 270 Q300 278 400 263 L400 300 L0 300 Z"/>
   <circle class="fillable" fill="#ffffff" cx="200" cy="100" r="32"/>
   <path class="fillable" fill="#ffffff" d="M170 88 L230 88 L235 102 L165 102 Z"/>
@@ -2857,8 +2300,11 @@ const PAGES = {
   <rect class="fillable" fill="#ffffff" x="125" y="278" width="50" height="12" rx="3"/>
   <rect class="fillable" fill="#ffffff" x="225" y="278" width="50" height="12" rx="3"/>
   <path class="fillable" fill="#ffffff" d="M155 145 L80 235 L160 220 L130 280 L200 200 L270 280 L240 220 L320 235 L245 145 Z"/>
-</g>` },
-  painter: { name: "🎨 画家", category: "people", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('painter', '🎨 画家', 'people', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <path class="fillable" fill="#ffffff" d="M0 270 Q100 262 200 270 Q300 278 400 263 L400 300 L0 300 Z"/>
   <path class="fillable" fill="#ffffff" d="M165 85 Q170 60 200 60 Q230 60 235 85 L235 95 L165 95 Z"/>
   <ellipse class="fillable" fill="#ffffff" cx="180" cy="73" rx="14" ry="6"/>
@@ -2879,8 +2325,11 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M242 175 L295 215 L290 230 L235 195 Z"/>
   <line x1="290" y1="225" x2="320" y2="245"/>
   <path class="fillable" fill="#ffffff" d="M318 240 L335 245 L335 255 L320 252 Z"/>
-</g>` },
-  ballerina: { name: "🩰 芭蕾舞者", category: "people", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('ballerina', '🩰 芭蕾舞者', 'people', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <path class="fillable" fill="#ffffff" d="M0 270 Q100 262 200 270 Q300 278 400 263 L400 300 L0 300 Z"/>
   <circle class="fillable" fill="#ffffff" cx="200" cy="80" r="22"/>
   <ellipse class="fillable" fill="#ffffff" cx="200" cy="58" rx="14" ry="10"/>
@@ -2899,8 +2348,11 @@ const PAGES = {
   <g stroke-width="1.5" fill="none"><path d="M180 285 Q188 290 195 285"/><path d="M205 285 Q213 290 220 285"/></g>
   <path class="fillable" fill="#ffffff" d="M185 115 Q140 140 100 110 Q120 145 175 145 Z"/>
   <path class="fillable" fill="#ffffff" d="M215 115 Q260 140 300 110 Q280 145 225 145 Z"/>
-</g>` },
-  prince: { name: "🤴 王子", category: "people", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('prince', '🤴 王子', 'people', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <path class="fillable" fill="#ffffff" d="M0 270 Q100 262 200 270 Q300 278 400 263 L400 300 L0 300 Z"/>
   <path class="fillable" fill="#ffffff" d="M158 80 L168 50 L180 78 L195 45 L205 45 L220 78 L232 50 L242 80 Z"/>
   <circle class="fillable" fill="#ffffff" cx="170" cy="55" r="3"/>
@@ -2923,8 +2375,12 @@ const PAGES = {
   <rect class="fillable" fill="#ffffff" x="282" y="175" width="10" height="30"/>
   <path class="fillable" fill="#ffffff" d="M280 175 L295 175 L290 168 L285 168 Z"/>
   <path class="fillable" fill="#ffffff" d="M155 175 L130 230 L150 240 L165 200 Z"/>
-</g>` },
-  bird_perched: { name: "🐦 小鸟", category: "bug", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+# --- Bug / Birds (10) ---
+add('bird_perched', '🐦 小鸟', 'bug', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M50 240 Q150 235 250 240 Q350 245 400 240"/>
   <ellipse class="fillable" fill="#ffffff" cx="200" cy="180" rx="60" ry="48"/>
@@ -2938,8 +2394,11 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M165 220 L155 245 L175 240 Z"/>
   <path class="fillable" fill="#ffffff" d="M230 220 L240 245 L215 240 Z"/>
   <g><circle class="fillable" fill="#ffffff" cx="240" cy="200" r="3"/><circle class="fillable" fill="#ffffff" cx="225" cy="215" r="3"/><circle class="fillable" fill="#ffffff" cx="200" cy="215" r="3"/></g>
-</g>` },
-  bee_flower: { name: "🐝 蜜蜂", category: "bug", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('bee_flower', '🐝 蜜蜂', 'bug', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M0 250 Q100 240 200 250 Q300 260 400 245 L400 300 L0 300 Z"/>
   <g><path class="fillable" fill="#ffffff" d="M150 250 L150 200 L160 200 L160 250 Z"/><circle class="fillable" fill="#ffffff" cx="155" cy="180" r="15"/><circle class="fillable" fill="#ffffff" cx="155" cy="180" r="6"/><circle class="fillable" fill="#ffffff" cx="138" cy="170" r="10"/><circle class="fillable" fill="#ffffff" cx="172" cy="170" r="10"/><circle class="fillable" fill="#ffffff" cx="138" cy="190" r="10"/><circle class="fillable" fill="#ffffff" cx="172" cy="190" r="10"/></g>
@@ -2959,8 +2418,11 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M200 100 Q175 80 165 100 Q180 115 205 110 Z"/>
   <path class="fillable" fill="#ffffff" d="M240 100 Q265 80 275 100 Q260 115 235 110 Z"/>
   <path class="fillable" fill="#ffffff" d="M268 138 L285 138 L282 148 L268 145 Z"/>
-</g>` },
-  dragonfly: { name: "🪲 蜻蜓", category: "bug", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('dragonfly', '🪲 蜻蜓', 'bug', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M0 240 Q100 232 200 240 Q300 248 400 235 L400 300 L0 300 Z"/>
   <g stroke-width="2" fill="none"><path d="M0 260 Q100 252 200 260 Q300 268 400 255"/></g>
@@ -2977,8 +2439,11 @@ const PAGES = {
   <ellipse class="fillable" fill="#ffffff" cx="135" cy="180" rx="48" ry="12" transform="rotate(10 135 180)"/>
   <ellipse class="fillable" fill="#ffffff" cx="265" cy="180" rx="48" ry="12" transform="rotate(-10 265 180)"/>
   <g stroke-width="1.5" fill="none"><line x1="100" y1="148" x2="170" y2="148"/><line x1="230" y1="148" x2="300" y2="148"/><line x1="100" y1="178" x2="170" y2="178"/><line x1="230" y1="178" x2="300" y2="178"/></g>
-</g>` },
-  ladybug_leaf: { name: "🐞 瓢虫", category: "bug", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('ladybug_leaf', '🐞 瓢虫', 'bug', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M0 230 Q100 220 200 230 Q300 240 400 225 L400 300 L0 300 Z"/>
   <path class="fillable" fill="#ffffff" d="M60 220 Q60 100 200 100 Q330 100 330 220 Q200 250 60 220 Z"/>
@@ -2993,8 +2458,11 @@ const PAGES = {
   <circle class="fillable" fill="#ffffff" cx="245" cy="155" r="4"/>
   <circle class="fillable" fill="#ffffff" cx="257" cy="160" r="4"/>
   <g stroke-width="1.5" fill="none"><line x1="170" y1="200" x2="155" y2="210"/><line x1="170" y1="215" x2="155" y2="225"/><line x1="270" y1="200" x2="285" y2="210"/><line x1="270" y1="215" x2="285" y2="225"/></g>
-</g>` },
-  snail: { name: "🐌 蜗牛", category: "bug", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('snail', '🐌 蜗牛', 'bug', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M0 250 Q100 240 200 250 Q300 260 400 245 L400 300 L0 300 Z"/>
   <g stroke-width="2" fill="none"><path d="M0 268 Q100 260 200 268 Q300 276 400 263"/></g>
@@ -3014,8 +2482,11 @@ const PAGES = {
   <circle class="fillable" fill="#ffffff" cx="135" cy="200" r="10"/>
   <path class="fillable" fill="#ffffff" d="M245 232 L255 232 L255 240 L245 240 Z"/>
   <g><circle class="fillable" fill="#ffffff" cx="285" cy="260" r="2.5"/><circle class="fillable" fill="#ffffff" cx="305" cy="262" r="2.5"/><circle class="fillable" fill="#ffffff" cx="325" cy="260" r="2.5"/></g>
-</g>` },
-  frog: { name: "🐸 青蛙", category: "bug", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('frog', '🐸 青蛙', 'bug', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M0 250 Q100 240 200 250 Q300 260 400 245 L400 300 L0 300 Z"/>
   <g stroke-width="2" fill="none"><path d="M0 270 Q100 262 200 270 Q300 278 400 263"/></g>
@@ -3037,8 +2508,11 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M275 215 Q295 235 305 250 L280 255 L260 240 Z"/>
   <g><circle class="fillable" fill="#ffffff" cx="100" cy="255" r="4"/><circle class="fillable" fill="#ffffff" cx="110" cy="262" r="4"/><circle class="fillable" fill="#ffffff" cx="105" cy="270" r="4"/><circle class="fillable" fill="#ffffff" cx="295" cy="255" r="4"/><circle class="fillable" fill="#ffffff" cx="305" cy="262" r="4"/></g>
   <g><circle class="fillable" fill="#ffffff" cx="175" cy="165" r="2"/><circle class="fillable" fill="#ffffff" cx="195" cy="155" r="2"/><circle class="fillable" fill="#ffffff" cx="225" cy="160" r="2"/></g>
-</g>` },
-  spider_web: { name: "🕷️ 蜘蛛网", category: "bug", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('spider_web', '🕷️ 蜘蛛网', 'bug', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <line x1="20" y1="20" x2="380" y2="20"/>
   <line x1="20" y1="20" x2="20" y2="280"/>
   <line x1="380" y1="20" x2="380" y2="280"/>
@@ -3066,8 +2540,11 @@ const PAGES = {
   <circle class="fillable" fill="#ffffff" cx="190" cy="140" r="2"/>
   <circle class="fillable" fill="#ffffff" cx="210" cy="140" r="2"/>
   <g stroke-width="2"><line x1="183" y1="145" x2="160" y2="125"/><line x1="180" y1="155" x2="150" y2="155"/><line x1="183" y1="170" x2="160" y2="185"/><line x1="190" y1="180" x2="175" y2="205"/><line x1="217" y1="145" x2="240" y2="125"/><line x1="220" y1="155" x2="250" y2="155"/><line x1="217" y1="170" x2="240" y2="185"/><line x1="210" y1="180" x2="225" y2="205"/></g>
-</g>` },
-  hummingbird: { name: "🐦 蜂鸟", category: "bug", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('hummingbird', '🐦 蜂鸟', 'bug', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <ellipse class="fillable" fill="#ffffff" cx="180" cy="160" rx="44" ry="24"/>
   <circle class="fillable" fill="#ffffff" cx="140" cy="148" r="18"/>
@@ -3082,8 +2559,11 @@ const PAGES = {
   <line x1="180" y1="178" x2="178" y2="195"/>
   <line x1="190" y1="178" x2="188" y2="195"/>
   <g><circle class="fillable" fill="#ffffff" cx="295" cy="200" r="22"/><line x1="295" y1="222" x2="295" y2="270"/><path class="fillable" fill="#ffffff" d="M295 270 Q280 280 290 285 L300 285 Q310 280 295 270 Z"/><g><circle class="fillable" fill="#ffffff" cx="280" cy="190" r="6"/><circle class="fillable" fill="#ffffff" cx="295" cy="180" r="6"/><circle class="fillable" fill="#ffffff" cx="310" cy="190" r="6"/><circle class="fillable" fill="#ffffff" cx="280" cy="210" r="6"/><circle class="fillable" fill="#ffffff" cx="310" cy="210" r="6"/><circle fill="#1a1a1a" cx="295" cy="200" r="3"/></g></g>
-</g>` },
-  caterpillar: { name: "🐛 毛毛虫", category: "bug", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('caterpillar', '🐛 毛毛虫', 'bug', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M0 220 Q40 215 80 220 Q120 225 160 220 Q200 215 240 220 Q280 225 320 220 Q360 215 400 220 L400 300 L0 300 Z"/>
   <circle class="fillable" fill="#ffffff" cx="60" cy="195" r="22"/>
@@ -3103,8 +2583,11 @@ const PAGES = {
   <g><circle class="fillable" fill="#ffffff" cx="80" cy="170" r="4"/><circle class="fillable" fill="#ffffff" cx="120" cy="170" r="4"/><circle class="fillable" fill="#ffffff" cx="160" cy="170" r="4"/><circle class="fillable" fill="#ffffff" cx="200" cy="170" r="4"/><circle class="fillable" fill="#ffffff" cx="240" cy="170" r="4"/></g>
   <g stroke-width="2"><line x1="60" y1="217" x2="60" y2="225"/><line x1="100" y1="217" x2="100" y2="225"/><line x1="140" y1="217" x2="140" y2="225"/><line x1="180" y1="217" x2="180" y2="225"/><line x1="220" y1="217" x2="220" y2="225"/><line x1="260" y1="217" x2="260" y2="225"/></g>
   <path class="fillable" fill="#ffffff" d="M40 218 L25 250 Q30 260 50 245 Z"/>
-</g>` },
-  parrot: { name: "🦜 鹦鹉", category: "bug", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('parrot', '🦜 鹦鹉', 'bug', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <line x1="80" y1="250" x2="320" y2="250"/>
   <g stroke-width="2" fill="none"><line x1="100" y1="248" x2="105" y2="260"/><line x1="160" y1="248" x2="165" y2="260"/><line x1="220" y1="248" x2="225" y2="260"/><line x1="280" y1="248" x2="285" y2="260"/></g>
   <ellipse class="fillable" fill="#ffffff" cx="220" cy="170" rx="68" ry="58"/>
@@ -3124,8 +2607,12 @@ const PAGES = {
   <line x1="218" y1="232" x2="208" y2="248"/>
   <line x1="226" y1="240" x2="216" y2="250"/>
   <g><line x1="270" y1="225" x2="270" y2="248"/><line x1="270" y1="248" x2="265" y2="252"/><line x1="270" y1="248" x2="275" y2="252"/></g>
-</g>` },
-  village_house: { name: "🏠 小村屋", category: "building", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+# --- Buildings (10) ---
+add('village_house', '🏠 小村屋', 'building', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M0 240 Q100 232 200 240 Q300 248 400 235 L400 300 L0 300 Z"/>
   <rect class="fillable" fill="#ffffff" x="120" y="160" width="200" height="100"/>
@@ -3145,8 +2632,11 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M30 250 Q60 220 90 250"/>
   <path class="fillable" fill="#ffffff" d="M340 230 L360 215 L360 245 L340 250 Z"/>
   <rect class="fillable" fill="#ffffff" x="349" y="226" width="4" height="20"/>
-</g>` },
-  school: { name: "🏫 学校", category: "building", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('school', '🏫 学校', 'building', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M0 250 Q100 240 200 250 Q300 260 400 245 L400 300 L0 300 Z"/>
   <rect class="fillable" fill="#ffffff" x="60" y="160" width="280" height="110"/>
@@ -3176,8 +2666,11 @@ const PAGES = {
   <rect class="fillable" fill="#ffffff" x="288" y="232" width="32" height="32"/>
   <rect class="fillable" fill="#ffffff" x="358" y="220" width="6" height="50"/>
   <path class="fillable" fill="#ffffff" d="M364 220 L398 225 L398 245 L364 240 Z"/>
-</g>` },
-  lighthouse: { name: "🗼 灯塔", category: "building", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('lighthouse', '🗼 灯塔', 'building', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M0 230 Q40 225 80 230 Q120 235 160 230 Q200 225 240 230 Q280 235 320 230 Q360 225 400 230 L400 300 L0 300 Z"/>
   <g stroke-width="2" fill="none"><path d="M0 250 Q40 245 80 250 Q120 255 160 250 Q200 245 240 250 Q280 255 320 250 Q360 245 400 250"/><path d="M0 275 Q40 270 80 275 Q120 280 160 275 Q200 270 240 275 Q280 280 320 275 Q360 270 400 275"/></g>
@@ -3195,8 +2688,11 @@ const PAGES = {
   <g stroke-width="2" stroke-dasharray="6 4" fill="none" stroke="#aaa"><line x1="220" y1="55" x2="320" y2="20"/><line x1="220" y1="55" x2="320" y2="50"/><line x1="220" y1="55" x2="320" y2="80"/></g>
   <path class="fillable" fill="#ffffff" d="M100 235 L120 225 L135 235 Z"/>
   <path class="fillable" fill="#ffffff" d="M260 235 L280 225 L300 235 Z"/>
-</g>` },
-  barn: { name: "🏚️ 谷仓", category: "building", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('barn', '🏚️ 谷仓', 'building', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M0 240 Q100 232 200 240 Q300 248 400 235 L400 300 L0 300 Z"/>
   <path class="fillable" fill="#ffffff" d="M120 240 L120 160 L150 130 L250 130 L280 160 L280 240 Z"/>
@@ -3216,8 +2712,11 @@ const PAGES = {
   <line x1="320" y1="210" x2="360" y2="210"/>
   <path class="fillable" fill="#ffffff" d="M40 240 L70 215 L100 240 Z"/>
   <g stroke-width="1.5" fill="none"><line x1="50" y1="232" x2="90" y2="232"/><line x1="55" y1="223" x2="85" y2="223"/></g>
-</g>` },
-  igloo: { name: "🛖 冰屋", category: "building", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('igloo', '🛖 冰屋', 'building', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <g stroke-width="1.5"><g transform="translate(60 60)" fill="none"><line x1="0" y1="-6" x2="0" y2="6"/><line x1="-6" y1="0" x2="6" y2="0"/><line x1="-4" y1="-4" x2="4" y2="4"/><line x1="-4" y1="4" x2="4" y2="-4"/></g><g transform="translate(330 80)" fill="none"><line x1="0" y1="-6" x2="0" y2="6"/><line x1="-6" y1="0" x2="6" y2="0"/></g><g transform="translate(150 50)" fill="none"><line x1="0" y1="-5" x2="0" y2="5"/><line x1="-5" y1="0" x2="5" y2="0"/></g></g>
   <circle class="fillable" fill="#ffffff" cx="290" cy="80" r="20"/>
   <path class="fillable" fill="#ffffff" d="M0 250 Q100 240 200 250 Q300 260 400 245 L400 300 L0 300 Z"/>
@@ -3238,8 +2737,11 @@ const PAGES = {
   <line x1="210" y1="225" x2="210" y2="250"/>
   <path class="fillable" fill="#ffffff" d="M170 250 L170 215 Q170 200 200 200 Q230 200 230 215 L230 250 Z"/>
   <path class="fillable" fill="#ffffff" d="M165 248 Q200 240 235 248 L240 256 Q200 262 160 256 Z"/>
-</g>` },
-  treehouse: { name: "🌳 树屋", category: "building", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('treehouse', '🌳 树屋', 'building', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M0 280 Q100 270 200 280 Q300 290 400 275 L400 300 L0 300 Z"/>
   <path class="fillable" fill="#ffffff" d="M180 280 L175 130 L225 130 L220 280 Z"/>
@@ -3261,8 +2763,11 @@ const PAGES = {
   <g stroke-width="1.5" fill="none"><line x1="240" y1="240" x2="278" y2="280"/><line x1="248" y1="232" x2="286" y2="272"/><line x1="240" y1="244" x2="278" y2="284"/><line x1="248" y1="248" x2="286" y2="288"/><line x1="256" y1="252" x2="294" y2="292"/></g>
   <line x1="160" y1="240" x2="125" y2="280"/>
   <path class="fillable" fill="#ffffff" d="M115 275 Q105 270 110 282 Q120 285 122 278 Z"/>
-</g>` },
-  skyscraper: { name: "🏢 高楼", category: "building", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('skyscraper', '🏢 高楼', 'building', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <g stroke-width="1.5"><circle class="fillable" fill="#ffffff" cx="50" cy="40" r="3"/><circle class="fillable" fill="#ffffff" cx="80" cy="50" r="2"/><circle class="fillable" fill="#ffffff" cx="330" cy="40" r="3"/></g>
   <path class="fillable" fill="#ffffff" d="M0 270 Q100 262 200 270 Q300 278 400 263 L400 300 L0 300 Z"/>
   <rect class="fillable" fill="#ffffff" x="140" y="60" width="120" height="210"/>
@@ -3275,8 +2780,11 @@ const PAGES = {
   <g><rect class="fillable" fill="#ffffff" x="58" y="210" width="14" height="14"/><rect class="fillable" fill="#ffffff" x="78" y="210" width="14" height="14"/><rect class="fillable" fill="#ffffff" x="58" y="230" width="14" height="14"/><rect class="fillable" fill="#ffffff" x="78" y="230" width="14" height="14"/><rect class="fillable" fill="#ffffff" x="58" y="250" width="14" height="14"/><rect class="fillable" fill="#ffffff" x="78" y="250" width="14" height="14"/></g>
   <rect class="fillable" fill="#ffffff" x="290" y="170" width="70" height="100"/>
   <g><rect class="fillable" fill="#ffffff" x="298" y="180" width="14" height="14"/><rect class="fillable" fill="#ffffff" x="318" y="180" width="14" height="14"/><rect class="fillable" fill="#ffffff" x="338" y="180" width="14" height="14"/><rect class="fillable" fill="#ffffff" x="298" y="200" width="14" height="14"/><rect class="fillable" fill="#ffffff" x="318" y="200" width="14" height="14"/><rect class="fillable" fill="#ffffff" x="338" y="200" width="14" height="14"/><rect class="fillable" fill="#ffffff" x="298" y="220" width="14" height="14"/><rect class="fillable" fill="#ffffff" x="318" y="220" width="14" height="14"/><rect class="fillable" fill="#ffffff" x="338" y="220" width="14" height="14"/></g>
-</g>` },
-  windmill: { name: "🏭 风车", category: "building", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('windmill', '🏭 风车', 'building', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M0 250 Q100 240 200 250 Q300 260 400 245 L400 300 L0 300 Z"/>
   <g stroke-width="2" fill="none"><path d="M30 280 L40 265"/><path d="M340 280 L350 265"/></g>
@@ -3294,8 +2802,11 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M200 100 L145 155 L138 145 L195 100 Z"/>
   <path class="fillable" fill="#ffffff" d="M200 90 L145 92 L145 100 L200 100 Z"/>
   <path class="fillable" fill="#ffffff" d="M195 90 L140 35 L140 45 L192 90 Z"/>
-</g>` },
-  church: { name: "⛪ 教堂", category: "building", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('church', '⛪ 教堂', 'building', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M0 260 Q100 252 200 260 Q300 268 400 255 L400 300 L0 300 Z"/>
   <rect class="fillable" fill="#ffffff" x="130" y="180" width="180" height="90"/>
@@ -3314,8 +2825,11 @@ const PAGES = {
   <path class="fillable" fill="#ffffff" d="M260 200 Q260 190 275 190 Q290 190 290 200 L290 230 L260 230 Z"/>
   <line x1="275" y1="190" x2="275" y2="230"/>
   <line x1="260" y1="210" x2="290" y2="210"/>
-</g>` },
-  hut: { name: "🛖 茅草屋", category: "building", svg: `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+</g>
+''')
+
+add('hut', '🛖 茅草屋', 'building', '''
+<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="55" cy="55" r="20"/>
   <path class="fillable" fill="#ffffff" d="M0 250 Q100 240 200 250 Q300 260 400 245 L400 300 L0 300 Z"/>
   <g><rect class="fillable" fill="#ffffff" x="40" y="245" width="6" height="18"/><circle class="fillable" fill="#ffffff" cx="43" cy="238" r="14"/><rect class="fillable" fill="#ffffff" x="358" y="245" width="6" height="18"/><circle class="fillable" fill="#ffffff" cx="361" cy="238" r="14"/></g>
@@ -3334,1209 +2848,8 @@ const PAGES = {
   <rect class="fillable" fill="#ffffff" x="243" y="205" width="22" height="22"/>
   <line x1="254" y1="205" x2="254" y2="227"/>
   <line x1="243" y1="216" x2="265" y2="216"/>
-</g>` }
-};
-const STAMPS = [
-  ["kid_boy", "小男孩", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><circle fill="__C__" cx="25" cy="14" r="8"/><path fill="__C__" d="M16 26 L34 26 L36 42 L14 42 Z"/><line x1="20" y1="42" x2="20" y2="48"/><line x1="30" y1="42" x2="30" y2="48"/><line x1="14" y1="32" x2="8" y2="38"/><line x1="36" y1="32" x2="42" y2="38"/><circle fill="#1a1a1a" cx="22" cy="14" r="1"/><circle fill="#1a1a1a" cx="28" cy="14" r="1"/></g>`, "people"],
-  ["kid_girl", "小女孩", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><circle fill="__C__" cx="25" cy="14" r="8"/><path fill="__C__" d="M14 22 L36 22 L40 18 L30 14 L25 6 L20 14 L10 18 Z"/><path fill="__C__" d="M14 26 L36 26 L40 44 L10 44 Z"/><line x1="18" y1="44" x2="18" y2="48"/><line x1="32" y1="44" x2="32" y2="48"/><circle fill="#1a1a1a" cx="22" cy="15" r="1"/><circle fill="#1a1a1a" cx="28" cy="15" r="1"/></g>`, "people"],
-  ["princess_h", "公主", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><circle fill="__C__" cx="25" cy="22" r="14"/><path fill="__C__" d="M11 18 L15 8 L19 16 L23 6 L27 16 L31 8 L35 18 Z"/><circle fill="#1a1a1a" cx="20" cy="22" r="1.5"/><circle fill="#1a1a1a" cx="30" cy="22" r="1.5"/><path fill="none" d="M21 28 Q25 31 29 28"/><path fill="__C__" d="M11 38 L39 38 L42 48 L8 48 Z"/></g>`, "people"],
-  ["knight_h", "骑士", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect fill="__C__" x="15" y="6" width="20" height="22" rx="3"/><path fill="__C__" d="M22 6 L25 2 L28 6 Z"/><rect fill="__C__" x="18" y="14" width="14" height="6"/><line x1="22" y1="14" x2="22" y2="20"/><line x1="28" y1="14" x2="28" y2="20"/><path fill="__C__" d="M12 28 L38 28 L42 48 L8 48 Z"/></g>`, "people"],
-  ["pirate_h", "海盗", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path fill="__C__" d="M8 18 L42 18 L40 12 Q25 4 10 12 Z"/><circle fill="__C__" cx="25" cy="28" r="12"/><circle fill="#1a1a1a" cx="20" cy="28" r="1.5"/><path fill="__C__" d="M28 24 L34 22 L34 30 L28 32 Z"/><path fill="none" d="M21 36 Q25 38 29 36"/><path fill="__C__" d="M14 40 L36 40 L40 48 L10 48 Z"/></g>`, "people"],
-  ["family", "一家人", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><circle fill="__C__" cx="14" cy="16" r="6"/><path fill="__C__" d="M8 24 L20 24 L22 38 L6 38 Z"/><circle fill="__C__" cx="36" cy="16" r="6"/><path fill="__C__" d="M30 24 L42 24 L44 38 L28 38 Z"/><circle fill="__C__" cx="25" cy="26" r="4"/><path fill="__C__" d="M21 32 L29 32 L30 42 L20 42 Z"/></g>`, "people"],
-  ["grass", "草丛", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path fill="none" d="M6 44 Q10 32 14 44"/><path fill="none" d="M14 44 Q18 28 22 44"/><path fill="none" d="M22 44 Q26 30 30 44"/><path fill="none" d="M30 44 Q34 26 38 44"/><path fill="none" d="M38 44 Q42 32 46 44"/><line x1="2" y1="46" x2="48" y2="46"/></g>`, "nature"],
-  ["small_tree", "小树", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect fill="__C__" x="22" y="30" width="6" height="16"/><circle fill="__C__" cx="25" cy="20" r="14"/><circle fill="__C__" cx="16" cy="22" r="8"/><circle fill="__C__" cx="34" cy="22" r="8"/></g>`, "nature"],
-  ["small_flower", "小花", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><line x1="25" y1="28" x2="25" y2="46" stroke="#1a1a1a"/><path fill="__C__" d="M22 40 Q16 36 14 42 Q20 44 24 42 Z"/><circle fill="__C__" cx="25" cy="18" r="6"/><circle fill="__C__" cx="17" cy="22" r="6"/><circle fill="__C__" cx="33" cy="22" r="6"/><circle fill="__C__" cx="21" cy="28" r="5"/><circle fill="__C__" cx="29" cy="28" r="5"/><circle fill="#1a1a1a" cx="25" cy="22" r="2"/></g>`, "nature"],
-  ["bush", "灌木丛", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path fill="__C__" d="M6 44 Q4 30 14 28 Q18 18 26 22 Q34 16 40 26 Q48 28 44 44 Z"/></g>`, "nature"],
-  ["mushroom", "蘑菇", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path fill="__C__" d="M8 28 Q8 12 25 12 Q42 12 42 28 Z"/><circle fill="#ffffff" cx="18" cy="22" r="3"/><circle fill="#ffffff" cx="28" cy="18" r="3"/><circle fill="#ffffff" cx="34" cy="24" r="2"/><path fill="__C__" d="M18 28 L18 42 Q18 46 25 46 Q32 46 32 42 L32 28 Z"/></g>`, "nature"],
-  ["leaf", "叶子", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path fill="__C__" d="M25 6 Q40 12 38 28 Q34 42 25 44 Q16 42 12 28 Q10 12 25 6 Z"/><path fill="none" d="M25 6 L25 44"/><g stroke-width="1.5" fill="none"><line x1="25" y1="14" x2="18" y2="18"/><line x1="25" y1="14" x2="32" y2="18"/><line x1="25" y1="22" x2="16" y2="26"/><line x1="25" y1="22" x2="34" y2="26"/><line x1="25" y1="30" x2="17" y2="34"/><line x1="25" y1="30" x2="33" y2="34"/></g></g>`, "nature"],
-  ["dog_small", "小狗", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><ellipse fill="__C__" cx="28" cy="32" rx="14" ry="10"/><circle fill="__C__" cx="14" cy="26" r="9"/><path fill="__C__" d="M8 18 L8 28 L12 28 Z"/><path fill="__C__" d="M22 22 L22 30 L16 28 Z"/><circle fill="#1a1a1a" cx="11" cy="25" r="1.2"/><circle fill="#1a1a1a" cx="7" cy="28" r="1"/><line x1="20" y1="42" x2="20" y2="46"/><line x1="36" y1="42" x2="36" y2="46"/><path fill="__C__" d="M40 28 Q44 22 42 32 Z"/></g>`, "animal"],
-  ["cat_small", "小猫", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><ellipse fill="__C__" cx="28" cy="32" rx="14" ry="10"/><circle fill="__C__" cx="14" cy="24" r="8"/><path fill="__C__" d="M8 16 L11 22 L14 18 Z"/><path fill="__C__" d="M20 16 L17 22 L14 18 Z"/><circle fill="#1a1a1a" cx="11" cy="24" r="1"/><circle fill="#1a1a1a" cx="17" cy="24" r="1"/><line x1="20" y1="42" x2="20" y2="46"/><line x1="36" y1="42" x2="36" y2="46"/><path fill="none" d="M40 32 Q46 18 42 14"/></g>`, "animal"],
-  ["bird", "小鸟", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><ellipse fill="__C__" cx="22" cy="26" rx="14" ry="10"/><circle fill="__C__" cx="34" cy="22" r="7"/><path fill="__C__" d="M40 22 L46 22 L42 26 Z"/><circle fill="#1a1a1a" cx="35" cy="22" r="1.2"/><path fill="__C__" d="M14 22 Q8 14 18 16 Z"/><path fill="__C__" d="M16 28 Q10 22 20 24 Z"/><line x1="22" y1="36" x2="22" y2="42"/><line x1="28" y1="36" x2="28" y2="42"/></g>`, "animal"],
-  ["fish_small", "小鱼", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path fill="__C__" d="M8 25 Q14 14 30 14 Q40 14 42 25 Q40 36 30 36 Q14 36 8 25 Z"/><path fill="__C__" d="M42 25 L48 18 L46 25 L48 32 Z"/><path fill="__C__" d="M20 14 Q22 8 26 12 Z"/><circle fill="#ffffff" cx="32" cy="22" r="3"/><circle fill="#1a1a1a" cx="33" cy="22" r="1.5"/><path fill="none" d="M18 25 Q24 28 18 30"/></g>`, "animal"],
-  ["butterfly", "蝴蝶", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><ellipse fill="__C__" cx="25" cy="25" rx="2" ry="12"/><path fill="__C__" d="M23 18 Q12 10 6 18 Q10 26 23 24 Z"/><path fill="__C__" d="M27 18 Q38 10 44 18 Q40 26 27 24 Z"/><path fill="__C__" d="M23 26 Q14 34 8 28 Q14 22 23 26 Z"/><path fill="__C__" d="M27 26 Q36 34 42 28 Q36 22 27 26 Z"/><line x1="24" y1="14" x2="20" y2="8"/><line x1="26" y1="14" x2="30" y2="8"/></g>`, "animal"],
-  ["ladybug", "瓢虫", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><ellipse fill="__C__" cx="25" cy="28" rx="18" ry="14"/><line x1="25" y1="14" x2="25" y2="42"/><circle fill="#1a1a1a" cx="16" cy="22" r="2"/><circle fill="#1a1a1a" cx="14" cy="32" r="2"/><circle fill="#1a1a1a" cx="34" cy="22" r="2"/><circle fill="#1a1a1a" cx="36" cy="32" r="2"/><path fill="#1a1a1a" d="M16 16 Q25 8 34 16 L34 18 Q25 14 16 18 Z"/><circle fill="#1a1a1a" cx="20" cy="12" r="1.5"/><circle fill="#1a1a1a" cx="30" cy="12" r="1.5"/></g>`, "animal"],
-  ["star", "星星", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path fill="__C__" d="M25 4 L30 18 L46 18 L33 27 L38 42 L25 33 L12 42 L17 27 L4 18 L20 18 Z"/></g>`, "thing"],
-  ["heart", "爱心", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path fill="__C__" d="M25 44 Q4 28 8 14 Q12 4 18 6 Q22 6 25 12 Q28 6 32 6 Q38 4 42 14 Q46 28 25 44 Z"/></g>`, "thing"],
-  ["balloon_s", "气球", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><ellipse fill="__C__" cx="25" cy="20" rx="14" ry="18"/><path fill="__C__" d="M22 36 L25 42 L28 36 Z"/><path fill="none" d="M25 42 Q22 46 28 46"/></g>`, "thing"],
-  ["gift", "礼物", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect fill="__C__" x="8" y="24" width="34" height="20"/><rect fill="__C__" x="22" y="24" width="6" height="20"/><path fill="__C__" d="M25 24 Q14 14 8 18 Q14 24 25 24 Z"/><path fill="__C__" d="M25 24 Q36 14 42 18 Q36 24 25 24 Z"/><rect fill="__C__" x="8" y="20" width="34" height="6"/></g>`, "thing"],
-  ["crown", "皇冠", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path fill="__C__" d="M6 38 L8 16 L15 26 L20 12 L25 24 L30 12 L35 26 L42 16 L44 38 Z"/><circle fill="__C__" cx="10" cy="16" r="2"/><circle fill="__C__" cx="20" cy="12" r="2"/><circle fill="__C__" cx="30" cy="12" r="2"/><circle fill="__C__" cx="40" cy="16" r="2"/><line x1="6" y1="42" x2="44" y2="42"/></g>`, "thing"],
-  ["sparkle", "闪光", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path fill="__C__" d="M25 4 L28 22 L46 25 L28 28 L25 46 L22 28 L4 25 L22 22 Z"/></g>`, "thing"],
-  ["sun", "太阳", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><circle fill="__C__" cx="25" cy="25" r="11"/><g stroke-width="2"><line x1="25" y1="4" x2="25" y2="12"/><line x1="25" y1="38" x2="25" y2="46"/><line x1="4" y1="25" x2="12" y2="25"/><line x1="38" y1="25" x2="46" y2="25"/><line x1="10" y1="10" x2="16" y2="16"/><line x1="34" y1="34" x2="40" y2="40"/><line x1="40" y1="10" x2="34" y2="16"/><line x1="16" y1="34" x2="10" y2="40"/></g></g>`, "weather"],
-  ["moon", "月亮", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path fill="__C__" d="M30 6 Q12 10 12 25 Q12 40 30 44 Q18 38 18 25 Q18 12 30 6 Z"/><g stroke-width="1.5"><circle fill="__C__" cx="40" cy="14" r="1.5"/><circle fill="__C__" cx="42" cy="22" r="1.5"/><circle fill="__C__" cx="40" cy="32" r="1.5"/></g></g>`, "weather"],
-  ["cloud", "云朵", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path fill="__C__" d="M8 32 Q4 22 14 20 Q16 10 26 14 Q34 6 40 16 Q48 18 44 30 L8 32 Z"/></g>`, "weather"],
-  ["rainbow_s", "彩虹", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path fill="__C__" d="M4 40 Q4 14 25 14 Q46 14 46 40 L40 40 Q40 20 25 20 Q10 20 10 40 Z"/><path fill="__C__" d="M10 40 Q10 20 25 20 Q40 20 40 40 L34 40 Q34 26 25 26 Q16 26 16 40 Z"/><path fill="__C__" d="M16 40 Q16 26 25 26 Q34 26 34 40 L28 40 Q28 32 25 32 Q22 32 22 40 Z"/></g>`, "weather"],
-  ["snowflake", "雪花", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><g stroke="__C__" stroke-width="2.5" fill="none"><line x1="25" y1="4" x2="25" y2="46"/><line x1="4" y1="25" x2="46" y2="25"/><line x1="10" y1="10" x2="40" y2="40"/><line x1="40" y1="10" x2="10" y2="40"/><path d="M25 8 L21 4 M25 8 L29 4"/><path d="M25 42 L21 46 M25 42 L29 46"/><path d="M8 25 L4 21 M8 25 L4 29"/><path d="M42 25 L46 21 M42 25 L46 29"/></g></g>`, "weather"],
-  ["raindrop", "雨滴", 50, `<g stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path fill="__C__" d="M25 6 Q14 22 14 32 Q14 42 25 42 Q36 42 36 32 Q36 22 25 6 Z"/><path fill="#ffffff" d="M22 18 Q19 24 19 30 Q23 30 23 22 Z"/></g>`, "weather"]
-];
+</g>
+''')
 
-/* =========================================================================
-   State + persistence
-   ========================================================================= */
-const LS_KEY = 'cga_state_v1';
-const state = {
-  tool: 'fill',
-  color: '#4ab3ff',
-  pattern: 'solid',
-  brushSize: 10,
-  stampSize: 50,
-  pageKey: 'panda',
-  pictureCat: CATEGORIES[0][0],
-  stampCat: STAMP_CATEGORIES[0][0],
-  stampKey: null,
-  view: { tx: 0, ty: 0, scale: 1 },
-  history: [],   // session-only undo stack
-  timer: {
-    durationSec: 600,
-    startTs: Date.now(),
-    elapsedBefore: 0,
-    paused: false,
-    fired: false,
-  },
-  customPages: {}, // key -> { name, dataUrl }
-};
-
-function debounce(fn, ms) {
-  let t = null;
-  return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
-}
-
-function loadPersisted() {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return;
-    const data = JSON.parse(raw);
-    Object.assign(state, {
-      tool: data.tool || state.tool,
-      color: data.color || state.color,
-      pattern: data.pattern || state.pattern,
-      brushSize: data.brushSize || state.brushSize,
-      stampSize: data.stampSize || state.stampSize,
-      pageKey: data.pageKey || state.pageKey,
-      pictureCat: data.pictureCat || state.pictureCat,
-      stampCat: data.stampCat || state.stampCat,
-      view: data.view || state.view,
-      customPages: data.customPages || {},
-    });
-    if (data.timer) {
-      Object.assign(state.timer, data.timer);
-      state.timer.fired = !!data.timer.fired;
-    }
-    if (data.pageStates) state._pageStates = data.pageStates;
-    // Restore custom pages into PAGES dict
-    Object.entries(state.customPages).forEach(([k, v]) => {
-      PAGES[k] = { name: v.name, category: 'custom', custom: true, dataUrl: v.dataUrl };
-    });
-  } catch (e) { console.warn('load failed', e); }
-}
-
-const savePersisted = debounce(() => {
-  try {
-    // Build pageStates from current SVG + canvas
-    const pageStates = (state._pageStates || {});
-    const cur = capturePageState();
-    if (cur) pageStates[state.pageKey] = cur;
-    state._pageStates = pageStates;
-    const data = {
-      tool: state.tool, color: state.color, pattern: state.pattern,
-      brushSize: state.brushSize, stampSize: state.stampSize, pageKey: state.pageKey,
-      pictureCat: state.pictureCat, stampCat: state.stampCat,
-      view: state.view, customPages: state.customPages,
-      timer: state.timer, pageStates,
-    };
-    localStorage.setItem(LS_KEY, JSON.stringify(data));
-  } catch (e) {
-    console.warn('save failed', e);
-    if (e && e.name === 'QuotaExceededError') {
-      showToast('存储已满,旧画作可能无法保存', 3000);
-    }
-  }
-}, 350);
-
-function capturePageState() {
-  // Capture fill colors of fillable elements (by index) + canvas pixels (PNG)
-  if (!svgEl) return null;
-  const fills = [];
-  svgEl.querySelectorAll('.fillable').forEach((el, i) => {
-    const f = el.getAttribute('fill');
-    if (!f || f === '#ffffff') return;
-    // If it's a pattern url, look up the pattern def to extract (pattern,color)
-    const m = f.match(/^url\(#([^)]+)\)$/);
-    if (m) {
-      const patEl = document.getElementById(m[1]);
-      if (patEl) {
-        const pkey = patEl.getAttribute('data-pkey');
-        const pcolor = patEl.getAttribute('data-pcolor');
-        if (pkey) { fills.push([i, { p: pkey, c: pcolor }]); return; }
-      }
-    }
-    fills.push([i, f]);
-  });
-  // Capture stamps placed in SVG
-  const stamps = [];
-  svgEl.querySelectorAll('.stamp-instance').forEach(g => {
-    stamps.push({
-      key: g.dataset.stampKey,
-      x: +g.dataset.x, y: +g.dataset.y,
-      color: g.dataset.color,
-      size: +g.dataset.size || 50,
-      pattern: g.dataset.pattern || 'solid',
-    });
-  });
-  // Capture canvas as PNG (only if there are strokes)
-  let strokes = null;
-  try {
-    // Avoid serializing huge images: only save if non-empty
-    if (canvasHasContent()) strokes = canvas.toDataURL('image/png');
-  } catch (e) {}
-  return { fills, stamps, strokes };
-}
-
-function canvasHasContent() {
-  // Sample alpha channel to detect any pixel
-  if (!canvas.width || !canvas.height) return false;
-  try {
-    const w = canvas.width, h = canvas.height;
-    const step = Math.max(8, Math.floor(Math.min(w, h) / 40));
-    const data = ctx.getImageData(0, 0, w, h).data;
-    for (let i = 3; i < data.length; i += step * 4) {
-      if (data[i] > 0) return true;
-    }
-  } catch (e) {}
-  return false;
-}
-
-function applyPageState(s) {
-  if (!s) return;
-  if (Array.isArray(s.fills)) {
-    const fillables = svgEl.querySelectorAll('.fillable');
-    s.fills.forEach(([i, f]) => {
-      if (!fillables[i]) return;
-      if (f && typeof f === 'object' && f.p) {
-        fillables[i].setAttribute('fill', patternInstanceFor(f.p, f.c));
-      } else {
-        fillables[i].setAttribute('fill', f);
-      }
-    });
-  }
-  if (Array.isArray(s.stamps)) {
-    s.stamps.forEach(st => placeStamp(st.key, st.x, st.y, st.color, false, st.pattern, st.size));
-  }
-  if (s.strokes) {
-    const img = new Image();
-    img.onload = () => {
-      // Make sure canvas is sized first
-      ctx.save();
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      ctx.restore();
-    };
-    img.src = s.strokes;
-  }
-}
-
-/* =========================================================================
-   DOM refs
-   ========================================================================= */
-const svgEl = document.getElementById('coloringSvg');
-const canvas = document.getElementById('drawCanvas');
-const ctx = canvas.getContext('2d');
-const stage = document.getElementById('stage');
-const stageInner = document.getElementById('stageInner');
-const swatchesBox = document.getElementById('swatches');
-const customColor = document.getElementById('customColor');
-const brushSizeInput = document.getElementById('brushSize');
-const brushPreview = document.getElementById('brushPreview');
-const brushDot = brushPreview.querySelector('.brush-dot');
-const patternGrid = document.getElementById('patternGrid');
-const toolsBox = document.getElementById('tools');
-const zoomDisplay = document.getElementById('zoomDisplay');
-const pictureGrid = document.getElementById('pictureGrid');
-const pictureCatTabs = document.getElementById('pictureCatTabs');
-const stampGrid = document.getElementById('stampGrid');
-const stampCatTabs = document.getElementById('stampCatTabs');
-const timerText = document.getElementById('timerText');
-const timerChip = document.getElementById('timerChip');
-const toast = document.getElementById('toast');
-const patternDefsContent = document.getElementById('patternDefsContent');
-
-let toastTimer = null;
-function showToast(msg, ms = 1200) {
-  toast.textContent = msg;
-  toast.classList.add('show');
-  if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove('show'), ms);
-}
-
-/* =========================================================================
-   Palette
-   ========================================================================= */
-function buildPalette() {
-  swatchesBox.innerHTML = '';
-  PALETTE.forEach(c => {
-    const sw = document.createElement('div');
-    sw.className = 'swatch' + (c === state.color ? ' active' : '');
-    sw.style.background = c;
-    sw.dataset.color = c;
-    if (c === '#ffffff') sw.style.borderColor = '#ccc';
-    sw.addEventListener('click', () => selectColor(c));
-    swatchesBox.appendChild(sw);
-  });
-}
-function selectColor(c) {
-  state.color = c;
-  customColor.value = (c.length === 7 && c.startsWith('#')) ? c : '#000000';
-  document.querySelectorAll('.swatch').forEach(s => s.classList.toggle('active', s.dataset.color === c));
-  const curSw = document.getElementById('curColorSwatch');
-  if (curSw) curSw.style.background = c;
-  updateBrushPreview();
-  updatePatternDefs();
-  savePersisted();
-}
-customColor.addEventListener('input', e => {
-  selectColor(e.target.value);
-});
-
-// Color popup button
-document.getElementById('openColorPop').addEventListener('click', () => openModal('colorPop'));
-// Closing the color popup on swatch selection
-document.getElementById('swatches').addEventListener('click', (e) => {
-  if (e.target.classList.contains('swatch')) closeModal('colorPop');
-});
-
-/* =========================================================================
-   Patterns
-   ========================================================================= */
-function buildPatternTiles() {
-  patternGrid.innerHTML = '';
-  PATTERNS.forEach(([id, name, def]) => {
-    const tile = document.createElement('div');
-    tile.className = 'pattern-tile' + (id === state.pattern ? ' active' : '');
-    tile.dataset.id = id;
-    tile.title = name;
-    if (id === 'solid') {
-      tile.innerHTML = `<svg viewBox="0 0 30 30"><rect width="30" height="30" fill="${state.color}"/></svg><div>纯色</div>`;
-    } else {
-      const previewDef = def.replace(/__FG__/g, state.color).replace(/__BG__/g, '#ffffff');
-      tile.innerHTML = `<svg viewBox="0 0 30 30"><defs>${previewDef}</defs><rect width="30" height="30" fill="url(#pat-${id})"/></svg><div>${name}</div>`;
-    }
-    tile.addEventListener('click', () => {
-      state.pattern = id;
-      buildPatternTiles();
-      updateCurrentPatternPreview();
-      closeModal('patternPop');
-      savePersisted();
-    });
-    patternGrid.appendChild(tile);
-  });
-}
-function updateCurrentPatternPreview() {
-  const previewEl = document.getElementById('curPatternPreview');
-  const nameEl = document.getElementById('curPatternName');
-  if (!previewEl) return;
-  const entry = PATTERNS.find(p => p[0] === state.pattern) || PATTERNS[0];
-  const [id, name, def] = entry;
-  if (!def) {
-    previewEl.innerHTML = `<rect width="30" height="30" fill="${state.color}"/>`;
-  } else {
-    const previewDef = def.replace(/__FG__/g, state.color).replace(/__BG__/g, '#ffffff');
-    previewEl.innerHTML = `<defs>${previewDef}</defs><rect width="30" height="30" fill="url(#pat-${id})"/>`;
-  }
-  if (nameEl) nameEl.textContent = name;
-}
-document.getElementById('openPatternPop').addEventListener('click', () => openModal('patternPop'));
-// Pattern instances are created once per (pattern, color) pair and cached
-// so previously-filled regions are NEVER recolored when the user picks a
-// different palette color.
-let patternInstanceCounter = 0;
-const patternInstanceCache = {};
-function patternInstanceFor(patternKey, color) {
-  if (!patternKey || patternKey === 'solid') return color;
-  const cacheKey = patternKey + '|' + color;
-  if (patternInstanceCache[cacheKey]) return patternInstanceCache[cacheKey];
-  const def = PATTERNS.find(p => p[0] === patternKey);
-  if (!def || !def[2]) { patternInstanceCache[cacheKey] = color; return color; }
-  const newId = `pi-${++patternInstanceCounter}`;
-  const xml = def[2]
-    .replace('id="pat-' + patternKey + '"', `id="${newId}" data-pkey="${patternKey}" data-pcolor="${color}"`)
-    .replace(/__FG__/g, color)
-    .replace(/__BG__/g, '#ffffff');
-  patternDefsContent.insertAdjacentHTML('beforeend', xml);
-  const url = `url(#${newId})`;
-  patternInstanceCache[cacheKey] = url;
-  return url;
-}
-
-function updatePatternDefs() {
-  // Only refresh the palette TILE previews — leave the actual filled defs alone.
-  buildPatternTiles();
-  updateCurrentPatternPreview();
-}
-
-function currentFillValue() {
-  return patternInstanceFor(state.pattern, state.color);
-}
-
-/* =========================================================================
-   Brush size
-   ========================================================================= */
-function updateBrushPreview() {
-  const s = Math.max(4, Math.min(32, state.brushSize));
-  brushDot.style.width = s + 'px';
-  brushDot.style.height = s + 'px';
-  brushPreview.style.color = state.color;
-  const bst = document.getElementById('brushSizeText');
-  if (bst) bst.textContent = state.brushSize;
-}
-brushSizeInput.addEventListener('input', e => {
-  state.brushSize = +e.target.value;
-  updateBrushPreview();
-  savePersisted();
-});
-
-// Stamp size slider
-const stampSizeInput = document.getElementById('stampSize');
-const stampSizeText = document.getElementById('stampSizeText');
-const stampSizeBox = document.getElementById('stampSizeBox');
-stampSizeInput.addEventListener('input', e => {
-  state.stampSize = +e.target.value;
-  stampSizeText.textContent = e.target.value;
-  savePersisted();
-});
-
-/* =========================================================================
-   Tools
-   ========================================================================= */
-toolsBox.addEventListener('click', e => {
-  const t = e.target.closest('.tool');
-  if (!t || !t.dataset.tool) return;
-  setTool(t.dataset.tool);
-});
-function setTool(t, openStampPicker = true) {
-  const prev = state.tool;
-  state.tool = t;
-  document.querySelectorAll('#tools .tool').forEach(b => b.classList.toggle('active', b.dataset.tool === t));
-  if (t === 'brush' || t === 'eraser') {
-    canvas.classList.add('draw-mode');
-  } else {
-    canvas.classList.remove('draw-mode');
-  }
-  if (t !== 'stamp') state.stampKey = null;
-  if (stampSizeBox) stampSizeBox.style.display = (t === 'stamp') ? '' : 'none';
-  // When user picks stamp tool from the bottom bar, auto-open the stamp picker
-  if (t === 'stamp' && openStampPicker && prev !== 'stamp') {
-    buildStampCatTabs(); buildStampGrid(); openModal('stampModal');
-  }
-  savePersisted();
-}
-
-/* =========================================================================
-   Pages (load / fill bindings)
-   ========================================================================= */
-function loadPage(key, restoreState = true) {
-  const page = PAGES[key];
-  if (!page) return;
-  // Save current page state before switching
-  // Snapshot current page state into _pageStates before switching
-  if (svgEl.innerHTML) {
-    state._pageStates = state._pageStates || {};
-    const snap = capturePageState();
-    if (snap) state._pageStates[state.pageKey] = snap;
-  }
-  state.pageKey = key;
-  state.history = [];
-
-  if (page.custom && page.dataUrl) {
-    svgEl.innerHTML =
-      `<image href="${page.dataUrl}" x="0" y="0" width="400" height="300" preserveAspectRatio="xMidYMid meet"/>`;
-  } else {
-    svgEl.innerHTML = page.svg;
-  }
-  bindFillable();
-  clearCanvas(false);
-  resetView();
-  // Restore saved state for this page if any
-  if (restoreState && state._pageStates && state._pageStates[key]) {
-    applyPageState(state._pageStates[key]);
-  }
-  syncCanvasSize();
-  buildPictureGrid();
-  savePersisted();
-}
-
-function bindFillable() {
-  svgEl.querySelectorAll('.fillable').forEach(el => {
-    const handler = (e) => {
-      if (state.tool === 'fill') {
-        e.preventDefault();
-        const prev = el.getAttribute('fill') || '#ffffff';
-        const next = currentFillValue();
-        if (prev === next) return;
-        state.history.push({ kind: 'fill', el, prevColor: prev });
-        el.setAttribute('fill', next);
-        savePersisted();
-      } else if (state.tool === 'eraser') {
-        // Eraser on a fillable region resets it to white.
-        e.preventDefault();
-        const prev = el.getAttribute('fill') || '#ffffff';
-        if (prev === '#ffffff') return;
-        state.history.push({ kind: 'fill', el, prevColor: prev });
-        el.setAttribute('fill', '#ffffff');
-        savePersisted();
-      }
-    };
-    el.addEventListener('click', handler);
-    el.addEventListener('touchstart', handler, { passive: false });
-  });
-}
-// Delegated listeners on the SVG, bound exactly once (above bindFillable).
-function svgStampClick(e) {
-  // First: eraser tool removes a clicked stamp
-  if (state.tool === 'eraser') {
-    const stampInst = e.target.closest('.stamp-instance');
-    if (stampInst && stampInst.parentNode === svgEl) {
-      const data = {
-        kind: 'stamp-removed',
-        key: stampInst.dataset.stampKey,
-        x: +stampInst.dataset.x, y: +stampInst.dataset.y,
-        color: stampInst.dataset.color,
-        size: +stampInst.dataset.size || 50,
-        pattern: stampInst.dataset.pattern || 'solid',
-      };
-      stampInst.parentNode.removeChild(stampInst);
-      state.history.push(data);
-      savePersisted();
-    }
-    return;
-  }
-  // Stamp tool: place a stamp at click point
-  if (state.tool !== 'stamp' || !state.stampKey) return;
-  if (e.target.closest('.stamp-instance')) return; // ignore clicks on existing stamps
-  const pt = svgEventToPoint(e);
-  if (!pt) return;
-  placeStamp(state.stampKey, pt.x, pt.y, state.color, true, state.pattern, state.stampSize);
-}
-function svgEventToPoint(e) {
-  const rect = svgEl.getBoundingClientRect();
-  const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-  const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-  const x = (cx / rect.width) * 400;
-  const y = (cy / rect.height) * 300;
-  return { x, y };
-}
-/* =========================================================================
-   Stamps
-   ========================================================================= */
-function placeStamp(key, x, y, color, addHistory, patternKey, size) {
-  const stamp = STAMPS.find(s => s[0] === key);
-  if (!stamp) return;
-  const [, , vb, body] = stamp;
-  const SIZE = size || state.stampSize || 50;
-  const fillVal = patternInstanceFor(patternKey || 'solid', color);
-  const halfSize = SIZE / 2;
-  const ns = 'http://www.w3.org/2000/svg';
-  const g = document.createElementNS(ns, 'g');
-  g.setAttribute('class', 'stamp-instance');
-  g.setAttribute('transform', `translate(${x - halfSize} ${y - halfSize}) scale(${SIZE / vb})`);
-  g.setAttribute('data-stamp-key', key);
-  g.setAttribute('data-x', x);
-  g.setAttribute('data-y', y);
-  g.setAttribute('data-color', color);
-  g.setAttribute('data-size', SIZE);
-  g.setAttribute('data-pattern', patternKey || 'solid');
-  g.innerHTML = body.replace(/__C__/g, fillVal);
-  svgEl.appendChild(g);
-  if (addHistory) {
-    state.history.push({ kind: 'stamp', el: g });
-    savePersisted();
-  }
-}
-
-/* =========================================================================
-   Canvas drawing with pan/zoom-aware coordinates
-   ========================================================================= */
-function syncCanvasSize() {
-  const rect = stage.getBoundingClientRect();
-  const prev = document.createElement('canvas');
-  prev.width = canvas.width; prev.height = canvas.height;
-  if (canvas.width && canvas.height) prev.getContext('2d').drawImage(canvas, 0, 0);
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = Math.round(rect.width * dpr);
-  canvas.height = Math.round(rect.height * dpr);
-  canvas.style.width = rect.width + 'px';
-  canvas.style.height = rect.height + 'px';
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  if (prev.width) {
-    ctx.drawImage(prev, 0, 0, prev.width / dpr, prev.height / dpr);
-  }
-}
-window.addEventListener('resize', () => { syncCanvasSize(); });
-
-// Track pointers for pan/zoom & drawing
-const pointers = new Map();
-let drawing = false;
-let lastX = 0, lastY = 0;
-let strokeSnapshot = null;
-let pinchStart = null;
-
-function canvasEventToLocal(e) {
-  const rect = canvas.getBoundingClientRect();
-  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-}
-
-function startStroke(x, y) {
-  strokeSnapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  drawing = true;
-  lastX = x; lastY = y;
-  drawSegment(x, y, x, y);
-}
-function continueStroke(x, y) {
-  if (!drawing) return;
-  drawSegment(lastX, lastY, x, y);
-  lastX = x; lastY = y;
-}
-function endStroke() {
-  if (!drawing) return;
-  drawing = false;
-  if (strokeSnapshot) {
-    state.history.push({ kind: 'stroke', imageData: strokeSnapshot });
-    strokeSnapshot = null;
-    savePersisted();
-  }
-}
-function drawSegment(x1, y1, x2, y2) {
-  ctx.lineWidth = state.brushSize;
-  if (state.tool === 'eraser') {
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.strokeStyle = 'rgba(0,0,0,1)';
-  } else {
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.strokeStyle = state.color;
-  }
-  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-}
-
-// pointerdown on canvas — used for brush/eraser AND pinch zoom
-canvas.addEventListener('pointerdown', (e) => {
-  canvas.setPointerCapture?.(e.pointerId);
-  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  if (pointers.size === 2) {
-    // start pinch
-    drawing = false; strokeSnapshot = null;
-    const pts = [...pointers.values()];
-    pinchStart = {
-      dist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y),
-      mid: { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 },
-      view: { ...state.view },
-    };
-    stageInner.classList.add('dragging');
-  } else if (pointers.size === 1 && (state.tool === 'brush' || state.tool === 'eraser')) {
-    e.preventDefault();
-    const p = canvasEventToLocal(e);
-    startStroke(p.x, p.y);
-  }
-});
-canvas.addEventListener('pointermove', (e) => {
-  if (!pointers.has(e.pointerId)) return;
-  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  if (pointers.size === 2 && pinchStart) {
-    const pts = [...pointers.values()];
-    const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
-    const mid = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
-    const ratio = dist / pinchStart.dist;
-    const newScale = Math.max(1, Math.min(5, pinchStart.view.scale * ratio));
-    // Pan delta
-    const dx = mid.x - pinchStart.mid.x;
-    const dy = mid.y - pinchStart.mid.y;
-    setView(pinchStart.view.tx + dx, pinchStart.view.ty + dy, newScale);
-  } else if (pointers.size === 1 && drawing) {
-    e.preventDefault();
-    const p = canvasEventToLocal(e);
-    continueStroke(p.x, p.y);
-  }
-});
-function setView(tx, ty, newScale) {
-  state.view.tx = tx;
-  state.view.ty = ty;
-  state.view.scale = newScale;
-  applyView();
-}
-// Overwrite earlier pinch helper:
-function pointerEnd(e) {
-  pointers.delete(e.pointerId);
-  if (pointers.size < 2) { pinchStart = null; stageInner.classList.remove('dragging'); }
-  if (pointers.size === 0) endStroke();
-}
-canvas.addEventListener('pointerup', pointerEnd);
-canvas.addEventListener('pointercancel', pointerEnd);
-canvas.addEventListener('pointerleave', pointerEnd);
-
-// Wheel-zoom
-stage.addEventListener('wheel', (e) => {
-  if (!(e.ctrlKey || e.metaKey)) return;
-  e.preventDefault();
-  const rect = stage.getBoundingClientRect();
-  const cx = e.clientX - rect.left;
-  const cy = e.clientY - rect.top;
-  const newScale = Math.max(1, Math.min(5, state.view.scale * (e.deltaY < 0 ? 1.12 : 0.88)));
-  zoomAround(cx, cy, newScale);
-}, { passive: false });
-
-function zoomAround(cx, cy, newScale) {
-  // Keep the point (cx, cy) under the cursor invariant.
-  const v = state.view;
-  const localX = (cx - v.tx) / v.scale;
-  const localY = (cy - v.ty) / v.scale;
-  v.scale = newScale;
-  v.tx = cx - localX * newScale;
-  v.ty = cy - localY * newScale;
-  applyView();
-}
-// (setView defined above)
-function applyView() {
-  const v = state.view;
-  stageInner.style.transform = `translate(${v.tx}px, ${v.ty}px) scale(${v.scale})`;
-  zoomDisplay.textContent = Math.round(v.scale * 100) + '%';
-  savePersisted();
-}
-function resetView() {
-  state.view = { tx: 0, ty: 0, scale: 1 };
-  applyView();
-}
-document.getElementById('zoomIn').addEventListener('click', () => {
-  const rect = stage.getBoundingClientRect();
-  zoomAround(rect.width / 2, rect.height / 2, Math.min(5, state.view.scale * 1.25));
-});
-document.getElementById('zoomOut').addEventListener('click', () => {
-  const rect = stage.getBoundingClientRect();
-  zoomAround(rect.width / 2, rect.height / 2, Math.max(1, state.view.scale * 0.8));
-});
-document.getElementById('zoomReset').addEventListener('click', resetView);
-
-/* =========================================================================
-   Undo / Clear / Save (top)
-   ========================================================================= */
-document.getElementById('undoBtn').addEventListener('click', () => {
-  const last = state.history.pop();
-  if (!last) { showToast('没有可以撤销的'); return; }
-  if (last.kind === 'fill') last.el.setAttribute('fill', last.prevColor);
-  else if (last.kind === 'stroke') ctx.putImageData(last.imageData, 0, 0);
-  else if (last.kind === 'stamp' && last.el && last.el.parentNode) last.el.parentNode.removeChild(last.el);
-  else if (last.kind === 'stamp-removed') placeStamp(last.key, last.x, last.y, last.color, false, last.pattern, last.size);
-  savePersisted();
-});
-
-document.getElementById('clearBtn').addEventListener('click', () => {
-  if (!confirm('要清空当前这张画吗?(撤销键可以恢复之前的状态)')) return;
-  // Clear fills + canvas + stamps for current page
-  if (state._pageStates) delete state._pageStates[state.pageKey];
-  loadPage(state.pageKey, false);
-  showToast('已清空');
-});
-
-function clearCanvas(addHistory = true) {
-  if (addHistory && canvas.width && canvas.height) {
-    state.history.push({ kind: 'stroke', imageData: ctx.getImageData(0, 0, canvas.width, canvas.height) });
-  }
-  ctx.save();
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.restore();
-}
-
-document.getElementById('saveBtn').addEventListener('click', async () => {
-  // Render at stage (unscaled) size into a clean offscreen canvas
-  const rect = stage.getBoundingClientRect();
-  const w = Math.round(rect.width), h = Math.round(rect.height);
-  const out = document.createElement('canvas');
-  out.width = w * 2; out.height = h * 2;
-  const octx = out.getContext('2d');
-  octx.scale(2, 2);
-  octx.fillStyle = '#ffffff';
-  octx.fillRect(0, 0, w, h);
-
-  // Inline patterns into the SVG so the exported PNG keeps them
-  const cloned = svgEl.cloneNode(true);
-  cloned.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-  cloned.setAttribute('width', w);
-  cloned.setAttribute('height', h);
-  // Embed pattern defs into the cloned SVG
-  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-  defs.innerHTML = patternDefsContent.innerHTML;
-  cloned.insertBefore(defs, cloned.firstChild);
-
-  const svgStr = new XMLSerializer().serializeToString(cloned);
-  const svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
-  const url = URL.createObjectURL(svgBlob);
-  const img = new Image();
-  img.onload = () => {
-    octx.drawImage(img, 0, 0, w, h);
-    octx.drawImage(canvas, 0, 0, w, h);
-    URL.revokeObjectURL(url);
-    out.toBlob(blob => {
-      const a = document.createElement('a');
-      a.download = `coloring-${state.pageKey}-${Date.now()}.png`;
-      a.href = URL.createObjectURL(blob);
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-      showToast('已下载 PNG');
-    }, 'image/png');
-  };
-  img.onerror = () => showToast('保存失败,请重试');
-  img.src = url;
-});
-
-/* =========================================================================
-   Picture picker modal
-   ========================================================================= */
-function openModal(id) { document.getElementById(id).classList.add('show'); }
-function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-document.querySelectorAll('[data-close]').forEach(b => {
-  b.addEventListener('click', () => closeModal(b.dataset.close));
-});
-document.querySelectorAll('.modal').forEach(m => {
-  m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('show'); });
-});
-document.getElementById('pickPictureBtn').addEventListener('click', () => {
-  buildPictureCatTabs(); buildPictureGrid(); openModal('pictureModal');
-});
-
-function buildPictureCatTabs() {
-  pictureCatTabs.innerHTML = '';
-  const cats = [...CATEGORIES];
-  if (Object.keys(state.customPages).length) cats.push(['custom', '📁 我的图']);
-  cats.forEach(([id, name]) => {
-    const b = document.createElement('button');
-    b.className = 'cat-tab' + (id === state.pictureCat ? ' active' : '');
-    b.textContent = name;
-    b.addEventListener('click', () => {
-      state.pictureCat = id; savePersisted();
-      buildPictureCatTabs(); buildPictureGrid();
-    });
-    pictureCatTabs.appendChild(b);
-  });
-}
-function buildPictureGrid() {
-  pictureGrid.innerHTML = '';
-  Object.keys(PAGES).forEach(key => {
-    const page = PAGES[key];
-    const cat = page.custom ? 'custom' : page.category;
-    if (cat !== state.pictureCat) return;
-    const card = document.createElement('div');
-    card.className = 'picker-card' + (key === state.pageKey ? ' active' : '') + (page.custom ? ' custom' : '');
-    card.dataset.key = key;
-    if (page.custom && page.dataUrl) {
-      card.innerHTML = `<img src="${page.dataUrl}" alt="${page.name}"/><div class="pc-label">${page.name}</div>`;
-    } else {
-      card.innerHTML = `<svg viewBox="0 0 400 300">${page.svg}</svg><div class="pc-label">${page.name}</div>`;
-    }
-    card.addEventListener('click', (e) => {
-      if (page.custom) {
-        const r = card.getBoundingClientRect();
-        const x = e.clientX - r.left, y = e.clientY - r.top;
-        if (x > r.width - 30 && y < 30) {
-          delete PAGES[key]; delete state.customPages[key];
-          if (state.pageKey === key) { state.pageKey = 'blank'; loadPage('blank'); }
-          savePersisted(); buildPictureCatTabs(); buildPictureGrid();
-          return;
-        }
-      }
-      loadPage(key);
-      closeModal('pictureModal');
-    });
-    pictureGrid.appendChild(card);
-  });
-}
-
-/* =========================================================================
-   Custom image upload / URL / Google
-   ========================================================================= */
-let customCounter = 0;
-function addCustomPage(dataUrl, label) {
-  customCounter++;
-  const key = 'custom_' + Date.now() + '_' + customCounter;
-  const name = label || ('我的图 ' + customCounter);
-  PAGES[key] = { name, category: 'custom', custom: true, dataUrl };
-  state.customPages[key] = { name, dataUrl };
-  state.pictureCat = 'custom';
-  savePersisted();
-  loadPage(key);
-  closeModal('pictureModal');
-}
-document.getElementById('fileInput').addEventListener('change', (e) => {
-  const f = e.target.files && e.target.files[0];
-  if (!f) return;
-  const reader = new FileReader();
-  reader.onload = () => addCustomPage(reader.result, f.name.replace(/\.[^.]+$/, ''));
-  reader.readAsDataURL(f);
-  e.target.value = '';
-});
-document.getElementById('googleBtn').addEventListener('click', () => {
-  const q = encodeURIComponent((document.getElementById('searchInput').value || 'cute coloring page for kids') + ' coloring');
-  window.open('https://www.google.com/search?tbm=isch&q=' + q, '_blank', 'noopener');
-});
-
-/* ========== Google Custom Search ========== */
-const GCS_KEY_LS = 'cga_gcs_key';
-const GCS_CX_LS  = 'cga_gcs_cx';
-const searchInput   = document.getElementById('searchInput');
-const searchBtn     = document.getElementById('searchBtn');
-const searchResults = document.getElementById('searchResults');
-const searchCfgBtn  = document.getElementById('searchCfgBtn');
-const gcsKeyInput   = document.getElementById('gcsKeyInput');
-const gcsCxInput    = document.getElementById('gcsCxInput');
-
-searchCfgBtn.addEventListener('click', () => {
-  gcsKeyInput.value = localStorage.getItem(GCS_KEY_LS) || '';
-  gcsCxInput.value  = localStorage.getItem(GCS_CX_LS)  || '';
-  openModal('searchCfgModal');
-});
-document.getElementById('gcsSave').addEventListener('click', () => {
-  const k = (gcsKeyInput.value || '').trim();
-  const c = (gcsCxInput.value  || '').trim();
-  if (k) localStorage.setItem(GCS_KEY_LS, k); else localStorage.removeItem(GCS_KEY_LS);
-  if (c) localStorage.setItem(GCS_CX_LS, c);  else localStorage.removeItem(GCS_CX_LS);
-  closeModal('searchCfgModal');
-  showToast(k && c ? '搜图设置已保存' : '已清空设置');
-});
-document.getElementById('gcsClear').addEventListener('click', () => {
-  gcsKeyInput.value = '';
-  gcsCxInput.value = '';
-});
-
-async function doGoogleSearch() {
-  const q = (searchInput.value || '').trim();
-  if (!q) { searchInput.focus(); return; }
-  const key = localStorage.getItem(GCS_KEY_LS);
-  const cx  = localStorage.getItem(GCS_CX_LS);
-  if (!key || !cx) {
-    if (confirm('还没设置 Google API key 和 CSE ID。要现在设置吗?')) openModal('searchCfgModal');
-    return;
-  }
-  searchResults.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:14px;color:#666;font-size:14px">正在搜图…</div>';
-  try {
-    const url = `https://www.googleapis.com/customsearch/v1?key=${encodeURIComponent(key)}&cx=${encodeURIComponent(cx)}&searchType=image&safe=active&num=10&q=${encodeURIComponent(q + ' coloring page')}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    if (data.error) throw new Error((data.error.message || '搜图失败') + ' (检查 API key / cx 是否正确,以及今日额度)');
-    const items = data.items || [];
-    if (!items.length) { searchResults.innerHTML = '<div style="grid-column:1/-1;padding:14px;color:#666;text-align:center">没找到结果,换个词试试</div>'; return; }
-    renderSearchResults(items);
-  } catch (e) {
-    searchResults.innerHTML = `<div style="grid-column:1/-1;padding:14px;color:#c33;text-align:center;font-size:13px">搜图失败:${e.message}</div>`;
-  }
-}
-function renderSearchResults(items) {
-  searchResults.innerHTML = '';
-  items.forEach(it => {
-    const card = document.createElement('div');
-    card.className = 'picker-card';
-    const thumb = (it.image && it.image.thumbnailLink) ? it.image.thumbnailLink : it.link;
-    card.innerHTML = `<img src="${thumb}" alt="${(it.title||'').replace(/"/g,'&quot;')}" style="width:100%;flex:1;object-fit:contain"/><div class="pc-label">点这里载入</div>`;
-    card.addEventListener('click', async () => {
-      card.querySelector('.pc-label').textContent = '正在载入…';
-      try {
-        const res = await fetch(it.link, { mode: 'cors' });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const blob = await res.blob();
-        const reader = new FileReader();
-        reader.onload = () => addCustomPage(reader.result, it.title ? it.title.slice(0, 24) : '搜到的图');
-        reader.readAsDataURL(blob);
-      } catch (e) {
-        // CORS blocked — fall back to embedding the URL directly. Save may fail.
-        addCustomPage(it.link, it.title ? it.title.slice(0, 24) : '搜到的图');
-      }
-    });
-    searchResults.appendChild(card);
-  });
-}
-searchBtn.addEventListener('click', doGoogleSearch);
-searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') doGoogleSearch(); });
-document.getElementById('urlLoadBtn').addEventListener('click', async () => {
-  const input = document.getElementById('urlInput');
-  const url = (input.value || '').trim();
-  if (!url) return;
-  try {
-    const res = await fetch(url, { mode: 'cors' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const blob = await res.blob();
-    const reader = new FileReader();
-    reader.onload = () => { addCustomPage(reader.result, '网络图'); input.value = ''; };
-    reader.readAsDataURL(blob);
-  } catch (err) {
-    if (confirm('这张图禁止跨站加载,只能预览/上色但保存 PNG 可能失败。继续吗?')) {
-      addCustomPage(url, '网络图');
-      input.value = '';
-    }
-  }
-});
-
-/* =========================================================================
-   Stamp picker modal — opened automatically by setTool('stamp')
-   ========================================================================= */
-function buildStampCatTabs() {
-  stampCatTabs.innerHTML = '';
-  STAMP_CATEGORIES.forEach(([id, name]) => {
-    const b = document.createElement('button');
-    b.className = 'cat-tab' + (id === state.stampCat ? ' active' : '');
-    b.textContent = name;
-    b.addEventListener('click', () => {
-      state.stampCat = id; savePersisted();
-      buildStampCatTabs(); buildStampGrid();
-    });
-    stampCatTabs.appendChild(b);
-  });
-}
-function buildStampGrid() {
-  stampGrid.innerHTML = '';
-  STAMPS.forEach(([key, name, vb, body, cat]) => {
-    if (cat !== state.stampCat) return;
-    const card = document.createElement('div');
-    card.className = 'stamp-card' + (key === state.stampKey ? ' active' : '');
-    card.title = name;
-    card.innerHTML = `<svg viewBox="0 0 ${vb} ${vb}">${body.replace(/__C__/g, state.color)}</svg>`;
-    card.addEventListener('click', () => {
-      state.stampKey = (state.stampKey === key) ? null : key;
-      setTool('stamp');
-      buildStampGrid();
-      closeModal('stampModal');
-      showToast(state.stampKey ? '在画上点一下放贴纸' : '取消贴纸', 1500);
-    });
-    stampGrid.appendChild(card);
-  });
-}
-
-/* =========================================================================
-   Timer (supports single + multi-player turn timing)
-   ========================================================================= */
-// state.timer extended: { mode: 'single'|'multi', durationSec, startTs,
-//   elapsedBefore, paused, fired, playerCount, currentPlayer }
-if (!state.timer.mode) state.timer.mode = 'single';
-if (!state.timer.playerCount) state.timer.playerCount = 2;
-if (!state.timer.currentPlayer) state.timer.currentPlayer = 1;
-
-function fmtMs(ms) {
-  const s = Math.max(0, Math.floor(ms / 1000));
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-}
-function tickTimer() {
-  const t = state.timer;
-  if (t.durationSec <= 0) {
-    timerText.textContent = '关';
-    timerChip.className = 'timer-chip';
-    return;
-  }
-  const elapsed = t.paused ? t.elapsedBefore : t.elapsedBefore + (Date.now() - t.startTs);
-  const remaining = t.durationSec * 1000 - elapsed;
-  const label = (t.mode === 'multi')
-    ? `P${t.currentPlayer}/${t.playerCount} ${fmtMs(remaining)}`
-    : fmtMs(remaining);
-  timerText.textContent = label;
-  timerChip.classList.remove('warn', 'danger');
-  if (remaining <= 60_000 && remaining > 0) timerChip.classList.add('warn');
-  if (remaining <= 10_000 && remaining > 0) timerChip.classList.add('danger');
-  if (remaining <= 0 && !t.fired) {
-    t.fired = true;
-    showTimerExpired();
-    savePersisted();
-  }
-}
-setInterval(tickTimer, 500);
-
-function showTimerExpired() {
-  const t = state.timer;
-  const icon = document.getElementById('timerExpiredIcon');
-  const title = document.getElementById('timerExpiredTitle');
-  const sub = document.getElementById('timerExpiredSub');
-  const btns = document.getElementById('timerExpiredButtons');
-  if (t.mode === 'multi') {
-    const next = (t.currentPlayer % t.playerCount) + 1;
-    icon.textContent = '🔁';
-    title.textContent = '换人啦!';
-    sub.textContent = `玩家 ${t.currentPlayer} 时间到。轮到 玩家 ${next} 啦 🎨`;
-    btns.innerHTML = `<button class="primary-btn" id="timerNextPlayer">让玩家 ${next} 开始 ▶</button>`;
-    document.getElementById('timerNextPlayer').addEventListener('click', () => {
-      t.currentPlayer = next;
-      t.elapsedBefore = 0;
-      t.startTs = Date.now();
-      t.paused = false;
-      t.fired = false;
-      closeModal('timerExpiredModal');
-      tickTimer();
-      savePersisted();
-    });
-  } else {
-    icon.textContent = '⏰';
-    title.textContent = '时间到啦!';
-    sub.textContent = '画得真棒 🎉';
-    btns.innerHTML = `<button class="secondary-btn" id="timerExpired10More">再加 10 分钟</button>
-                      <button class="primary-btn" data-close="timerExpiredModal">好的</button>`;
-    document.getElementById('timerExpired10More').addEventListener('click', () => {
-      t.durationSec += 600;
-      t.fired = false;
-      closeModal('timerExpiredModal');
-      savePersisted();
-    });
-    document.querySelector('#timerExpiredButtons [data-close]')
-      .addEventListener('click', () => closeModal('timerExpiredModal'));
-  }
-  openModal('timerExpiredModal');
-}
-
-function refreshTimerModalSelections() {
-  const t = state.timer;
-  // mode tabs
-  document.querySelectorAll('.mode-tab').forEach(b =>
-    b.classList.toggle('active', b.dataset.mode === t.mode)
-  );
-  document.getElementById('singleModeBox').style.display = (t.mode === 'single') ? '' : 'none';
-  document.getElementById('multiModeBox').style.display  = (t.mode === 'multi')  ? '' : 'none';
-  // single options
-  document.querySelectorAll('#timerOptions button').forEach(b => {
-    b.classList.toggle('active', t.mode === 'single' && +b.dataset.min === t.durationSec / 60);
-  });
-  // multi options
-  document.querySelectorAll('#multiCountOpts button').forEach(b => {
-    b.classList.toggle('active', t.mode === 'multi' && +b.dataset.n === t.playerCount);
-  });
-  document.querySelectorAll('#multiTurnOpts button').forEach(b => {
-    b.classList.toggle('active', t.mode === 'multi' && +b.dataset.min === t.durationSec / 60);
-  });
-  document.getElementById('timerPauseResume').textContent = t.paused ? '▶ 继续' : '⏸ 暂停';
-}
-
-timerChip.addEventListener('click', () => {
-  refreshTimerModalSelections();
-  openModal('timerModal');
-});
-document.querySelectorAll('.mode-tab').forEach(b => {
-  b.addEventListener('click', () => {
-    state.timer.mode = b.dataset.mode;
-    if (state.timer.mode === 'multi') {
-      // Default per-turn duration if not sensible
-      if (state.timer.durationSec === 0 || state.timer.durationSec > 1800) state.timer.durationSec = 60;
-      state.timer.currentPlayer = 1;
-    }
-    state.timer.elapsedBefore = 0;
-    state.timer.startTs = Date.now();
-    state.timer.fired = false;
-    refreshTimerModalSelections();
-    tickTimer();
-    savePersisted();
-  });
-});
-document.getElementById('timerOptions').addEventListener('click', (e) => {
-  const b = e.target.closest('button'); if (!b) return;
-  state.timer.mode = 'single';
-  setTimerDuration(+b.dataset.min * 60);
-  refreshTimerModalSelections();
-});
-document.getElementById('multiCountOpts').addEventListener('click', (e) => {
-  const b = e.target.closest('button'); if (!b) return;
-  state.timer.mode = 'multi';
-  state.timer.playerCount = +b.dataset.n;
-  state.timer.currentPlayer = 1;
-  state.timer.elapsedBefore = 0;
-  state.timer.startTs = Date.now();
-  state.timer.fired = false;
-  refreshTimerModalSelections();
-  tickTimer();
-  savePersisted();
-});
-document.getElementById('multiTurnOpts').addEventListener('click', (e) => {
-  const b = e.target.closest('button'); if (!b) return;
-  state.timer.mode = 'multi';
-  setTimerDuration(+b.dataset.min * 60);
-  refreshTimerModalSelections();
-});
-function setTimerDuration(sec) {
-  state.timer.durationSec = sec;
-  state.timer.elapsedBefore = 0;
-  state.timer.startTs = Date.now();
-  state.timer.paused = false;
-  state.timer.fired = false;
-  tickTimer();
-  savePersisted();
-}
-document.getElementById('timerReset').addEventListener('click', () => {
-  if (state.timer.mode === 'multi') state.timer.currentPlayer = 1;
-  setTimerDuration(state.timer.durationSec);
-  refreshTimerModalSelections();
-  showToast('倒计时已重置');
-});
-document.getElementById('timerPauseResume').addEventListener('click', () => {
-  const t = state.timer;
-  if (t.paused) {
-    t.paused = false;
-    t.startTs = Date.now();
-  } else {
-    t.paused = true;
-    t.elapsedBefore = t.elapsedBefore + (Date.now() - t.startTs);
-  }
-  refreshTimerModalSelections();
-  savePersisted();
-});
-
-/* =========================================================================
-   Fullscreen
-   ========================================================================= */
-document.getElementById('fullscreenBtn').addEventListener('click', async () => {
-  try {
-    if (document.fullscreenElement) await document.exitFullscreen();
-    else if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
-    else if (document.documentElement.webkitRequestFullscreen) document.documentElement.webkitRequestFullscreen();
-    else showToast('当前浏览器不支持全屏 — iPad Safari 请用"分享 → 添加到主屏幕"', 3000);
-  } catch (e) { showToast('无法进入全屏: ' + e.message, 2500); }
-});
-
-/* =========================================================================
-   Help
-   ========================================================================= */
-document.getElementById('helpBtn').addEventListener('click', () => openModal('helpModal'));
-
-/* =========================================================================
-   Boot
-   ========================================================================= */
-loadPersisted();
-buildPalette();
-selectColor(state.color);
-buildPatternTiles();
-updatePatternDefs();
-updateBrushPreview();
-brushSizeInput.value = state.brushSize;
-stampSizeInput.value = state.stampSize;
-stampSizeText.textContent = state.stampSize;
-setTool(state.tool);
-loadPage(state.pageKey);
-applyView();
-tickTimer();
-
-// Auto-open the picture picker as the first screen (after help on first visit).
-function openPickerAfterBoot() {
-  buildPictureCatTabs();
-  buildPictureGrid();
-  openModal('pictureModal');
-}
-// First-run: help, then picker. Returning visit: jump straight to picker.
-try {
-  if (!localStorage.getItem('cga_help_seen')) {
-    openModal('helpModal');
-    localStorage.setItem('cga_help_seen', '1');
-    // When user closes help, open picker
-    const helpModal = document.getElementById('helpModal');
-    const obs = new MutationObserver(() => {
-      if (!helpModal.classList.contains('show')) {
-        obs.disconnect();
-        setTimeout(openPickerAfterBoot, 250);
-      }
-    });
-    obs.observe(helpModal, { attributes: true, attributeFilter: ['class'] });
-  } else {
-    setTimeout(openPickerAfterBoot, 100);
-  }
-} catch (_) { openPickerAfterBoot(); }
-
-</script>
-</body>
-</html>
+# Sanity: make sure we have 100
+assert len(TEMPLATES) == 100, f'expected 100 templates, got {len(TEMPLATES)}'
