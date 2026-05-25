@@ -84,6 +84,7 @@ cd /home/user/DrawGame && python3 build.py
 | 倒计时 | **单人 1/2/3/5/10/15 分钟 + 多人轮流**(2-5 人 × 1-15 分钟/轮 × 1-10 轮 或不限)。最后一轮结束弹"都画完啦",可"再玩一局"。换人弹窗如果被关掉(包括点背景),`MutationObserver` 自动 `advanceToNextPlayer` 防止卡住。`state.timer` { mode, durationSec, startTs, elapsedBefore, paused, fired, playerCount, currentPlayer, totalRounds, currentRound, done } |
 | 全屏 | `document.documentElement.requestFullscreen()`,iPad Safari 不支持(提示用"加到主屏幕") |
 | 保存 PNG | `saveBtn`,把 SVG + pattern defs 序列化 + canvas 叠加到离屏 canvas → toBlob |
+| 中英文切换 | header 的 🌐 按钮调 `toggleLang()` → `applyI18n()`。所有静态文字带 `data-i18n="key"` / `data-i18n-title` / `data-i18n-placeholder` 属性,运行时根据 `state.lang` 替换。动态文字用 `t(key)` / `tFmt(key, ...args)` / `catName(id)` / `templateName(key)` / `stampName(key)` / `patternName(id)`。翻译表在 build.py 顶部的 `I18N` / `CAT_NAMES` / `STAMP_CAT_NAMES` / `PATTERN_NAMES` / `TEMPLATE_NAMES_EN` / `STAMP_NAMES_EN` 几个 dict,build 时序列化进 JS。 |
 
 ## SVG 图样约定(viewBox 固定 400×300)
 

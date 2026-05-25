@@ -51,6 +51,290 @@ STAMP_CATEGORIES = [
 ]
 
 # ============================================================================
+# Internationalization (CN + EN)  — serialized into the JS at build time.
+# CN strings here are the source of truth; EN is the translation.
+# ============================================================================
+I18N = {
+  'cn': {
+    'appTitle': '🎨 画图填色',
+    'pickPicture': '选图', 'undo': '撤销', 'clear': '清空', 'save': '保存',
+    'fullscreen': '全屏', 'help': '?',
+    'colorsLabel': '颜色', 'patternsLabel': '纹路', 'patternsLabelFull': '纹路',
+    'brushSize': '画笔粗细', 'stampSize': '贴纸大小',
+    'toolFill': '填色', 'toolBrush': '画笔', 'toolEraser': '橡皮', 'toolStamp': '贴纸',
+    'zoomOutTitle': '缩小', 'zoomInTitle': '放大', 'zoomResetTitle': '复位 100%',
+    'zoomReset': '复位',
+    'pickPictureTitle': '🖼️ 选一张图',
+    'searchPlaceholder': '🔍 搜图: 熊猫 / 汽车 / 公主 …',
+    'searchBtn': '搜图', 'searchCfgTitle': '设置 Google API key',
+    'uploadBtn': '📁 上传图片', 'googleBtn': '🌐 在 Google 打开',
+    'urlPlaceholder': '或粘贴图片网址…', 'urlLoadBtn': '载入',
+    'searchSettingsTitle': '⚙️ Google 搜图设置',
+    'searchSetupNeeded': 'Google 图片本身没有公开 API。我们用 Google 的 Programmable Search Engine(每天 100 次免费)。一次性设置好,以后在上面框里输入关键词就能搜到图,点缩略图直接载入画板。',
+    'searchSetupStep1': '建一个 Programmable Search Engine: programmablesearchengine.google.com → "Add" → 把 "Search the entire web" 打开 → 在 Search settings 把 "Image search" 打开。创建后页面会显示 Search engine ID(cx)。',
+    'searchSetupStep2': '申请一个 API key: Google Cloud Console → "Enable" Custom Search API → 旁边 "Credentials" → "Create credentials" → "API key"。',
+    'searchSetupStep3': '把两个值粘到这里(只存在你这台设备的浏览器里):',
+    'gcsClear': '清空', 'gcsSave': '保存',
+    'stampPickerTitle': '⭐ 选个贴纸,然后在画上点一下放上去',
+    'stampPickerHint': '小贴士:再点一次同一个贴纸可以取消选中。贴纸用当前颜色着色。',
+    'timerTitle': '⏱ 倒计时',
+    'timerSingle': '单人', 'timerMulti': '多人轮流',
+    'timerSinglePrompt': '画多久?到时间会弹提示。',
+    'timerMultiPrompt': '每个人轮流画固定时间,时间一到提示换下一个人。',
+    'timerHowManyPlayers': '几个人?',
+    'timerHowLongTurn': '每人多长时间?',
+    'timerHowManyRounds': '玩几轮?(每人都画完算一轮)',
+    'timerMinSuffix': '分钟', 'timerPlayerSuffix': '人', 'timerRoundSuffix': '轮',
+    'timerUnlimited': '不限', 'timerOff': '关掉',
+    'timerResetBtn': '↺ 重置', 'timerPause': '⏸ 暂停', 'timerResume': '▶ 继续',
+    'timeUp': '时间到啦!', 'greatJob': '画得真棒 🎉',
+    'add10Min': '再加 10 分钟', 'add1Min': '再加 1 分钟', 'ok': '好的',
+    'switchPlayer': '换人啦!',
+    'letPlayerStart': '让玩家 {0} 开始 ▶',
+    'allDone': '都画完啦!', 'playAgain': '再玩一局', 'finish': '完成',
+    'helpTitle': '怎么玩',
+    'helpClose': '明白了!',
+    'waitingPrefix': '等开始 ',
+    'doneIcon': '🎉 完成', 'timerOff2': '关',
+    'autosaved': '已自动保存',
+    'savedPNG': '已下载 PNG',
+    'saveFailed': '保存失败,请重试',
+    'nothingToUndo': '没有可以撤销的',
+    'cleared': '已清空',
+    'confirmClear': '要清空当前这张画吗?(撤销键可以恢复之前的状态)',
+    'fullscreenNotSupported': '当前浏览器不支持全屏 — iPad Safari 请用"分享 → 添加到主屏幕"',
+    'cantFullscreen': '无法进入全屏: ',
+    'stampSelected': '在画上点一下放贴纸', 'stampDeselected': '取消贴纸',
+    'storageFull': '存储已满,旧画作可能无法保存',
+    'searchingImages': '正在搜图…',
+    'searchFailed': '搜图失败:',
+    'searchNoResults': '没找到结果,换个词试试',
+    'searchNeedKey': '还没设置 Google API key 和 CSE ID。要现在设置吗?',
+    'searchSettingsSaved': '搜图设置已保存',
+    'searchCleared': '已清空设置',
+    'searchClickToLoad': '点这里载入',
+    'searchLoading': '正在载入…',
+    'corsWarning': '这张图禁止跨站加载,只能预览/上色但保存 PNG 可能失败。继续吗?',
+    'timerResetToast': '倒计时已重置',
+    'helpIntro': '给小朋友的画图和涂色应用,在电脑/iPad/手机的浏览器里就能玩。',
+    'helpPickHead': '🖼️ 选图',
+    'helpPickBody': '点顶上 选图 按钮打开图库,有 100 张图按 🐾 动物 / 🌊 海洋 / 🦕 童话 / 🚗 交通 / 🌸 自然 / 🍰 食物 / 🎉 节日 分类。还可以上传你自己的图。',
+    'helpColorHead': '🎨 涂色',
+    'helpFill': '填色:选颜色,点图里的一块区域,自动填满。',
+    'helpPattern': '纹路:左边可以选小圆点、条纹、心形之类的纹路代替纯色。',
+    'helpBrush': '画笔:自由涂鸦,可调粗细。',
+    'helpEraser': '橡皮:擦掉画笔笔迹(不会擦掉填的颜色,要还原颜色用"撤销")。',
+    'helpStamp': '贴纸:点顶上 贴纸 选一个,在画上点一下就贴一个,可以重复贴。',
+    'helpZoomHead': '🔍 放大缩小',
+    'helpZoomBody': 'iPad 上两根手指捏合可放大缩小,捏住拖动可移动画面。电脑上用左下的 +/− 按钮,或滚轮 + Ctrl/Cmd。',
+    'helpAutosaveHead': '💾 自动保存',
+    'helpAutosaveBody': '每画一笔都自动存在浏览器里,关掉再打开,你画到一半的画会自动找回来。换图也会记住,不会丢。',
+    'helpTimerHead': '⏱ 倒计时',
+    'helpTimerBody': '顶上的 ⏱ 按钮设置画多久(默认 10 分钟),到时间会弹提示。',
+    'helpFullscreenHead': '⛶ 全屏',
+    'helpFullscreenBody': '点 ⛶ 按钮,浏览器进入全屏模式(iPad Safari 也可以从"分享 → 添加到主屏幕"装成 App)。',
+    'customColorLabel': '自选任意颜色 →',
+  },
+  'en': {
+    'appTitle': '🎨 Coloring',
+    'pickPicture': 'Pictures', 'undo': 'Undo', 'clear': 'Clear', 'save': 'Save',
+    'fullscreen': 'Fullscreen', 'help': '?',
+    'colorsLabel': 'Colors', 'patternsLabel': 'Patterns', 'patternsLabelFull': 'Patterns',
+    'brushSize': 'Brush size', 'stampSize': 'Sticker size',
+    'toolFill': 'Fill', 'toolBrush': 'Brush', 'toolEraser': 'Erase', 'toolStamp': 'Sticker',
+    'zoomOutTitle': 'Zoom out', 'zoomInTitle': 'Zoom in', 'zoomResetTitle': 'Reset 100%',
+    'zoomReset': 'Reset',
+    'pickPictureTitle': '🖼️ Pick a picture',
+    'searchPlaceholder': '🔍 Search: panda / car / princess …',
+    'searchBtn': 'Search', 'searchCfgTitle': 'Google API key settings',
+    'uploadBtn': '📁 Upload', 'googleBtn': '🌐 Open in Google',
+    'urlPlaceholder': 'Or paste image URL…', 'urlLoadBtn': 'Load',
+    'searchSettingsTitle': '⚙️ Google search settings',
+    'searchSetupNeeded': 'Google Images has no public API. We use Google\'s Programmable Search Engine (100 free queries/day). Set this up once, and you can search for pictures by keyword and load them directly into the canvas.',
+    'searchSetupStep1': 'Create a Programmable Search Engine at programmablesearchengine.google.com → "Add" → enable "Search the entire web" → in Search settings, turn on "Image search". The Search engine ID (cx) will be shown on the page.',
+    'searchSetupStep2': 'Get an API key at the Google Cloud Console → "Enable" Custom Search API → "Credentials" → "Create credentials" → "API key".',
+    'searchSetupStep3': 'Paste both values here (stored only in this device\'s browser):',
+    'gcsClear': 'Clear', 'gcsSave': 'Save',
+    'stampPickerTitle': '⭐ Pick a sticker, then tap the canvas to place it',
+    'stampPickerHint': 'Tip: tap the same sticker again to deselect. Stickers use the current color.',
+    'timerTitle': '⏱ Timer',
+    'timerSingle': 'Solo', 'timerMulti': 'Take turns',
+    'timerSinglePrompt': 'How long? Reminder will pop when time\'s up.',
+    'timerMultiPrompt': 'Each player takes a turn; reminder pops to switch players.',
+    'timerHowManyPlayers': 'How many players?',
+    'timerHowLongTurn': 'Per turn?',
+    'timerHowManyRounds': 'How many rounds? (everyone draws once per round)',
+    'timerMinSuffix': 'min', 'timerPlayerSuffix': 'players', 'timerRoundSuffix': 'rounds',
+    'timerUnlimited': '∞', 'timerOff': 'Off',
+    'timerResetBtn': '↺ Reset', 'timerPause': '⏸ Pause', 'timerResume': '▶ Resume',
+    'timeUp': 'Time\'s up!', 'greatJob': 'Great job! 🎉',
+    'add10Min': '+10 min', 'add1Min': '+1 min', 'ok': 'OK',
+    'switchPlayer': 'Switch player!',
+    'letPlayerStart': 'Player {0}\'s turn ▶',
+    'allDone': 'All done!', 'playAgain': 'Play again', 'finish': 'Finish',
+    'helpTitle': 'How to play',
+    'helpClose': 'Got it!',
+    'waitingPrefix': 'Ready ',
+    'doneIcon': '🎉 Done', 'timerOff2': 'Off',
+    'autosaved': 'Auto-saved',
+    'savedPNG': 'Saved as PNG',
+    'saveFailed': 'Save failed, please retry',
+    'nothingToUndo': 'Nothing to undo',
+    'cleared': 'Cleared',
+    'confirmClear': 'Clear this drawing? (Undo can restore it.)',
+    'fullscreenNotSupported': 'Your browser doesn\'t support fullscreen — on iPad Safari use "Share → Add to Home Screen"',
+    'cantFullscreen': 'Cannot enter fullscreen: ',
+    'stampSelected': 'Tap on the canvas to place', 'stampDeselected': 'Sticker deselected',
+    'storageFull': 'Storage full, older drawings may not save',
+    'searchingImages': 'Searching…',
+    'searchFailed': 'Search failed: ',
+    'searchNoResults': 'No results — try another word',
+    'searchNeedKey': 'No Google API key configured. Set up now?',
+    'searchSettingsSaved': 'Search settings saved',
+    'searchCleared': 'Settings cleared',
+    'searchClickToLoad': 'Tap to load',
+    'searchLoading': 'Loading…',
+    'corsWarning': 'This image blocks cross-site loading — preview/color works but saving PNG may fail. Continue?',
+    'timerResetToast': 'Timer reset',
+    'helpIntro': 'A drawing and coloring app for kids. Works in any browser on PC / iPad / phone.',
+    'helpPickHead': '🖼️ Pictures',
+    'helpPickBody': 'Tap Pictures at the top to open the gallery — 100 pictures organized in 10 categories. You can also upload your own.',
+    'helpColorHead': '🎨 Coloring',
+    'helpFill': 'Fill: pick a color, tap a region in the drawing and it fills in.',
+    'helpPattern': 'Pattern: pick a pattern (dots, stripes, hearts …) instead of a solid color.',
+    'helpBrush': 'Brush: free-form drawing, with adjustable thickness.',
+    'helpEraser': 'Eraser: tap a colored region to reset it, tap a sticker to remove, drag to erase brush strokes.',
+    'helpStamp': 'Sticker: tap Sticker at the top, pick a sticker, then tap on the canvas to place it.',
+    'helpZoomHead': '🔍 Zoom',
+    'helpZoomBody': 'iPad: pinch with two fingers to zoom and pan. Desktop: use +/− buttons or Ctrl/Cmd + scroll wheel.',
+    'helpAutosaveHead': '💾 Autosave',
+    'helpAutosaveBody': 'Every change is saved in your browser. Close and reopen and your work is still there. Each picture is saved separately.',
+    'helpTimerHead': '⏱ Timer',
+    'helpTimerBody': 'Tap the ⏱ chip at top to set how long (default 10 min). A reminder pops when time\'s up.',
+    'helpFullscreenHead': '⛶ Fullscreen',
+    'helpFullscreenBody': 'Tap the ⛶ button for browser fullscreen. (iPad Safari: use Share → Add to Home Screen.)',
+    'customColorLabel': 'Or pick any color →',
+  },
+}
+
+CAT_NAMES = {
+  'animal':  {'cn': '🐾 动物',      'en': '🐾 Animals'},
+  'ocean':   {'cn': '🌊 海洋',      'en': '🌊 Ocean'},
+  'bug':     {'cn': '🐦 鸟和昆虫',  'en': '🐦 Birds & Bugs'},
+  'people':  {'cn': '👦 小人',      'en': '👦 People'},
+  'fantasy': {'cn': '🦕 童话奇幻',  'en': '🦕 Fantasy'},
+  'vehicle': {'cn': '🚗 交通工具',  'en': '🚗 Vehicles'},
+  'building':{'cn': '🏡 房屋建筑',  'en': '🏡 Buildings'},
+  'nature':  {'cn': '🌸 自然',      'en': '🌸 Nature'},
+  'food':    {'cn': '🍰 食物',      'en': '🍰 Food'},
+  'other':   {'cn': '🎉 节日和其他','en': '🎉 Holidays & Other'},
+}
+
+STAMP_CAT_NAMES = {
+  'people':  {'cn': '👦 小人',     'en': '👦 People'},
+  'nature':  {'cn': '🌳 自然',     'en': '🌳 Nature'},
+  'animal':  {'cn': '🐶 小动物',   'en': '🐶 Animals'},
+  'thing':   {'cn': '⭐ 装饰',     'en': '⭐ Decor'},
+  'weather': {'cn': '☀️ 天气',     'en': '☀️ Weather'},
+}
+
+PATTERN_NAMES = {
+  'solid':    {'cn': '纯色',     'en': 'Solid'},
+  'dots':     {'cn': '小圆点',   'en': 'Dots'},
+  'bigdots':  {'cn': '大圆点',   'en': 'Big dots'},
+  'stripes':  {'cn': '斜条纹',   'en': 'Stripes'},
+  'hstripes': {'cn': '横条纹',   'en': 'Lines'},
+  'grid':     {'cn': '网格',     'en': 'Grid'},
+  'plaid':    {'cn': '格子',     'en': 'Plaid'},
+  'zigzag':   {'cn': '锯齿',     'en': 'Zigzag'},
+  'chevron':  {'cn': 'V 形',     'en': 'Chevron'},
+  'hearts':   {'cn': '小爱心',   'en': 'Hearts'},
+  'stars':    {'cn': '小星星',   'en': 'Stars'},
+  'triangles':{'cn': '三角形',   'en': 'Triangles'},
+  'bricks':   {'cn': '砖块',     'en': 'Bricks'},
+  'cross':    {'cn': '十字',     'en': 'Crosses'},
+  'scales':   {'cn': '鱼鳞',     'en': 'Scales'},
+  'waves':    {'cn': '波浪',     'en': 'Waves'},
+  'bubbles':  {'cn': '泡泡',     'en': 'Bubbles'},
+  'flowers':  {'cn': '小花',     'en': 'Flowers'},
+  'leopard':  {'cn': '豹纹',     'en': 'Leopard'},
+  'arrows':   {'cn': '箭头',     'en': 'Arrows'},
+}
+
+# English template names (Chinese is the default from templates.py)
+TEMPLATE_NAMES_EN = {
+  # Animals
+  'panda': '🐼 Panda eating bamboo', 'lion': '🦁 Little lion', 'tiger': '🐯 Tiger',
+  'penguin': '🐧 Penguin', 'cat': '🐱 Cat with yarn ball', 'dog': '🐶 Dog with bone',
+  'rabbit': '🐰 Rabbit with carrot', 'fox': '🦊 Fox', 'elephant': '🐘 Elephant bathing',
+  'owl': '🦉 Owl',
+  # Ocean
+  'ocean': '🐠 Underwater scene', 'whale': '🐋 Whale', 'octopus': '🐙 Octopus',
+  'dolphin': '🐬 Dolphin jumping', 'crab': '🦀 Crab', 'jellyfish': '🪼 Jellyfish',
+  'shark': '🦈 Shark', 'seahorse': '🌊 Seahorse', 'lobster': '🦞 Lobster',
+  'scuba': '🤿 Scuba diver',
+  # Fantasy
+  'dinosaur': '🦖 T-Rex', 'dragon': '🐲 Dragon', 'unicorn': '🦄 Rainbow unicorn',
+  'mermaid': '🧜‍♀️ Mermaid', 'castle': '🏰 Castle', 'princess': '👸 Princess',
+  'robot': '🤖 Robot', 'witch': '🧙‍♀️ Witch on broom', 'fairy': '🧚 Little fairy',
+  'genie_lamp': '🪔 Magic lamp',
+  # Vehicles
+  'car': '🚗 Car', 'train': '🚂 Train', 'airplane': '✈️ Airplane',
+  'rocket': '🚀 Rocket', 'pirate': '🏴‍☠️ Pirate ship', 'fire_truck': '🚒 Fire truck',
+  'balloon': '🎈 Hot air balloon', 'bicycle': '🚲 Bicycle', 'sailboat': '⛵ Sailboat',
+  'helicopter': '🚁 Helicopter',
+  # Nature
+  'garden': '🌻 Garden', 'tree': '🌳 Apple tree', 'rainbow': '🌈 Rainbow',
+  'beach': '🏖️ Beach', 'mountain': '🏔️ Mountains & lake', 'snowman': '⛄ Snowman',
+  'butterfly_meadow': '🦋 Butterfly meadow', 'cactus': '🌵 Cactus',
+  'palm_island': '🏝️ Palm island', 'mushroom_garden': '🍄 Mushrooms',
+  # Food
+  'cake': '🎂 Birthday cake', 'icecream': '🍨 Ice cream sundae', 'pizza': '🍕 Pizza',
+  'fruit': '🍎 Fruit bowl', 'donut': '🍩 Donut', 'hamburger': '🍔 Burger',
+  'candy': '🍬 Candy pile', 'cookies': '🍪 Chocolate cookies',
+  'watermelon': '🍉 Watermelon', 'lollipop': '🍭 Lollipops',
+  # Other
+  'christmas': '🎄 Christmas tree', 'halloween': '🎃 Halloween pumpkin',
+  'easter': '🐰 Easter eggs', 'party': '🎉 Birthday party',
+  'house': '🏡 House and garden', 'space': '🪐 Space scene', 'blank': '⬜ Blank',
+  'gift_stack': '🎁 Gift stack', 'fireworks': '🎆 Fireworks',
+  'balloon_bunch': '🎈 Balloon bunch',
+  # People
+  'family': '👨‍👩‍👧 Family of four', 'baby': '👶 Baby',
+  'chef': '👨‍🍳 Chef', 'doctor': '👩‍⚕️ Doctor', 'fireman': '👨‍🚒 Firefighter',
+  'astronaut': '👨‍🚀 Astronaut', 'superhero': '🦸 Superhero',
+  'painter': '🎨 Painter', 'ballerina': '🩰 Ballerina', 'prince': '🤴 Prince',
+  # Bug/Birds
+  'bird_perched': '🐦 Little bird', 'bee_flower': '🐝 Bee', 'dragonfly': '🪲 Dragonfly',
+  'ladybug_leaf': '🐞 Ladybug', 'snail': '🐌 Snail', 'frog': '🐸 Frog',
+  'spider_web': '🕷️ Spider web', 'hummingbird': '🐦 Hummingbird',
+  'caterpillar': '🐛 Caterpillar', 'parrot': '🦜 Parrot',
+  # Buildings
+  'village_house': '🏠 Cottage', 'school': '🏫 School', 'lighthouse': '🗼 Lighthouse',
+  'barn': '🏚️ Barn', 'igloo': '🛖 Igloo', 'treehouse': '🌳 Treehouse',
+  'skyscraper': '🏢 Skyscraper', 'windmill': '🏭 Windmill', 'church': '⛪ Church',
+  'hut': '🛖 Thatched hut',
+}
+
+STAMP_NAMES_EN = {
+  # People
+  'kid_boy': 'Boy', 'kid_girl': 'Girl', 'princess_h': 'Princess',
+  'knight_h': 'Knight', 'pirate_h': 'Pirate', 'family': 'Family',
+  # Nature
+  'grass': 'Grass', 'small_tree': 'Tree', 'small_flower': 'Flower',
+  'bush': 'Bush', 'mushroom': 'Mushroom', 'leaf': 'Leaf',
+  # Animals
+  'dog_small': 'Dog', 'cat_small': 'Cat', 'bird': 'Bird',
+  'fish_small': 'Fish', 'butterfly': 'Butterfly', 'ladybug': 'Ladybug',
+  # Things
+  'star': 'Star', 'heart': 'Heart', 'balloon_s': 'Balloon',
+  'gift': 'Gift', 'crown': 'Crown', 'sparkle': 'Sparkle',
+  # Weather
+  'sun': 'Sun', 'moon': 'Moon', 'cloud': 'Cloud',
+  'rainbow_s': 'Rainbow', 'snowflake': 'Snowflake', 'raindrop': 'Raindrop',
+}
+
+# ============================================================================
 # Fill patterns
 # ============================================================================
 # Each pattern is an SVG <pattern> definition. Filled with current accent color
@@ -708,38 +992,39 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
 HTML_BODY = r"""<body>
 
 <header>
-  <h1>🎨 画图填色</h1>
-  <div class="timer-chip" id="timerChip" title="点击设置倒计时">⏱ <span id="timerText">10:00</span></div>
+  <h1 data-i18n="appTitle">🎨 画图填色</h1>
+  <div class="timer-chip" id="timerChip" data-i18n-title="timerTitle" title="点击设置倒计时">⏱ <span id="timerText">10:00</span></div>
   <div class="header-spacer"></div>
   <div class="header-btns">
-    <button class="big-btn" id="pickPictureBtn"><span class="btn-icon">🖼️</span><span class="btn-label">选图</span></button>
-    <button class="big-btn" id="undoBtn"><span class="btn-icon">↶</span><span class="btn-label">撤销</span></button>
-    <button class="big-btn danger" id="clearBtn"><span class="btn-icon">🗑</span><span class="btn-label">清空</span></button>
-    <button class="big-btn" id="saveBtn"><span class="btn-icon">💾</span><span class="btn-label">保存</span></button>
-    <button class="big-btn" id="fullscreenBtn"><span class="btn-icon">⛶</span><span class="btn-label">全屏</span></button>
+    <button class="big-btn" id="pickPictureBtn"><span class="btn-icon">🖼️</span><span class="btn-label" data-i18n="pickPicture">选图</span></button>
+    <button class="big-btn" id="undoBtn"><span class="btn-icon">↶</span><span class="btn-label" data-i18n="undo">撤销</span></button>
+    <button class="big-btn danger" id="clearBtn"><span class="btn-icon">🗑</span><span class="btn-label" data-i18n="clear">清空</span></button>
+    <button class="big-btn" id="saveBtn"><span class="btn-icon">💾</span><span class="btn-label" data-i18n="save">保存</span></button>
+    <button class="big-btn" id="fullscreenBtn"><span class="btn-icon">⛶</span><span class="btn-label" data-i18n="fullscreen">全屏</span></button>
+    <button class="big-btn" id="langToggle" title="Switch language / 切换语言"><span class="btn-icon">🌐</span><span class="btn-label">EN</span></button>
     <button class="big-btn" id="helpBtn">?</button>
   </div>
 </header>
 
 <main>
   <aside class="palette">
-    <button class="pop-btn" id="openColorPop" title="颜色">
+    <button class="pop-btn" id="openColorPop" data-i18n-title="colorsLabel" title="颜色">
       <span class="pop-swatch" id="curColorSwatch"></span>
-      <span class="pop-label">颜色</span>
+      <span class="pop-label" data-i18n="colorsLabel">颜色</span>
     </button>
-    <button class="pop-btn" id="openPatternPop" title="纹路">
+    <button class="pop-btn" id="openPatternPop" data-i18n-title="patternsLabel" title="纹路">
       <span class="pop-swatch pop-swatch-pat"><svg viewBox="0 0 30 30" id="curPatternPreview"><rect width="30" height="30" fill="#4ab3ff"/></svg></span>
       <span class="pop-label" id="curPatternName">纯色</span>
     </button>
     <div class="palette-section">
-      <h3>画笔粗细 <span id="brushSizeText" style="float:right;color:#555">10</span></h3>
+      <h3><span data-i18n="brushSize">画笔粗细</span> <span id="brushSizeText" style="float:right;color:#555">10</span></h3>
       <div class="brush-row">
         <input type="range" id="brushSize" min="3" max="40" value="10" />
         <div class="brush-preview" id="brushPreview"><div class="brush-dot"></div></div>
       </div>
     </div>
     <div class="palette-section" id="stampSizeBox" style="display:none">
-      <h3>贴纸大小 <span id="stampSizeText" style="float:right;color:#555">50</span></h3>
+      <h3><span data-i18n="stampSize">贴纸大小</span> <span id="stampSizeText" style="float:right;color:#555">50</span></h3>
       <div class="brush-row">
         <input type="range" id="stampSize" min="20" max="160" value="50" />
       </div>
@@ -758,27 +1043,27 @@ HTML_BODY = r"""<body>
       <div class="tools" id="tools">
         <button class="tool active" data-tool="fill">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l9 9-7 7a3 3 0 01-4-4l2-2"/><path d="M19 14c0 2-2 4-2 4s-2-2-2-4a2 2 0 014 0z" fill="currentColor" stroke="none"/></svg>
-          填色
+          <span data-i18n="toolFill">填色</span>
         </button>
         <button class="tool" data-tool="brush">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21s4-1 6-3l9-9-3-3-9 9c-2 2-3 6-3 6z"/></svg>
-          画笔
+          <span data-i18n="toolBrush">画笔</span>
         </button>
         <button class="tool" data-tool="eraser">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6 6h12M16 3l5 5L9 20H3v-6z"/></svg>
-          橡皮
+          <span data-i18n="toolEraser">橡皮</span>
         </button>
         <button class="tool" data-tool="stamp">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2.5 5 5.5.8-4 4 .9 5.5L12 16l-4.9 2.3.9-5.5-4-4 5.5-.8z"/></svg>
-          贴纸
+          <span data-i18n="toolStamp">贴纸</span>
         </button>
       </div>
 
       <div class="zoom-tools">
-        <button class="tool" id="zoomOut" title="缩小"><span>−</span></button>
+        <button class="tool" id="zoomOut" data-i18n-title="zoomOutTitle" title="缩小"><span>−</span></button>
         <div class="zoom-display" id="zoomDisplay">100%</div>
-        <button class="tool" id="zoomIn" title="放大"><span>+</span></button>
-        <button class="tool" id="zoomReset" title="复位 100%"><span style="font-size:11px;font-weight:700">复位</span></button>
+        <button class="tool" id="zoomIn" data-i18n-title="zoomInTitle" title="放大"><span>+</span></button>
+        <button class="tool" id="zoomReset" data-i18n-title="zoomResetTitle" title="复位 100%"><span style="font-size:11px;font-weight:700" data-i18n="zoomReset">复位</span></button>
       </div>
     </div>
   </div>
@@ -788,25 +1073,25 @@ HTML_BODY = r"""<body>
 <div class="modal" id="pictureModal" role="dialog" aria-modal="true">
   <div class="modal-box">
     <div class="modal-header">
-      <h2>🖼️ 选一张图</h2>
+      <h2 data-i18n="pickPictureTitle">🖼️ 选一张图</h2>
       <button class="modal-close-x" data-close="pictureModal">×</button>
     </div>
     <div class="modal-body">
       <!-- Search row: Google Custom Search API (user provides key/cx) -->
       <div class="search-row">
-        <input id="searchInput" type="search" placeholder="🔍 搜图: 熊猫 / 汽车 / 公主 …" />
-        <button class="ghost-btn primary-btn" id="searchBtn">搜图</button>
-        <button class="ghost-btn" id="searchCfgBtn" title="设置 Google API key">⚙️</button>
+        <input id="searchInput" type="search" data-i18n-placeholder="searchPlaceholder" placeholder="🔍 搜图: 熊猫 / 汽车 / 公主 …" />
+        <button class="ghost-btn primary-btn" id="searchBtn" data-i18n="searchBtn">搜图</button>
+        <button class="ghost-btn" id="searchCfgBtn" data-i18n-title="searchCfgTitle" title="设置 Google API key">⚙️</button>
       </div>
       <div id="searchResults" class="picker-grid" style="margin-bottom:10px"></div>
 
       <div class="upload-row">
-        <label class="ghost-btn">📁 上传图片
+        <label class="ghost-btn"><span data-i18n="uploadBtn">📁 上传图片</span>
           <input id="fileInput" type="file" accept="image/*" style="display:none" />
         </label>
-        <button class="ghost-btn" id="googleBtn">🌐 在 Google 打开</button>
-        <input id="urlInput" type="url" placeholder="或粘贴图片网址…" />
-        <button class="ghost-btn" id="urlLoadBtn">载入</button>
+        <button class="ghost-btn" id="googleBtn" data-i18n="googleBtn">🌐 在 Google 打开</button>
+        <input id="urlInput" type="url" data-i18n-placeholder="urlPlaceholder" placeholder="或粘贴图片网址…" />
+        <button class="ghost-btn" id="urlLoadBtn" data-i18n="urlLoadBtn">载入</button>
       </div>
       <div class="cat-tabs" id="pictureCatTabs"></div>
       <div class="picker-grid" id="pictureGrid"></div>
@@ -818,25 +1103,15 @@ HTML_BODY = r"""<body>
 <div class="modal" id="searchCfgModal" role="dialog" aria-modal="true">
   <div class="modal-box" style="max-width:520px">
     <div class="modal-header">
-      <h2>⚙️ Google 搜图设置</h2>
+      <h2 data-i18n="searchSettingsTitle">⚙️ Google 搜图设置</h2>
       <button class="modal-close-x" data-close="searchCfgModal">×</button>
     </div>
     <div class="modal-body">
-      <p style="font-size:14px;line-height:1.6;color:#444">
-        Google 图片本身没有公开 API。我们用 Google 的 <b>Programmable Search Engine</b>(每天 100 次免费)。
-        一次性设置好,以后在上面框里输入关键词就能搜到图,点缩略图直接载入画板。
-      </p>
+      <p data-i18n="searchSetupNeeded" style="font-size:14px;line-height:1.6;color:#444"></p>
       <ol style="font-size:14px;line-height:1.7;color:#444">
-        <li>建一个 <b>Programmable Search Engine</b>:
-          <a href="https://programmablesearchengine.google.com/" target="_blank" rel="noopener">programmablesearchengine.google.com</a>
-          → "Add" → 把 "Search the entire web" 打开 → 在 Search settings 把 "Image search" 打开。
-          创建后页面会显示 <b>Search engine ID(cx)</b>。
-        </li>
-        <li>申请一个 API key:
-          <a href="https://console.cloud.google.com/apis/library/customsearch.googleapis.com" target="_blank" rel="noopener">Google Cloud Console</a>
-          → "Enable" Custom Search API → 旁边 "Credentials" → "Create credentials" → "API key"。
-        </li>
-        <li>把两个值粘到这里(只存在你这台设备的浏览器里):</li>
+        <li data-i18n="searchSetupStep1"></li>
+        <li data-i18n="searchSetupStep2"></li>
+        <li data-i18n="searchSetupStep3"></li>
       </ol>
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px">
         <input id="gcsKeyInput" type="text" placeholder="API Key" autocomplete="off" style="padding:10px;border:1px solid #dde3ea;border-radius:8px;font-size:14px"/>
@@ -844,8 +1119,8 @@ HTML_BODY = r"""<body>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="secondary-btn" id="gcsClear">清空</button>
-      <button class="primary-btn" id="gcsSave">保存</button>
+      <button class="secondary-btn" id="gcsClear" data-i18n="gcsClear">清空</button>
+      <button class="primary-btn" id="gcsSave" data-i18n="gcsSave">保存</button>
     </div>
   </div>
 </div>
@@ -854,13 +1129,13 @@ HTML_BODY = r"""<body>
 <div class="modal" id="stampModal" role="dialog" aria-modal="true">
   <div class="modal-box">
     <div class="modal-header">
-      <h2>⭐ 选个贴纸,然后在画上点一下放上去</h2>
+      <h2 data-i18n="stampPickerTitle">⭐ 选个贴纸,然后在画上点一下放上去</h2>
       <button class="modal-close-x" data-close="stampModal">×</button>
     </div>
     <div class="modal-body">
       <div class="cat-tabs" id="stampCatTabs"></div>
       <div class="stamp-grid" id="stampGrid"></div>
-      <div class="hint">小贴士:再点一次同一个贴纸可以取消选中。贴纸用当前颜色着色。</div>
+      <div class="hint" data-i18n="stampPickerHint">小贴士:再点一次同一个贴纸可以取消选中。贴纸用当前颜色着色。</div>
     </div>
   </div>
 </div>
@@ -869,14 +1144,14 @@ HTML_BODY = r"""<body>
 <div class="modal" id="colorPop" role="dialog" aria-modal="true">
   <div class="modal-box" style="max-width:480px">
     <div class="modal-header">
-      <h2>🎨 选颜色</h2>
+      <h2>🎨 <span data-i18n="colorsLabel">颜色</span></h2>
       <button class="modal-close-x" data-close="colorPop">×</button>
     </div>
     <div class="modal-body">
       <div class="swatches" id="swatches"></div>
       <div class="custom-color" style="margin-top:14px;padding-top:14px;border-top:1px solid #eef1f5">
         <input type="color" id="customColor" value="#4ab3ff" />
-        <span style="font-size:14px;color:#555">自选任意颜色 →</span>
+        <span style="font-size:14px;color:#555" data-i18n="customColorLabel">自选任意颜色 →</span>
       </div>
     </div>
   </div>
@@ -886,7 +1161,7 @@ HTML_BODY = r"""<body>
 <div class="modal" id="patternPop" role="dialog" aria-modal="true">
   <div class="modal-box" style="max-width:520px">
     <div class="modal-header">
-      <h2>🎭 选纹路</h2>
+      <h2>🎭 <span data-i18n="patternsLabel">纹路</span></h2>
       <button class="modal-close-x" data-close="patternPop">×</button>
     </div>
     <div class="modal-body">
@@ -899,60 +1174,60 @@ HTML_BODY = r"""<body>
 <div class="modal" id="timerModal" role="dialog" aria-modal="true">
   <div class="modal-box" style="max-width:460px">
     <div class="modal-header">
-      <h2>⏱ 倒计时</h2>
+      <h2 data-i18n="timerTitle">⏱ 倒计时</h2>
       <button class="modal-close-x" data-close="timerModal">×</button>
     </div>
     <div class="modal-body">
       <div style="display:flex;gap:6px;margin-bottom:14px">
-        <button class="mode-tab active" data-mode="single">单人</button>
-        <button class="mode-tab" data-mode="multi">多人轮流</button>
+        <button class="mode-tab active" data-mode="single" data-i18n="timerSingle">单人</button>
+        <button class="mode-tab" data-mode="multi" data-i18n="timerMulti">多人轮流</button>
       </div>
 
       <div id="singleModeBox">
-        <p style="margin:0 0 6px;color:#555">画多久?到时间会弹提示。</p>
+        <p data-i18n="timerSinglePrompt" style="margin:0 0 6px;color:#555">画多久?到时间会弹提示。</p>
         <div class="timer-options" id="timerOptions">
-          <button data-min="1">1分钟</button>
-          <button data-min="2">2分钟</button>
-          <button data-min="3">3分钟</button>
-          <button data-min="5">5分钟</button>
-          <button data-min="10">10分钟</button>
-          <button data-min="15">15分钟</button>
-          <button data-min="0">关掉</button>
+          <button data-min="1">1<span data-i18n="timerMinSuffix">分钟</span></button>
+          <button data-min="2">2<span data-i18n="timerMinSuffix">分钟</span></button>
+          <button data-min="3">3<span data-i18n="timerMinSuffix">分钟</span></button>
+          <button data-min="5">5<span data-i18n="timerMinSuffix">分钟</span></button>
+          <button data-min="10">10<span data-i18n="timerMinSuffix">分钟</span></button>
+          <button data-min="15">15<span data-i18n="timerMinSuffix">分钟</span></button>
+          <button data-min="0" data-i18n="timerOff">关掉</button>
         </div>
       </div>
 
       <div id="multiModeBox" style="display:none">
-        <p style="margin:0 0 6px;color:#555">每个人轮流画固定时间,时间一到提示换下一个人。</p>
-        <h4 style="margin:10px 0 4px;font-size:13px;color:#333">几个人?</h4>
+        <p data-i18n="timerMultiPrompt" style="margin:0 0 6px;color:#555">每个人轮流画固定时间,时间一到提示换下一个人。</p>
+        <h4 data-i18n="timerHowManyPlayers" style="margin:10px 0 4px;font-size:13px;color:#333">几个人?</h4>
         <div class="timer-options" id="multiCountOpts">
-          <button data-n="2">2 人</button>
-          <button data-n="3">3 人</button>
-          <button data-n="4">4 人</button>
-          <button data-n="5">5 人</button>
+          <button data-n="2">2 <span data-i18n="timerPlayerSuffix">人</span></button>
+          <button data-n="3">3 <span data-i18n="timerPlayerSuffix">人</span></button>
+          <button data-n="4">4 <span data-i18n="timerPlayerSuffix">人</span></button>
+          <button data-n="5">5 <span data-i18n="timerPlayerSuffix">人</span></button>
         </div>
-        <h4 style="margin:14px 0 4px;font-size:13px;color:#333">每人多长时间?</h4>
+        <h4 data-i18n="timerHowLongTurn" style="margin:14px 0 4px;font-size:13px;color:#333">每人多长时间?</h4>
         <div class="timer-options" id="multiTurnOpts">
-          <button data-min="1">1分钟</button>
-          <button data-min="2">2分钟</button>
-          <button data-min="3">3分钟</button>
-          <button data-min="5">5分钟</button>
-          <button data-min="10">10分钟</button>
-          <button data-min="15">15分钟</button>
+          <button data-min="1">1<span data-i18n="timerMinSuffix">分钟</span></button>
+          <button data-min="2">2<span data-i18n="timerMinSuffix">分钟</span></button>
+          <button data-min="3">3<span data-i18n="timerMinSuffix">分钟</span></button>
+          <button data-min="5">5<span data-i18n="timerMinSuffix">分钟</span></button>
+          <button data-min="10">10<span data-i18n="timerMinSuffix">分钟</span></button>
+          <button data-min="15">15<span data-i18n="timerMinSuffix">分钟</span></button>
         </div>
-        <h4 style="margin:14px 0 4px;font-size:13px;color:#333">玩几轮?(每人都画完算一轮)</h4>
+        <h4 data-i18n="timerHowManyRounds" style="margin:14px 0 4px;font-size:13px;color:#333">玩几轮?(每人都画完算一轮)</h4>
         <div class="timer-options" id="multiRoundOpts">
-          <button data-r="1">1 轮</button>
-          <button data-r="2">2 轮</button>
-          <button data-r="3">3 轮</button>
-          <button data-r="5">5 轮</button>
-          <button data-r="10">10 轮</button>
-          <button data-r="0">不限</button>
+          <button data-r="1">1 <span data-i18n="timerRoundSuffix">轮</span></button>
+          <button data-r="2">2 <span data-i18n="timerRoundSuffix">轮</span></button>
+          <button data-r="3">3 <span data-i18n="timerRoundSuffix">轮</span></button>
+          <button data-r="5">5 <span data-i18n="timerRoundSuffix">轮</span></button>
+          <button data-r="10">10 <span data-i18n="timerRoundSuffix">轮</span></button>
+          <button data-r="0" data-i18n="timerUnlimited">不限</button>
         </div>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="secondary-btn" id="timerReset">↺ 重置</button>
-      <button class="primary-btn" id="timerPauseResume">⏸ 暂停</button>
+      <button class="secondary-btn" id="timerReset" data-i18n="timerResetBtn">↺ 重置</button>
+      <button class="primary-btn" id="timerPauseResume" data-i18n="timerPause">⏸ 暂停</button>
     </div>
   </div>
 </div>
@@ -976,32 +1251,32 @@ HTML_BODY = r"""<body>
 <div class="modal" id="helpModal" role="dialog" aria-modal="true">
   <div class="modal-box" style="max-width:560px">
     <div class="modal-header">
-      <h2>怎么玩</h2>
+      <h2 data-i18n="helpTitle">怎么玩</h2>
       <button class="modal-close-x" data-close="helpModal">×</button>
     </div>
     <div class="modal-body help-body">
-      <p>给小朋友的画图涂色游戏,在电脑/iPad/手机的浏览器里就能玩。</p>
-      <h3>🖼️ 选图</h3>
-      <p>点顶上 <b>选图</b> 按钮打开图库,有 50 张图按 🐾 动物 / 🌊 海洋 / 🦕 童话 / 🚗 交通 / 🌸 自然 / 🍰 食物 / 🎉 节日 分类。还可以上传你自己的图。</p>
-      <h3>🎨 涂色</h3>
+      <p data-i18n="helpIntro"></p>
+      <h3 data-i18n="helpPickHead"></h3>
+      <p data-i18n="helpPickBody"></p>
+      <h3 data-i18n="helpColorHead"></h3>
       <ul>
-        <li><b>填色</b>:选颜色,点图里的一块区域,自动填满。</li>
-        <li><b>纹路</b>:左边可以选小圆点、条纹、心形之类的纹路代替纯色。</li>
-        <li><b>画笔</b>:自由涂鸦,可调粗细。</li>
-        <li><b>橡皮</b>:擦掉画笔笔迹(不会擦掉填的颜色,要还原颜色用"撤销")。</li>
-        <li><b>贴纸</b>:点顶上 <b>贴纸</b> 选一个,在画上点一下就贴一个,可以重复贴。</li>
+        <li data-i18n="helpFill"></li>
+        <li data-i18n="helpPattern"></li>
+        <li data-i18n="helpBrush"></li>
+        <li data-i18n="helpEraser"></li>
+        <li data-i18n="helpStamp"></li>
       </ul>
-      <h3>🔍 放大缩小</h3>
-      <p>iPad 上两根手指捏合可放大缩小,捏住拖动可移动画面。电脑上用左下的 +/− 按钮,或滚轮 + Ctrl/Cmd。</p>
-      <h3>💾 自动保存</h3>
-      <p>每画一笔都自动存在浏览器里,关掉再打开,你画到一半的画会自动找回来。换图也会记住,不会丢。</p>
-      <h3>⏱ 倒计时</h3>
-      <p>顶上的 ⏱ 按钮设置画多久(默认 10 分钟),到时间会弹提示。</p>
-      <h3>⛶ 全屏</h3>
-      <p>点 ⛶ 按钮,浏览器进入全屏模式(iPad Safari 也可以从"分享 → 添加到主屏幕"装成 App)。</p>
+      <h3 data-i18n="helpZoomHead"></h3>
+      <p data-i18n="helpZoomBody"></p>
+      <h3 data-i18n="helpAutosaveHead"></h3>
+      <p data-i18n="helpAutosaveBody"></p>
+      <h3 data-i18n="helpTimerHead"></h3>
+      <p data-i18n="helpTimerBody"></p>
+      <h3 data-i18n="helpFullscreenHead"></h3>
+      <p data-i18n="helpFullscreenBody"></p>
     </div>
     <div class="modal-footer">
-      <button class="primary-btn" data-close="helpModal">明白了!</button>
+      <button class="primary-btn" data-close="helpModal" data-i18n="helpClose">明白了!</button>
     </div>
   </div>
 </div>
@@ -1012,7 +1287,7 @@ HTML_BODY = r"""<body>
 </svg>
 
 <!-- Toast -->
-<div class="toast" id="toast">已自动保存</div>
+<div class="toast" id="toast" data-i18n="autosaved">已自动保存</div>
 """
 
 JS = r"""<script>
@@ -1027,6 +1302,78 @@ const STAMP_CATEGORIES = __STAMP_CATEGORIES__;
 const PATTERNS = __PATTERNS__;
 const PAGES = __PAGES__;
 const STAMPS = __STAMPS__;
+
+/* =========================================================================
+   Internationalization (中文 / English)
+   ========================================================================= */
+const I18N = __I18N__;
+const CAT_NAMES = __CAT_NAMES__;        // { id: { cn, en } }
+const STAMP_CAT_NAMES = __STAMP_CAT_NAMES__;
+const PATTERN_NAMES = __PATTERN_NAMES__;
+const TEMPLATE_NAMES_EN = __TEMPLATE_NAMES_EN__;
+const STAMP_NAMES_EN = __STAMP_NAMES__;
+
+function t(key) {
+  return (I18N[state.lang] && I18N[state.lang][key]) || I18N.cn[key] || key;
+}
+function tFmt(key, ...args) {
+  let s = t(key);
+  args.forEach((a, i) => { s = s.replace('{' + i + '}', a); });
+  return s;
+}
+function catName(id) {
+  if (id === 'custom') return state.lang === 'en' ? '📁 My pictures' : '📁 我的图';
+  return (CAT_NAMES[id] && CAT_NAMES[id][state.lang]) || id;
+}
+function stampCatName(id) {
+  return (STAMP_CAT_NAMES[id] && STAMP_CAT_NAMES[id][state.lang]) || id;
+}
+function patternName(id) {
+  return (PATTERN_NAMES[id] && PATTERN_NAMES[id][state.lang]) || id;
+}
+function templateName(key) {
+  const page = PAGES[key];
+  if (!page) return key;
+  if (state.lang === 'en' && TEMPLATE_NAMES_EN[key]) return TEMPLATE_NAMES_EN[key];
+  return page.name;
+}
+function stampName(key) {
+  if (state.lang === 'en' && STAMP_NAMES_EN[key]) return STAMP_NAMES_EN[key];
+  const e = STAMPS.find(s => s[0] === key);
+  return e ? e[1] : key;
+}
+function applyI18n() {
+  // Walk every element with data-i18n and set its textContent
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (key) el.textContent = t(key);
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    const key = el.dataset.i18nTitle;
+    if (key) el.setAttribute('title', t(key));
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.dataset.i18nPlaceholder;
+    if (key) el.setAttribute('placeholder', t(key));
+  });
+  // Lang toggle button always shows the OTHER language
+  const langBtn = document.querySelector('#langToggle .btn-label');
+  if (langBtn) langBtn.textContent = state.lang === 'cn' ? 'EN' : '中';
+  // Refresh dynamic content
+  if (typeof buildPictureCatTabs === 'function') buildPictureCatTabs();
+  if (typeof buildPictureGrid === 'function') buildPictureGrid();
+  if (typeof buildStampCatTabs === 'function') buildStampCatTabs();
+  if (typeof buildStampGrid === 'function') buildStampGrid();
+  if (typeof buildPatternTiles === 'function') buildPatternTiles();
+  if (typeof updateCurrentPatternPreview === 'function') updateCurrentPatternPreview();
+  // Document language attribute (so font rendering and accessibility line up)
+  document.documentElement.lang = state.lang === 'en' ? 'en' : 'zh-CN';
+}
+function toggleLang() {
+  state.lang = state.lang === 'cn' ? 'en' : 'cn';
+  applyI18n();
+  savePersisted();
+}
 
 /* =========================================================================
    State + persistence
@@ -1044,6 +1391,7 @@ const state = {
   stampKey: null,
   view: { tx: 0, ty: 0, scale: 1 },
   firstPickDone: false,
+  lang: 'cn',  // 'cn' or 'en'
   history: [],   // session-only undo stack
   timer: {
     durationSec: 600,
@@ -1077,6 +1425,7 @@ function loadPersisted() {
       view: data.view || state.view,
       customPages: data.customPages || {},
       firstPickDone: !!data.firstPickDone,
+      lang: data.lang === 'en' ? 'en' : 'cn',
     });
     if (data.timer) {
       Object.assign(state.timer, data.timer);
@@ -1104,12 +1453,13 @@ const savePersisted = debounce(() => {
       view: state.view, customPages: state.customPages,
       timer: state.timer, pageStates,
       firstPickDone: state.firstPickDone,
+      lang: state.lang,
     };
     localStorage.setItem(LS_KEY, JSON.stringify(data));
   } catch (e) {
     console.warn('save failed', e);
     if (e && e.name === 'QuotaExceededError') {
-      showToast('存储已满,旧画作可能无法保存', 3000);
+      showToast(t('storageFull'), 3000);
     }
   }
 }, 350);
@@ -1271,16 +1621,17 @@ document.getElementById('swatches').addEventListener('click', (e) => {
    ========================================================================= */
 function buildPatternTiles() {
   patternGrid.innerHTML = '';
-  PATTERNS.forEach(([id, name, def]) => {
+  PATTERNS.forEach(([id, _name, def]) => {
     const tile = document.createElement('div');
     tile.className = 'pattern-tile' + (id === state.pattern ? ' active' : '');
     tile.dataset.id = id;
-    tile.title = name;
+    const label = patternName(id);
+    tile.title = label;
     if (id === 'solid') {
-      tile.innerHTML = `<svg viewBox="0 0 30 30"><rect width="30" height="30" fill="${state.color}"/></svg><div>纯色</div>`;
+      tile.innerHTML = `<svg viewBox="0 0 30 30"><rect width="30" height="30" fill="${state.color}"/></svg><div>${label}</div>`;
     } else {
       const previewDef = def.replace(/__FG__/g, state.color).replace(/__BG__/g, '#ffffff');
-      tile.innerHTML = `<svg viewBox="0 0 30 30"><defs>${previewDef}</defs><rect width="30" height="30" fill="url(#pat-${id})"/></svg><div>${name}</div>`;
+      tile.innerHTML = `<svg viewBox="0 0 30 30"><defs>${previewDef}</defs><rect width="30" height="30" fill="url(#pat-${id})"/></svg><div>${label}</div>`;
     }
     tile.addEventListener('click', () => {
       state.pattern = id;
@@ -1297,14 +1648,14 @@ function updateCurrentPatternPreview() {
   const nameEl = document.getElementById('curPatternName');
   if (!previewEl) return;
   const entry = PATTERNS.find(p => p[0] === state.pattern) || PATTERNS[0];
-  const [id, name, def] = entry;
+  const [id, _name, def] = entry;
   if (!def) {
     previewEl.innerHTML = `<rect width="30" height="30" fill="${state.color}"/>`;
   } else {
     const previewDef = def.replace(/__FG__/g, state.color).replace(/__BG__/g, '#ffffff');
     previewEl.innerHTML = `<defs>${previewDef}</defs><rect width="30" height="30" fill="url(#pat-${id})"/>`;
   }
-  if (nameEl) nameEl.textContent = name;
+  if (nameEl) nameEl.textContent = patternName(id);
 }
 document.getElementById('openPatternPop').addEventListener('click', () => openModal('patternPop'));
 // Pattern instances are created once per (pattern, color) pair and cached
@@ -1718,7 +2069,7 @@ document.getElementById('zoomReset').addEventListener('click', resetView);
    ========================================================================= */
 document.getElementById('undoBtn').addEventListener('click', () => {
   const last = state.history.pop();
-  if (!last) { showToast('没有可以撤销的'); return; }
+  if (!last) { showToast(t('nothingToUndo')); return; }
   if (last.kind === 'fill') last.el.setAttribute('fill', last.prevColor);
   else if (last.kind === 'stroke') ctx.putImageData(last.imageData, 0, 0);
   else if (last.kind === 'stamp' && last.el && last.el.parentNode) last.el.parentNode.removeChild(last.el);
@@ -1727,11 +2078,11 @@ document.getElementById('undoBtn').addEventListener('click', () => {
 });
 
 document.getElementById('clearBtn').addEventListener('click', () => {
-  if (!confirm('要清空当前这张画吗?(撤销键可以恢复之前的状态)')) return;
+  if (!confirm(t('confirmClear'))) return;
   // Clear fills + canvas + stamps for current page
   if (state._pageStates) delete state._pageStates[state.pageKey];
   loadPage(state.pageKey, false);
-  showToast('已清空');
+  showToast(t('cleared'));
 });
 
 function clearCanvas(addHistory = true) {
@@ -1779,10 +2130,10 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
       a.href = URL.createObjectURL(blob);
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-      showToast('已下载 PNG');
+      showToast(t('savedPNG'));
     }, 'image/png');
   };
-  img.onerror = () => showToast('保存失败,请重试');
+  img.onerror = () => showToast(t('saveFailed'));
   img.src = url;
 });
 
@@ -1803,12 +2154,12 @@ document.getElementById('pickPictureBtn').addEventListener('click', () => {
 
 function buildPictureCatTabs() {
   pictureCatTabs.innerHTML = '';
-  const cats = [...CATEGORIES];
-  if (Object.keys(state.customPages).length) cats.push(['custom', '📁 我的图']);
-  cats.forEach(([id, name]) => {
+  const ids = CATEGORIES.map(c => c[0]);
+  if (Object.keys(state.customPages).length) ids.push('custom');
+  ids.forEach(id => {
     const b = document.createElement('button');
     b.className = 'cat-tab' + (id === state.pictureCat ? ' active' : '');
-    b.textContent = name;
+    b.textContent = catName(id);
     b.addEventListener('click', () => {
       state.pictureCat = id; savePersisted();
       buildPictureCatTabs(); buildPictureGrid();
@@ -1825,10 +2176,11 @@ function buildPictureGrid() {
     const card = document.createElement('div');
     card.className = 'picker-card' + (key === state.pageKey ? ' active' : '') + (page.custom ? ' custom' : '');
     card.dataset.key = key;
+    const label = templateName(key);
     if (page.custom && page.dataUrl) {
-      card.innerHTML = `<img src="${page.dataUrl}" alt="${page.name}"/><div class="pc-label">${page.name}</div>`;
+      card.innerHTML = `<img src="${page.dataUrl}" alt="${label}"/><div class="pc-label">${label}</div>`;
     } else {
-      card.innerHTML = `<svg viewBox="0 0 400 300">${page.svg}</svg><div class="pc-label">${page.name}</div>`;
+      card.innerHTML = `<svg viewBox="0 0 400 300">${page.svg}</svg><div class="pc-label">${label}</div>`;
     }
     card.addEventListener('click', (e) => {
       if (page.custom) {
@@ -1875,7 +2227,7 @@ let customCounter = 0;
 function addCustomPage(dataUrl, label) {
   customCounter++;
   const key = 'custom_' + Date.now() + '_' + customCounter;
-  const name = label || ('我的图 ' + customCounter);
+  const name = label || ((state.lang === 'en' ? 'My picture ' : '我的图 ') + customCounter);
   PAGES[key] = { name, category: 'custom', custom: true, dataUrl };
   state.customPages[key] = { name, dataUrl };
   state.pictureCat = 'custom';
@@ -1918,7 +2270,7 @@ document.getElementById('gcsSave').addEventListener('click', () => {
   if (k) localStorage.setItem(GCS_KEY_LS, k); else localStorage.removeItem(GCS_KEY_LS);
   if (c) localStorage.setItem(GCS_CX_LS, c);  else localStorage.removeItem(GCS_CX_LS);
   closeModal('searchCfgModal');
-  showToast(k && c ? '搜图设置已保存' : '已清空设置');
+  showToast(k && c ? t('searchSettingsSaved') : t('searchCleared'));
 });
 document.getElementById('gcsClear').addEventListener('click', () => {
   gcsKeyInput.value = '';
@@ -1931,20 +2283,20 @@ async function doGoogleSearch() {
   const key = localStorage.getItem(GCS_KEY_LS);
   const cx  = localStorage.getItem(GCS_CX_LS);
   if (!key || !cx) {
-    if (confirm('还没设置 Google API key 和 CSE ID。要现在设置吗?')) openModal('searchCfgModal');
+    if (confirm(t('searchNeedKey'))) openModal('searchCfgModal');
     return;
   }
-  searchResults.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:14px;color:#666;font-size:14px">正在搜图…</div>';
+  searchResults.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:14px;color:#666;font-size:14px">${t('searchingImages')}</div>`;
   try {
     const url = `https://www.googleapis.com/customsearch/v1?key=${encodeURIComponent(key)}&cx=${encodeURIComponent(cx)}&searchType=image&safe=active&num=10&q=${encodeURIComponent(q + ' coloring page')}`;
     const res = await fetch(url);
     const data = await res.json();
-    if (data.error) throw new Error((data.error.message || '搜图失败') + ' (检查 API key / cx 是否正确,以及今日额度)');
+    if (data.error) throw new Error(data.error.message || t('searchFailed'));
     const items = data.items || [];
-    if (!items.length) { searchResults.innerHTML = '<div style="grid-column:1/-1;padding:14px;color:#666;text-align:center">没找到结果,换个词试试</div>'; return; }
+    if (!items.length) { searchResults.innerHTML = `<div style="grid-column:1/-1;padding:14px;color:#666;text-align:center">${t('searchNoResults')}</div>`; return; }
     renderSearchResults(items);
   } catch (e) {
-    searchResults.innerHTML = `<div style="grid-column:1/-1;padding:14px;color:#c33;text-align:center;font-size:13px">搜图失败:${e.message}</div>`;
+    searchResults.innerHTML = `<div style="grid-column:1/-1;padding:14px;color:#c33;text-align:center;font-size:13px">${t('searchFailed')}${e.message}</div>`;
   }
 }
 function renderSearchResults(items) {
@@ -1953,19 +2305,19 @@ function renderSearchResults(items) {
     const card = document.createElement('div');
     card.className = 'picker-card';
     const thumb = (it.image && it.image.thumbnailLink) ? it.image.thumbnailLink : it.link;
-    card.innerHTML = `<img src="${thumb}" alt="${(it.title||'').replace(/"/g,'&quot;')}" style="width:100%;flex:1;object-fit:contain"/><div class="pc-label">点这里载入</div>`;
+    card.innerHTML = `<img src="${thumb}" alt="${(it.title||'').replace(/"/g,'&quot;')}" style="width:100%;flex:1;object-fit:contain"/><div class="pc-label">${t('searchClickToLoad')}</div>`;
     card.addEventListener('click', async () => {
-      card.querySelector('.pc-label').textContent = '正在载入…';
+      card.querySelector('.pc-label').textContent = t('searchLoading');
       try {
         const res = await fetch(it.link, { mode: 'cors' });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const blob = await res.blob();
         const reader = new FileReader();
-        reader.onload = () => addCustomPage(reader.result, it.title ? it.title.slice(0, 24) : '搜到的图');
+        reader.onload = () => addCustomPage(reader.result, it.title ? it.title.slice(0, 24) : (state.lang === 'en' ? 'Found image' : '搜到的图'));
         reader.readAsDataURL(blob);
       } catch (e) {
         // CORS blocked — fall back to embedding the URL directly. Save may fail.
-        addCustomPage(it.link, it.title ? it.title.slice(0, 24) : '搜到的图');
+        addCustomPage(it.link, it.title ? it.title.slice(0, 24) : (state.lang === 'en' ? 'Found image' : '搜到的图'));
       }
     });
     searchResults.appendChild(card);
@@ -1982,11 +2334,11 @@ document.getElementById('urlLoadBtn').addEventListener('click', async () => {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const blob = await res.blob();
     const reader = new FileReader();
-    reader.onload = () => { addCustomPage(reader.result, '网络图'); input.value = ''; };
+    reader.onload = () => { addCustomPage(reader.result, (state.lang === 'en' ? 'URL image' : '网络图')); input.value = ''; };
     reader.readAsDataURL(blob);
   } catch (err) {
-    if (confirm('这张图禁止跨站加载,只能预览/上色但保存 PNG 可能失败。继续吗?')) {
-      addCustomPage(url, '网络图');
+    if (confirm(t('corsWarning'))) {
+      addCustomPage(url, (state.lang === 'en' ? 'URL image' : '网络图'));
       input.value = '';
     }
   }
@@ -1997,10 +2349,10 @@ document.getElementById('urlLoadBtn').addEventListener('click', async () => {
    ========================================================================= */
 function buildStampCatTabs() {
   stampCatTabs.innerHTML = '';
-  STAMP_CATEGORIES.forEach(([id, name]) => {
+  STAMP_CATEGORIES.forEach(([id]) => {
     const b = document.createElement('button');
     b.className = 'cat-tab' + (id === state.stampCat ? ' active' : '');
-    b.textContent = name;
+    b.textContent = stampCatName(id);
     b.addEventListener('click', () => {
       state.stampCat = id; savePersisted();
       buildStampCatTabs(); buildStampGrid();
@@ -2014,14 +2366,14 @@ function buildStampGrid() {
     if (cat !== state.stampCat) return;
     const card = document.createElement('div');
     card.className = 'stamp-card' + (key === state.stampKey ? ' active' : '');
-    card.title = name;
+    card.title = stampName(key);
     card.innerHTML = `<svg viewBox="0 0 ${vb} ${vb}">${body.replace(/__C__/g, state.color)}</svg>`;
     card.addEventListener('click', () => {
       state.stampKey = (state.stampKey === key) ? null : key;
       setTool('stamp');
       buildStampGrid();
       closeModal('stampModal');
-      showToast(state.stampKey ? '在画上点一下放贴纸' : '取消贴纸', 1500);
+      showToast(state.stampKey ? t('stampSelected') : t('stampDeselected'), 1500);
     });
     stampGrid.appendChild(card);
   });
@@ -2052,30 +2404,30 @@ function fmtMs(ms) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 function tickTimer() {
-  const t = state.timer;
-  if (t.done) {
-    timerText.textContent = '🎉 完成';
+  const tm = state.timer;
+  if (tm.done) {
+    timerText.textContent = t('doneIcon');
     timerChip.className = 'timer-chip';
     return;
   }
   // Before the user has picked their first picture, freeze the timer on the
   // full duration so the initial picker isn't counted as drawing time.
   if (!state.firstPickDone) {
-    timerText.textContent = t.durationSec > 0 ? '等开始 ' + fmtMs(t.durationSec * 1000) : '关';
+    timerText.textContent = tm.durationSec > 0 ? t('waitingPrefix') + fmtMs(tm.durationSec * 1000) : t('timerOff2');
     timerChip.className = 'timer-chip';
     return;
   }
-  if (t.durationSec <= 0) {
-    timerText.textContent = '关';
+  if (tm.durationSec <= 0) {
+    timerText.textContent = t('timerOff2');
     timerChip.className = 'timer-chip';
     return;
   }
-  const elapsed = t.paused ? t.elapsedBefore : t.elapsedBefore + (Date.now() - t.startTs);
-  const remaining = t.durationSec * 1000 - elapsed;
+  const elapsed = tm.paused ? tm.elapsedBefore : tm.elapsedBefore + (Date.now() - tm.startTs);
+  const remaining = tm.durationSec * 1000 - elapsed;
   let label;
-  if (t.mode === 'multi') {
-    const r = t.totalRounds > 0 ? `R${t.currentRound}/${t.totalRounds}` : `R${t.currentRound}`;
-    label = `P${t.currentPlayer}/${t.playerCount} ${r} ${fmtMs(remaining)}`;
+  if (tm.mode === 'multi') {
+    const r = tm.totalRounds > 0 ? `R${tm.currentRound}/${tm.totalRounds}` : `R${tm.currentRound}`;
+    label = `P${tm.currentPlayer}/${tm.playerCount} ${r} ${fmtMs(remaining)}`;
   } else {
     label = fmtMs(remaining);
   }
@@ -2083,8 +2435,8 @@ function tickTimer() {
   timerChip.classList.remove('warn', 'danger');
   if (remaining <= 60_000 && remaining > 0) timerChip.classList.add('warn');
   if (remaining <= 10_000 && remaining > 0) timerChip.classList.add('danger');
-  if (remaining <= 0 && !t.fired) {
-    t.fired = true;
+  if (remaining <= 0 && !tm.fired) {
+    tm.fired = true;
     showTimerExpired();
     savePersisted();
   }
@@ -2093,55 +2445,59 @@ setInterval(tickTimer, 500);
 
 // Advance to next player in multi mode. Returns true if more turns remain.
 function advanceToNextPlayer() {
-  const t = state.timer;
-  let nextPlayer = (t.currentPlayer % t.playerCount) + 1;
-  let nextRound = t.currentRound + (nextPlayer === 1 ? 1 : 0);
-  if (t.totalRounds > 0 && nextRound > t.totalRounds) {
-    t.done = true;
+  const tm = state.timer;
+  let nextPlayer = (tm.currentPlayer % tm.playerCount) + 1;
+  let nextRound = tm.currentRound + (nextPlayer === 1 ? 1 : 0);
+  if (tm.totalRounds > 0 && nextRound > tm.totalRounds) {
+    tm.done = true;
     return false;
   }
-  t.currentPlayer = nextPlayer;
-  t.currentRound = nextRound;
-  t.elapsedBefore = 0;
-  t.startTs = Date.now();
-  t.paused = false;
-  t.fired = false;
+  tm.currentPlayer = nextPlayer;
+  tm.currentRound = nextRound;
+  tm.elapsedBefore = 0;
+  tm.startTs = Date.now();
+  tm.paused = false;
+  tm.fired = false;
   return true;
 }
 
 function showTimerExpired() {
-  const t = state.timer;
+  const tm = state.timer;
   const icon = document.getElementById('timerExpiredIcon');
   const title = document.getElementById('timerExpiredTitle');
   const sub = document.getElementById('timerExpiredSub');
   const btns = document.getElementById('timerExpiredButtons');
-  if (t.mode === 'multi') {
+  if (tm.mode === 'multi') {
     // Peek at what comes next (without mutating state)
-    const nextPlayer = (t.currentPlayer % t.playerCount) + 1;
-    const nextRound = t.currentRound + (nextPlayer === 1 ? 1 : 0);
-    const isLast = t.totalRounds > 0 && nextRound > t.totalRounds;
+    const nextPlayer = (tm.currentPlayer % tm.playerCount) + 1;
+    const nextRound = tm.currentRound + (nextPlayer === 1 ? 1 : 0);
+    const isLast = tm.totalRounds > 0 && nextRound > tm.totalRounds;
     if (isLast) {
       // Last turn — game over
       icon.textContent = '🎉';
-      title.textContent = '都画完啦!';
-      sub.textContent = `${t.playerCount} 个小朋友各画了 ${t.totalRounds} 轮 ✨`;
-      btns.innerHTML = `<button class="secondary-btn" id="timerPlayAgain">再玩一局</button>
-                        <button class="primary-btn"   id="timerDone">完成</button>`;
+      title.textContent = t('allDone');
+      sub.textContent = state.lang === 'en'
+        ? `${tm.playerCount} players drew ${tm.totalRounds} rounds each ✨`
+        : `${tm.playerCount} 个小朋友各画了 ${tm.totalRounds} 轮 ✨`;
+      btns.innerHTML = `<button class="secondary-btn" id="timerPlayAgain">${t('playAgain')}</button>
+                        <button class="primary-btn"   id="timerDone">${t('finish')}</button>`;
       document.getElementById('timerPlayAgain').addEventListener('click', () => {
-        t.currentPlayer = 1; t.currentRound = 1; t.done = false;
-        t.elapsedBefore = 0; t.startTs = Date.now();
-        t.paused = false; t.fired = false;
+        tm.currentPlayer = 1; tm.currentRound = 1; tm.done = false;
+        tm.elapsedBefore = 0; tm.startTs = Date.now();
+        tm.paused = false; tm.fired = false;
         closeModal('timerExpiredModal'); tickTimer(); savePersisted();
       });
       document.getElementById('timerDone').addEventListener('click', () => {
-        t.done = true;
+        tm.done = true;
         closeModal('timerExpiredModal'); tickTimer(); savePersisted();
       });
     } else {
       icon.textContent = '🔁';
-      title.textContent = '换人啦!';
-      sub.textContent = `玩家 ${t.currentPlayer} 时间到 — 轮到 玩家 ${nextPlayer} ${nextPlayer === 1 ? `(第 ${nextRound} 轮)` : ''} 🎨`;
-      btns.innerHTML = `<button class="primary-btn" id="timerNextPlayer">让玩家 ${nextPlayer} 开始 ▶</button>`;
+      title.textContent = t('switchPlayer');
+      sub.textContent = state.lang === 'en'
+        ? `Player ${tm.currentPlayer} done — Player ${nextPlayer}${nextPlayer === 1 ? ` (round ${nextRound})` : ''} 🎨`
+        : `玩家 ${tm.currentPlayer} 时间到 — 轮到 玩家 ${nextPlayer}${nextPlayer === 1 ? ` (第 ${nextRound} 轮)` : ''} 🎨`;
+      btns.innerHTML = `<button class="primary-btn" id="timerNextPlayer">${tFmt('letPlayerStart', nextPlayer)}</button>`;
       document.getElementById('timerNextPlayer').addEventListener('click', () => {
         advanceToNextPlayer();
         closeModal('timerExpiredModal'); tickTimer(); savePersisted();
@@ -2149,17 +2505,17 @@ function showTimerExpired() {
     }
   } else {
     icon.textContent = '⏰';
-    title.textContent = '时间到啦!';
-    sub.textContent = '画得真棒 🎉';
-    btns.innerHTML = `<button class="secondary-btn" id="timerExpired10More">再加 10 分钟</button>
-                      <button class="primary-btn"   id="timerExpired1More">再加 1 分钟</button>
-                      <button class="primary-btn"   data-close="timerExpiredModal">好的</button>`;
+    title.textContent = t('timeUp');
+    sub.textContent = t('greatJob');
+    btns.innerHTML = `<button class="secondary-btn" id="timerExpired10More">${t('add10Min')}</button>
+                      <button class="primary-btn"   id="timerExpired1More">${t('add1Min')}</button>
+                      <button class="primary-btn"   data-close="timerExpiredModal">${t('ok')}</button>`;
     document.getElementById('timerExpired10More').addEventListener('click', () => {
-      t.durationSec += 600; t.fired = false;
+      tm.durationSec += 600; tm.fired = false;
       closeModal('timerExpiredModal'); savePersisted();
     });
     document.getElementById('timerExpired1More').addEventListener('click', () => {
-      t.durationSec += 60; t.fired = false;
+      tm.durationSec += 60; tm.fired = false;
       closeModal('timerExpiredModal'); savePersisted();
     });
     document.querySelector('#timerExpiredButtons [data-close]')
@@ -2180,25 +2536,25 @@ new MutationObserver(() => {
 }).observe(expiredModal, { attributes: true, attributeFilter: ['class'] });
 
 function refreshTimerModalSelections() {
-  const t = state.timer;
+  const tm = state.timer;
   document.querySelectorAll('.mode-tab').forEach(b =>
-    b.classList.toggle('active', b.dataset.mode === t.mode)
+    b.classList.toggle('active', b.dataset.mode === tm.mode)
   );
-  document.getElementById('singleModeBox').style.display = (t.mode === 'single') ? '' : 'none';
-  document.getElementById('multiModeBox').style.display  = (t.mode === 'multi')  ? '' : 'none';
+  document.getElementById('singleModeBox').style.display = (tm.mode === 'single') ? '' : 'none';
+  document.getElementById('multiModeBox').style.display  = (tm.mode === 'multi')  ? '' : 'none';
   document.querySelectorAll('#timerOptions button').forEach(b => {
-    b.classList.toggle('active', t.mode === 'single' && +b.dataset.min === t.durationSec / 60);
+    b.classList.toggle('active', tm.mode === 'single' && +b.dataset.min === tm.durationSec / 60);
   });
   document.querySelectorAll('#multiCountOpts button').forEach(b => {
-    b.classList.toggle('active', t.mode === 'multi' && +b.dataset.n === t.playerCount);
+    b.classList.toggle('active', tm.mode === 'multi' && +b.dataset.n === tm.playerCount);
   });
   document.querySelectorAll('#multiTurnOpts button').forEach(b => {
-    b.classList.toggle('active', t.mode === 'multi' && +b.dataset.min === t.durationSec / 60);
+    b.classList.toggle('active', tm.mode === 'multi' && +b.dataset.min === tm.durationSec / 60);
   });
   document.querySelectorAll('#multiRoundOpts button').forEach(b => {
-    b.classList.toggle('active', t.mode === 'multi' && +b.dataset.r === t.totalRounds);
+    b.classList.toggle('active', tm.mode === 'multi' && +b.dataset.r === tm.totalRounds);
   });
-  document.getElementById('timerPauseResume').textContent = t.paused ? '▶ 继续' : '⏸ 暂停';
+  document.getElementById('timerPauseResume').textContent = tm.paused ? t('timerResume') : t('timerPause');
 }
 
 timerChip.addEventListener('click', () => {
@@ -2207,22 +2563,22 @@ timerChip.addEventListener('click', () => {
 });
 document.querySelectorAll('.mode-tab').forEach(b => {
   b.addEventListener('click', () => {
-    const t = state.timer;
-    t.mode = b.dataset.mode;
-    if (t.mode === 'multi') {
+    const tm = state.timer;
+    tm.mode = b.dataset.mode;
+    if (tm.mode === 'multi') {
       // Switching INTO multi mode: pick a sensible per-turn default
-      if (t.durationSec === 0 || t.durationSec > 1800) t.durationSec = 60;
-      t.currentPlayer = 1;
-      t.currentRound = 1;
-      t.done = false;
+      if (tm.durationSec === 0 || tm.durationSec > 1800) tm.durationSec = 60;
+      tm.currentPlayer = 1;
+      tm.currentRound = 1;
+      tm.done = false;
     } else {
       // Switching back to single — keep durationSec if it's reasonable
-      if (t.durationSec < 60) t.durationSec = 600;
+      if (tm.durationSec < 60) tm.durationSec = 600;
     }
-    t.elapsedBefore = 0;
-    t.startTs = Date.now();
-    t.paused = false;
-    t.fired = false;
+    tm.elapsedBefore = 0;
+    tm.startTs = Date.now();
+    tm.paused = false;
+    tm.fired = false;
     refreshTimerModalSelections();
     tickTimer();
     savePersisted();
@@ -2236,16 +2592,16 @@ document.getElementById('timerOptions').addEventListener('click', (e) => {
 });
 document.getElementById('multiCountOpts').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return;
-  const t = state.timer;
-  t.mode = 'multi';
-  t.playerCount = +b.dataset.n;
-  t.currentPlayer = 1;
-  t.currentRound = 1;
-  t.done = false;
-  t.elapsedBefore = 0;
-  t.startTs = Date.now();
-  t.paused = false;
-  t.fired = false;
+  const tm = state.timer;
+  tm.mode = 'multi';
+  tm.playerCount = +b.dataset.n;
+  tm.currentPlayer = 1;
+  tm.currentRound = 1;
+  tm.done = false;
+  tm.elapsedBefore = 0;
+  tm.startTs = Date.now();
+  tm.paused = false;
+  tm.fired = false;
   refreshTimerModalSelections();
   tickTimer();
   savePersisted();
@@ -2261,16 +2617,16 @@ document.getElementById('multiTurnOpts').addEventListener('click', (e) => {
 });
 document.getElementById('multiRoundOpts').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return;
-  const t = state.timer;
-  t.mode = 'multi';
-  t.totalRounds = +b.dataset.r;
-  t.currentPlayer = 1;
-  t.currentRound = 1;
-  t.done = false;
-  t.elapsedBefore = 0;
-  t.startTs = Date.now();
-  t.paused = false;
-  t.fired = false;
+  const tm = state.timer;
+  tm.mode = 'multi';
+  tm.totalRounds = +b.dataset.r;
+  tm.currentPlayer = 1;
+  tm.currentRound = 1;
+  tm.done = false;
+  tm.elapsedBefore = 0;
+  tm.startTs = Date.now();
+  tm.paused = false;
+  tm.fired = false;
   refreshTimerModalSelections();
   tickTimer();
   savePersisted();
@@ -2286,21 +2642,21 @@ function setTimerDuration(sec) {
   savePersisted();
 }
 document.getElementById('timerReset').addEventListener('click', () => {
-  const t = state.timer;
-  if (t.mode === 'multi') { t.currentPlayer = 1; t.currentRound = 1; }
-  t.done = false;
-  setTimerDuration(t.durationSec);
+  const tm = state.timer;
+  if (tm.mode === 'multi') { tm.currentPlayer = 1; tm.currentRound = 1; }
+  tm.done = false;
+  setTimerDuration(tm.durationSec);
   refreshTimerModalSelections();
-  showToast('倒计时已重置');
+  showToast(t('timerResetToast'));
 });
 document.getElementById('timerPauseResume').addEventListener('click', () => {
-  const t = state.timer;
-  if (t.paused) {
-    t.paused = false;
-    t.startTs = Date.now();
+  const tm = state.timer;
+  if (tm.paused) {
+    tm.paused = false;
+    tm.startTs = Date.now();
   } else {
-    t.paused = true;
-    t.elapsedBefore = t.elapsedBefore + (Date.now() - t.startTs);
+    tm.paused = true;
+    tm.elapsedBefore = tm.elapsedBefore + (Date.now() - tm.startTs);
   }
   refreshTimerModalSelections();
   savePersisted();
@@ -2314,14 +2670,15 @@ document.getElementById('fullscreenBtn').addEventListener('click', async () => {
     if (document.fullscreenElement) await document.exitFullscreen();
     else if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
     else if (document.documentElement.webkitRequestFullscreen) document.documentElement.webkitRequestFullscreen();
-    else showToast('当前浏览器不支持全屏 — iPad Safari 请用"分享 → 添加到主屏幕"', 3000);
-  } catch (e) { showToast('无法进入全屏: ' + e.message, 2500); }
+    else showToast(t('fullscreenNotSupported'), 3000);
+  } catch (e) { showToast(t('cantFullscreen') + e.message, 2500); }
 });
 
 /* =========================================================================
    Help
    ========================================================================= */
 document.getElementById('helpBtn').addEventListener('click', () => openModal('helpModal'));
+document.getElementById('langToggle').addEventListener('click', toggleLang);
 
 /* =========================================================================
    Boot
@@ -2339,6 +2696,7 @@ setTool(state.tool);
 loadPage(state.pageKey);
 applyView();
 tickTimer();
+applyI18n();
 
 // Auto-open the picture picker as the first screen (after help on first visit).
 function openPickerAfterBoot() {
@@ -2398,7 +2756,13 @@ def write_html():
         .replace('__STAMP_CATEGORIES__', json.dumps(STAMP_CATEGORIES, ensure_ascii=False)) \
         .replace('__PATTERNS__', json.dumps(PATTERNS, ensure_ascii=False)) \
         .replace('__PAGES__', pages_js) \
-        .replace('__STAMPS__', stamps_js)
+        .replace('__STAMPS__', stamps_js) \
+        .replace('__I18N__', json.dumps(I18N, ensure_ascii=False)) \
+        .replace('__CAT_NAMES__', json.dumps(CAT_NAMES, ensure_ascii=False)) \
+        .replace('__STAMP_CAT_NAMES__', json.dumps(STAMP_CAT_NAMES, ensure_ascii=False)) \
+        .replace('__PATTERN_NAMES__', json.dumps(PATTERN_NAMES, ensure_ascii=False)) \
+        .replace('__TEMPLATE_NAMES_EN__', json.dumps(TEMPLATE_NAMES_EN, ensure_ascii=False)) \
+        .replace('__STAMP_NAMES__', json.dumps(STAMP_NAMES_EN, ensure_ascii=False))
 
     html = HTML_HEAD_CSS + HTML_BODY + js
     out = os.path.join(ROOT, 'index.html')
