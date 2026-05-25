@@ -1430,6 +1430,13 @@ function loadPersisted() {
     if (data.timer) {
       Object.assign(state.timer, data.timer);
       state.timer.fired = !!data.timer.fired;
+      // Don't count offline time as elapsed: reset startTs to now. The
+      // matching savePersisted() normalization folded the in-session
+      // elapsed into elapsedBefore, so resetting startTs preserves
+      // progress while skipping the gap between sessions.
+      if (!state.timer.paused && !state.timer.done && state.timer.startTs) {
+        state.timer.startTs = Date.now();
+      }
     }
     if (data.pageStates) state._pageStates = data.pageStates;
     // Restore custom pages into PAGES dict
@@ -1441,6 +1448,15 @@ function loadPersisted() {
 
 const savePersisted = debounce(() => {
   try {
+    // Normalize the running timer: fold the elapsed time since startTs into
+    // elapsedBefore and reset startTs to now. This makes the saved state
+    // independent of the absolute wall clock — see the matching reset in
+    // loadPersisted() that skips the offline gap.
+    const tmr = state.timer;
+    if (tmr && !tmr.paused && !tmr.done && tmr.startTs && tmr.durationSec > 0) {
+      tmr.elapsedBefore = tmr.elapsedBefore + (Date.now() - tmr.startTs);
+      tmr.startTs = Date.now();
+    }
     // Build pageStates from current SVG + canvas
     const pageStates = (state._pageStates || {});
     const cur = capturePageState();
