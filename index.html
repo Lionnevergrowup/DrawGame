@@ -708,13 +708,12 @@
       <div id="singleModeBox">
         <p style="margin:0 0 6px;color:#555">画多久?到时间会弹提示。</p>
         <div class="timer-options" id="timerOptions">
+          <button data-min="1">1分钟</button>
+          <button data-min="2">2分钟</button>
+          <button data-min="3">3分钟</button>
           <button data-min="5">5分钟</button>
           <button data-min="10">10分钟</button>
           <button data-min="15">15分钟</button>
-          <button data-min="20">20分钟</button>
-          <button data-min="30">30分钟</button>
-          <button data-min="45">45分钟</button>
-          <button data-min="60">60分钟</button>
           <button data-min="0">关掉</button>
         </div>
       </div>
@@ -3786,53 +3785,28 @@ function loadPage(key, restoreState = true) {
 }
 
 function bindFillable() {
+  // Direct SVG handlers only fire when canvas isn't catching clicks
+  // (i.e. only in fill / stamp tool modes). Eraser is handled via the
+  // canvas pointer flow with hit-testing — see eraserTapHitTest above.
   svgEl.querySelectorAll('.fillable').forEach(el => {
     const handler = (e) => {
-      if (state.tool === 'fill') {
-        e.preventDefault();
-        const prev = el.getAttribute('fill') || '#ffffff';
-        const next = currentFillValue();
-        if (prev === next) return;
-        state.history.push({ kind: 'fill', el, prevColor: prev });
-        el.setAttribute('fill', next);
-        savePersisted();
-      } else if (state.tool === 'eraser') {
-        // Eraser on a fillable region resets it to white.
-        e.preventDefault();
-        const prev = el.getAttribute('fill') || '#ffffff';
-        if (prev === '#ffffff') return;
-        state.history.push({ kind: 'fill', el, prevColor: prev });
-        el.setAttribute('fill', '#ffffff');
-        savePersisted();
-      }
+      if (state.tool !== 'fill') return;
+      e.preventDefault();
+      const prev = el.getAttribute('fill') || '#ffffff';
+      const next = currentFillValue();
+      if (prev === next) return;
+      state.history.push({ kind: 'fill', el, prevColor: prev });
+      el.setAttribute('fill', next);
+      savePersisted();
     };
     el.addEventListener('click', handler);
     el.addEventListener('touchstart', handler, { passive: false });
   });
 }
-// Delegated listeners on the SVG, bound exactly once (above bindFillable).
+// Delegated SVG click handler, bound exactly once for stamp placement
 function svgStampClick(e) {
-  // First: eraser tool removes a clicked stamp
-  if (state.tool === 'eraser') {
-    const stampInst = e.target.closest('.stamp-instance');
-    if (stampInst && stampInst.parentNode === svgEl) {
-      const data = {
-        kind: 'stamp-removed',
-        key: stampInst.dataset.stampKey,
-        x: +stampInst.dataset.x, y: +stampInst.dataset.y,
-        color: stampInst.dataset.color,
-        size: +stampInst.dataset.size || 50,
-        pattern: stampInst.dataset.pattern || 'solid',
-      };
-      stampInst.parentNode.removeChild(stampInst);
-      state.history.push(data);
-      savePersisted();
-    }
-    return;
-  }
-  // Stamp tool: place a stamp at click point
   if (state.tool !== 'stamp' || !state.stampKey) return;
-  if (e.target.closest('.stamp-instance')) return; // ignore clicks on existing stamps
+  if (e.target.closest('.stamp-instance')) return;
   const pt = svgEventToPoint(e);
   if (!pt) return;
   placeStamp(state.stampKey, pt.x, pt.y, state.color, true, state.pattern, state.stampSize);
@@ -3938,13 +3912,16 @@ function drawSegment(x1, y1, x2, y2) {
   ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
 }
 
-// pointerdown on canvas — used for brush/eraser AND pinch zoom
+// Eraser tap-vs-drag tracking: brush always starts a stroke on pointerdown,
+// but eraser defers — if user drags > 8px we treat it as canvas erasing;
+// if they just tap, we hit-test the SVG to reset a fill or remove a stamp.
+let eraserPending = null; // { x, y, clientX, clientY }
+
 canvas.addEventListener('pointerdown', (e) => {
   canvas.setPointerCapture?.(e.pointerId);
   pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (pointers.size === 2) {
-    // start pinch
-    drawing = false; strokeSnapshot = null;
+    drawing = false; strokeSnapshot = null; eraserPending = null;
     const pts = [...pointers.values()];
     pinchStart = {
       dist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y),
@@ -3952,10 +3929,17 @@ canvas.addEventListener('pointerdown', (e) => {
       view: { ...state.view },
     };
     stageInner.classList.add('dragging');
-  } else if (pointers.size === 1 && (state.tool === 'brush' || state.tool === 'eraser')) {
+    return;
+  }
+  if (pointers.size !== 1) return;
+  if (state.tool === 'brush') {
     e.preventDefault();
     const p = canvasEventToLocal(e);
     startStroke(p.x, p.y);
+  } else if (state.tool === 'eraser') {
+    e.preventDefault();
+    const p = canvasEventToLocal(e);
+    eraserPending = { x: p.x, y: p.y, clientX: e.clientX, clientY: e.clientY };
   }
 });
 canvas.addEventListener('pointermove', (e) => {
@@ -3967,11 +3951,20 @@ canvas.addEventListener('pointermove', (e) => {
     const mid = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
     const ratio = dist / pinchStart.dist;
     const newScale = Math.max(1, Math.min(5, pinchStart.view.scale * ratio));
-    // Pan delta
-    const dx = mid.x - pinchStart.mid.x;
-    const dy = mid.y - pinchStart.mid.y;
-    setView(pinchStart.view.tx + dx, pinchStart.view.ty + dy, newScale);
-  } else if (pointers.size === 1 && drawing) {
+    setView(pinchStart.view.tx + (mid.x - pinchStart.mid.x), pinchStart.view.ty + (mid.y - pinchStart.mid.y), newScale);
+    return;
+  }
+  if (pointers.size !== 1) return;
+  // Eraser drag detection: if pointer moved enough, promote pending tap → canvas stroke
+  if (eraserPending) {
+    const dx = e.clientX - eraserPending.clientX;
+    const dy = e.clientY - eraserPending.clientY;
+    if (dx * dx + dy * dy > 64) {
+      startStroke(eraserPending.x, eraserPending.y);
+      eraserPending = null;
+    }
+  }
+  if (drawing) {
     e.preventDefault();
     const p = canvasEventToLocal(e);
     continueStroke(p.x, p.y);
@@ -3983,11 +3976,49 @@ function setView(tx, ty, newScale) {
   state.view.scale = newScale;
   applyView();
 }
-// Overwrite earlier pinch helper:
+
+// Eraser tap on SVG: reset a fill, or remove a stamp
+function eraserTapHitTest(clientX, clientY) {
+  const orig = canvas.style.pointerEvents;
+  canvas.style.pointerEvents = 'none';
+  const target = document.elementFromPoint(clientX, clientY);
+  canvas.style.pointerEvents = orig;
+  if (!target) return;
+  if (target.classList && target.classList.contains('fillable')) {
+    const prev = target.getAttribute('fill') || '#ffffff';
+    if (prev !== '#ffffff') {
+      state.history.push({ kind: 'fill', el: target, prevColor: prev });
+      target.setAttribute('fill', '#ffffff');
+      savePersisted();
+    }
+    return;
+  }
+  const stampInst = target.closest && target.closest('.stamp-instance');
+  if (stampInst && stampInst.parentNode === svgEl) {
+    state.history.push({
+      kind: 'stamp-removed',
+      key: stampInst.dataset.stampKey,
+      x: +stampInst.dataset.x, y: +stampInst.dataset.y,
+      color: stampInst.dataset.color,
+      size: +stampInst.dataset.size || 50,
+      pattern: stampInst.dataset.pattern || 'solid',
+    });
+    stampInst.parentNode.removeChild(stampInst);
+    savePersisted();
+  }
+}
+
 function pointerEnd(e) {
   pointers.delete(e.pointerId);
   if (pointers.size < 2) { pinchStart = null; stageInner.classList.remove('dragging'); }
-  if (pointers.size === 0) endStroke();
+  if (pointers.size === 0) {
+    if (eraserPending && state.tool === 'eraser') {
+      const { clientX, clientY } = eraserPending;
+      eraserPending = null;
+      eraserTapHitTest(clientX, clientY);
+    }
+    endStroke();
+  }
 }
 canvas.addEventListener('pointerup', pointerEnd);
 canvas.addEventListener('pointercancel', pointerEnd);
@@ -4344,6 +4375,9 @@ if (!T.currentPlayer) T.currentPlayer = 1;
 if (T.totalRounds == null) T.totalRounds = 3;
 if (!T.currentRound) T.currentRound = 1;
 if (T.done == null) T.done = false;
+// Backwards-compat: previously the single-mode options went up to 60 minutes.
+// We capped the max at 15 minutes — clamp old saved values to fit.
+if (T.mode === 'single' && T.durationSec > 900) T.durationSec = 600;
 
 function fmtMs(ms) {
   const s = Math.max(0, Math.floor(ms / 1000));
