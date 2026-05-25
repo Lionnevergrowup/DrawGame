@@ -8,22 +8,33 @@
 <title>卡通画图填色</title>
 <style>
   :root {
-    --accent: #4ab3ff;
-    --accent-dark: #2a6db0;
-    --bg: #fff8e7;
+    --accent: #5b8def;
+    --accent-2: #b794f4;
+    --accent-3: #ff9a76;
+    --accent-dark: #2a5cb0;
+    --bg-1: #fff5e1;
+    --bg-2: #ffe7f0;
     --panel: #ffffff;
-    --shadow: 0 4px 14px rgba(0,0,0,.08);
-    --radius: 18px;
+    --shadow: 0 6px 18px rgba(60,40,100,.10);
+    --shadow-deep: 0 8px 24px rgba(60,40,100,.18);
+    --radius: 22px;
     --hit: 56px;   /* min touch target */
+    --grad-header: linear-gradient(135deg, #5b8def 0%, #b794f4 50%, #ff9a76 100%);
+    --grad-button: linear-gradient(180deg, rgba(255,255,255,.28) 0%, rgba(255,255,255,.12) 100%);
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body {
     margin: 0; padding: 0; height: 100%;
-    font-family: -apple-system, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
-    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", system-ui, sans-serif;
+    background:
+      radial-gradient(at 18% 12%, rgba(255,180,206,.45), transparent 40%),
+      radial-gradient(at 82% 88%, rgba(170,210,255,.5), transparent 45%),
+      linear-gradient(180deg, var(--bg-1), var(--bg-2));
+    background-attachment: fixed;
     overscroll-behavior: none;
     touch-action: manipulation;
     user-select: none; -webkit-user-select: none;
+    color: #2c2640;
   }
   body { display: flex; flex-direction: column; height: 100dvh; }
 
@@ -31,30 +42,56 @@
   header {
     display: flex; align-items: center; gap: 8px;
     padding: calc(8px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) 8px calc(12px + env(safe-area-inset-left));
-    background: var(--accent); color: white;
-    box-shadow: var(--shadow);
+    background: var(--grad-header);
+    color: white;
+    box-shadow: var(--shadow-deep);
     flex-shrink: 0;
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
+    position: relative;
+    overflow: hidden;
   }
-  header h1 { font-size: 18px; margin: 0; letter-spacing: 1px; flex-shrink: 0; }
+  header::before {
+    content: ''; position: absolute; inset: 0;
+    background:
+      radial-gradient(circle at 12% 30%, rgba(255,255,255,.18) 0, transparent 24%),
+      radial-gradient(circle at 88% 70%, rgba(255,255,255,.14) 0, transparent 28%);
+    pointer-events: none;
+  }
+  header > * { position: relative; z-index: 1; }
+  header h1 {
+    font-size: 20px; margin: 0; letter-spacing: 1.5px; flex-shrink: 0;
+    font-weight: 800;
+    text-shadow: 0 2px 4px rgba(0,0,0,.15);
+  }
   .timer-chip {
-    background: rgba(255,255,255,.18); padding: 6px 12px; border-radius: 999px;
-    font-size: 16px; font-weight: 600; cursor: pointer; min-height: var(--hit);
+    background: rgba(255,255,255,.22); padding: 6px 14px; border-radius: 999px;
+    font-size: 15px; font-weight: 700; cursor: pointer; min-height: 48px;
     display: inline-flex; align-items: center; gap: 6px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 2px 6px rgba(0,0,0,.08);
+    transition: transform .15s ease;
   }
-  .timer-chip.warn { background: rgba(255,180,0,.35); }
-  .timer-chip.danger { background: rgba(255,80,80,.5); animation: blink 1s infinite; }
+  .timer-chip:active { transform: scale(.94); }
+  .timer-chip.warn  { background: rgba(255,200,90,.4); }
+  .timer-chip.danger { background: rgba(255,90,110,.55); animation: blink 1s infinite; }
   @keyframes blink { 50% { opacity: .5; } }
+  @keyframes pop   { 0%{transform:scale(1);} 40%{transform:scale(.93);} 100%{transform:scale(1);} }
+  @keyframes modalIn { 0%{opacity:0; transform:translateY(20px) scale(.96);} 100%{opacity:1; transform:translateY(0) scale(1);} }
+  @keyframes wiggle { 0%,100%{transform:rotate(0);} 25%{transform:rotate(-3deg);} 75%{transform:rotate(3deg);} }
   .header-spacer { flex: 1; }
   .header-btns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
   .big-btn {
-    background: rgba(255,255,255,.22); border: none; color: white;
-    padding: 10px 14px; border-radius: 12px;
+    background: var(--grad-button); border: none; color: white;
+    padding: 10px 14px; border-radius: 14px;
     font-size: 15px; font-weight: 700;
     min-height: var(--hit); min-width: 64px;
     cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 3px 8px rgba(0,0,0,.10);
+    transition: transform .12s ease, box-shadow .12s ease;
   }
-  .big-btn:active { background: rgba(255,255,255,.42); }
-  .big-btn.danger:active { background: rgba(255,80,80,.6); }
+  .big-btn:active { transform: scale(.92); box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 1px 3px rgba(0,0,0,.12); }
+  .big-btn.danger { background: linear-gradient(180deg, rgba(255,200,200,.45), rgba(255,180,180,.2)); }
+  .big-btn.danger:active { background: linear-gradient(180deg, rgba(255,170,170,.6), rgba(255,150,150,.3)); }
 
   /* Main layout */
   main {
@@ -79,11 +116,15 @@
     width: 100%; aspect-ratio: 1;
     border-radius: 50%;
     border: 3px solid #fff;
-    box-shadow: 0 1px 4px rgba(0,0,0,.18);
+    box-shadow: 0 2px 6px rgba(0,0,0,.18);
     cursor: pointer;
+    transition: transform .15s ease;
   }
+  .swatch:hover { transform: scale(1.08); }
+  .swatch:active { transform: scale(.9); }
   .swatch.active {
-    outline: 4px solid var(--accent); outline-offset: 2px;
+    outline: 4px solid var(--accent-2); outline-offset: 2px;
+    box-shadow: 0 4px 12px rgba(183,148,244,.45);
   }
   .custom-color {
     display: flex; align-items: center; gap: 8px; margin-top: 6px;
@@ -212,17 +253,20 @@
   /* Modals */
   .modal {
     position: fixed; inset: 0;
-    background: rgba(0,0,0,.5);
+    background: rgba(40,30,60,.5);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
     display: none; align-items: center; justify-content: center;
     z-index: 50; padding: 12px;
   }
   .modal.show { display: flex; }
+  .modal.show .modal-box { animation: modalIn .26s cubic-bezier(.34,1.4,.5,1); }
   .modal-box {
-    background: #fff; border-radius: 20px;
+    background: #fff; border-radius: 24px;
     width: 100%; max-width: 920px;
     max-height: 92vh; overflow: hidden;
     display: flex; flex-direction: column;
-    box-shadow: 0 12px 40px rgba(0,0,0,.25);
+    box-shadow: 0 18px 50px rgba(40,30,80,.32), 0 2px 6px rgba(0,0,0,.08);
   }
   .modal-header {
     display: flex; align-items: center; gap: 10px;
@@ -244,15 +288,21 @@
     flex-shrink: 0;
   }
   .primary-btn {
-    background: var(--accent); color: #fff; border: none;
-    padding: 12px 24px; border-radius: 12px; font-size: 16px; font-weight: 700;
+    background: linear-gradient(135deg, #5b8def, #b794f4);
+    color: #fff; border: none;
+    padding: 12px 24px; border-radius: 14px; font-size: 16px; font-weight: 700;
     min-height: var(--hit); cursor: pointer;
+    box-shadow: 0 4px 12px rgba(90,80,200,.25);
+    transition: transform .12s ease;
   }
+  .primary-btn:active { transform: scale(.94); }
   .secondary-btn {
     background: #f1f4f8; color: #333; border: none;
-    padding: 12px 24px; border-radius: 12px; font-size: 16px; font-weight: 600;
+    padding: 12px 24px; border-radius: 14px; font-size: 16px; font-weight: 600;
     min-height: var(--hit); cursor: pointer;
+    transition: transform .12s ease;
   }
+  .secondary-btn:active { transform: scale(.94); background: #e3e7ed; }
 
   /* Picture / Stamp picker */
   .cat-tabs {
@@ -262,25 +312,40 @@
   }
   .cat-tab {
     background: #f1f4f8; border: 2px solid transparent;
-    padding: 10px 14px; border-radius: 999px;
-    font-size: 14px; font-weight: 600; cursor: pointer;
-    min-height: 44px;
+    padding: 10px 16px; border-radius: 999px;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    min-height: 44px; color: #555;
+    transition: transform .12s ease, background .15s;
   }
-  .cat-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .cat-tab:active { transform: scale(.94); }
+  .cat-tab.active {
+    background: linear-gradient(135deg, #5b8def, #b794f4);
+    color: #fff; border-color: transparent;
+    box-shadow: 0 4px 10px rgba(90,80,200,.25);
+  }
   .picker-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 10px;
+    gap: 12px;
   }
   .picker-card {
-    background: #f9fafc; border: 3px solid transparent;
-    border-radius: 14px; padding: 6px; cursor: pointer;
+    background: #fff; border: 3px solid transparent;
+    border-radius: 18px; padding: 8px; cursor: pointer;
     aspect-ratio: 4 / 3; position: relative;
     display: flex; flex-direction: column;
+    box-shadow: 0 4px 12px rgba(90,80,150,.10);
+    transition: transform .15s ease, box-shadow .15s ease;
   }
-  .picker-card.active { border-color: var(--accent); background: #e6f3ff; }
+  .picker-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(90,80,150,.18); }
+  .picker-card:active { transform: scale(.96); }
+  .picker-card.active {
+    border-color: var(--accent-2);
+    background: #f6efff;
+    box-shadow: 0 6px 16px rgba(183,148,244,.4);
+  }
   .picker-card svg { width: 100%; flex: 1; }
   .picker-card .pc-label {
-    font-size: 11px; color: #555; text-align: center; padding-top: 4px;
+    font-size: 11px; color: #5e556d; text-align: center; padding-top: 4px;
+    font-weight: 600;
   }
   .picker-card.custom::after {
     content: '×';
@@ -298,11 +363,19 @@
     gap: 8px;
   }
   .stamp-card {
-    background: #f9fafc; border: 3px solid transparent;
-    border-radius: 14px; padding: 6px; cursor: pointer;
+    background: #fff; border: 3px solid transparent;
+    border-radius: 16px; padding: 6px; cursor: pointer;
     aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 3px 10px rgba(90,80,150,.10);
+    transition: transform .15s ease;
   }
-  .stamp-card.active { border-color: var(--accent); background: #e6f3ff; }
+  .stamp-card:hover { transform: translateY(-3px) rotate(-2deg); }
+  .stamp-card:active { transform: scale(.92); }
+  .stamp-card.active {
+    border-color: var(--accent-2);
+    background: #f6efff;
+    box-shadow: 0 5px 14px rgba(183,148,244,.4);
+  }
   .stamp-card svg { width: 80%; height: 80%; }
 
   /* Search row in picture modal */
@@ -366,14 +439,17 @@
 
   /* Toast / autosave indicator */
   .toast {
-    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
-    background: rgba(0,0,0,.78); color: #fff;
-    padding: 10px 18px; border-radius: 999px;
-    font-size: 14px; z-index: 60;
+    position: fixed; left: 50%; bottom: 80px; transform: translateX(-50%);
+    background: linear-gradient(135deg, #5b8def, #b794f4);
+    color: #fff;
+    padding: 12px 22px; border-radius: 999px;
+    font-size: 14px; font-weight: 700;
+    box-shadow: 0 6px 18px rgba(90,80,200,.4);
+    z-index: 60;
     opacity: 0; pointer-events: none;
-    transition: opacity .25s;
+    transition: opacity .25s, transform .25s;
   }
-  .toast.show { opacity: 1; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
   /* ===== Responsive ===== */
 
@@ -575,7 +651,7 @@
         <button class="tool" id="zoomOut" title="缩小"><span>−</span></button>
         <div class="zoom-display" id="zoomDisplay">100%</div>
         <button class="tool" id="zoomIn" title="放大"><span>+</span></button>
-        <button class="tool" id="zoomReset" title="复位"><span>⌂</span></button>
+        <button class="tool" id="zoomReset" title="复位 100%"><span style="font-size:11px;font-weight:700">复位</span></button>
       </div>
     </div>
   </div>
@@ -3404,6 +3480,7 @@ const state = {
   stampCat: STAMP_CATEGORIES[0][0],
   stampKey: null,
   view: { tx: 0, ty: 0, scale: 1 },
+  firstPickDone: false,
   history: [],   // session-only undo stack
   timer: {
     durationSec: 600,
@@ -3436,6 +3513,7 @@ function loadPersisted() {
       stampCat: data.stampCat || state.stampCat,
       view: data.view || state.view,
       customPages: data.customPages || {},
+      firstPickDone: !!data.firstPickDone,
     });
     if (data.timer) {
       Object.assign(state.timer, data.timer);
@@ -3462,6 +3540,7 @@ const savePersisted = debounce(() => {
       pictureCat: state.pictureCat, stampCat: state.stampCat,
       view: state.view, customPages: state.customPages,
       timer: state.timer, pageStates,
+      firstPickDone: state.firstPickDone,
     };
     localStorage.setItem(LS_KEY, JSON.stringify(data));
   } catch (e) {
@@ -3811,6 +3890,11 @@ function svgStampClick(e) {
   if (!pt) return;
   placeStamp(state.stampKey, pt.x, pt.y, state.color, true, state.pattern, state.stampSize);
 }
+svgEl.addEventListener('click', svgStampClick);
+svgEl.addEventListener('touchend', (e) => {
+  // Some browsers fire only touchend (not click) on SVG. Forward as needed.
+  if (state.tool === 'stamp' && state.stampKey) svgStampClick(e);
+}, { passive: true });
 function svgEventToPoint(e) {
   const rect = svgEl.getBoundingClientRect();
   const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
@@ -3959,7 +4043,7 @@ canvas.addEventListener('pointermove', (e) => {
   if (eraserPending) {
     const dx = e.clientX - eraserPending.clientX;
     const dy = e.clientY - eraserPending.clientY;
-    if (dx * dx + dy * dy > 64) {
+    if (dx * dx + dy * dy > 256) {  // > 16px → treat as drag (canvas erase)
       startStroke(eraserPending.x, eraserPending.y);
       eraserPending = null;
     }
@@ -4196,9 +4280,29 @@ function buildPictureGrid() {
       }
       loadPage(key);
       closeModal('pictureModal');
+      markFirstPickDone();
     });
     pictureGrid.appendChild(card);
   });
+}
+
+// Called when the user first picks any picture — flips the firstPickDone
+// flag and (re)starts the timer so the initial picker doesn't count as
+// drawing time. No-op for every pick after the first.
+function markFirstPickDone() {
+  if (state.firstPickDone) return;
+  state.firstPickDone = true;
+  state.timer.elapsedBefore = 0;
+  state.timer.startTs = Date.now();
+  state.timer.paused = false;
+  state.timer.fired = false;
+  if (state.timer.mode === 'multi') {
+    state.timer.currentPlayer = 1;
+    state.timer.currentRound = 1;
+    state.timer.done = false;
+  }
+  tickTimer();
+  savePersisted();
 }
 
 /* =========================================================================
@@ -4215,6 +4319,7 @@ function addCustomPage(dataUrl, label) {
   savePersisted();
   loadPage(key);
   closeModal('pictureModal');
+  markFirstPickDone();
 }
 document.getElementById('fileInput').addEventListener('change', (e) => {
   const f = e.target.files && e.target.files[0];
@@ -4387,6 +4492,13 @@ function tickTimer() {
   const t = state.timer;
   if (t.done) {
     timerText.textContent = '🎉 完成';
+    timerChip.className = 'timer-chip';
+    return;
+  }
+  // Before the user has picked their first picture, freeze the timer on the
+  // full duration so the initial picker isn't counted as drawing time.
+  if (!state.firstPickDone) {
+    timerText.textContent = t.durationSec > 0 ? '等开始 ' + fmtMs(t.durationSec * 1000) : '关';
     timerChip.className = 'timer-chip';
     return;
   }
