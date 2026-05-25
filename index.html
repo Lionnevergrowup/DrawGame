@@ -3558,7 +3558,9 @@ const state = {
 
 function debounce(fn, ms) {
   let t = null;
-  return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+  const debounced = (...a) => { clearTimeout(t); t = setTimeout(() => { fn(...a); t = null; }, ms); };
+  debounced.flush = (...a) => { if (t) { clearTimeout(t); t = null; } fn(...a); };
+  return debounced;
 }
 
 function loadPersisted() {
@@ -4882,6 +4884,14 @@ loadPage(state.pageKey);
 applyView();
 tickTimer();
 applyI18n();
+
+// Flush autosave when the tab becomes hidden or the page is unloaded
+// (otherwise the debounced save might never fire if the user navigates
+// away within 350 ms of their last change).
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') savePersisted.flush();
+});
+window.addEventListener('pagehide', () => savePersisted.flush());
 
 // Auto-open the picture picker as the first screen (after help on first visit).
 function openPickerAfterBoot() {
