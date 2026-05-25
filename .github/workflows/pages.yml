@@ -2,9 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches:
-      - claude/bluey-drawing-coloring-game-cRm8o
-      - main
+    branches: [main]
   workflow_dispatch:
 
 permissions:
