@@ -1392,7 +1392,7 @@ const state = {
   view: { tx: 0, ty: 0, scale: 1 },
   firstPickDone: false,
   lang: 'cn',  // 'cn' or 'en'
-  history: [],   // session-only undo stack
+  history: [],   // session-only undo stack — see pushHistory() below for cap
   timer: {
     durationSec: 600,
     startTs: Date.now(),
@@ -1402,6 +1402,14 @@ const state = {
   },
   customPages: {}, // key -> { name, dataUrl }
 };
+
+// Cap the undo stack so brush-stroke imageData entries (a few MB each at
+// retina DPR) don't accumulate forever and OOM the tab on iPad.
+const MAX_HISTORY = 25;
+function pushHistory(entry) {
+  state.history.push(entry);
+  while (state.history.length > MAX_HISTORY) state.history.shift();
+}
 
 function debounce(fn, ms) {
   let t = null;
@@ -1808,7 +1816,7 @@ function bindFillable() {
       const prev = el.getAttribute('fill') || '#ffffff';
       const next = currentFillValue();
       if (prev === next) return;
-      state.history.push({ kind: 'fill', el, prevColor: prev });
+      pushHistory({ kind: 'fill', el, prevColor: prev });
       el.setAttribute('fill', next);
       savePersisted();
     };
@@ -1874,7 +1882,7 @@ function placeStamp(key, x, y, color, addHistory, patternKey, size) {
   g.innerHTML = body.replace(/__C__/g, fillVal);
   svgEl.appendChild(g);
   if (addHistory) {
-    state.history.push({ kind: 'stamp', el: g });
+    pushHistory({ kind: 'stamp', el: g });
     savePersisted();
   }
 }
@@ -1927,7 +1935,7 @@ function endStroke() {
   if (!drawing) return;
   drawing = false;
   if (strokeSnapshot) {
-    state.history.push({ kind: 'stroke', imageData: strokeSnapshot });
+    pushHistory({ kind: 'stroke', imageData: strokeSnapshot });
     strokeSnapshot = null;
     savePersisted();
   }
@@ -2019,7 +2027,7 @@ function eraserTapHitTest(clientX, clientY) {
   if (target.classList && target.classList.contains('fillable')) {
     const prev = target.getAttribute('fill') || '#ffffff';
     if (prev !== '#ffffff') {
-      state.history.push({ kind: 'fill', el: target, prevColor: prev });
+      pushHistory({ kind: 'fill', el: target, prevColor: prev });
       target.setAttribute('fill', '#ffffff');
       savePersisted();
     }
@@ -2027,7 +2035,7 @@ function eraserTapHitTest(clientX, clientY) {
   }
   const stampInst = target.closest && target.closest('.stamp-instance');
   if (stampInst && stampInst.parentNode === svgEl) {
-    state.history.push({
+    pushHistory({
       kind: 'stamp-removed',
       key: stampInst.dataset.stampKey,
       x: +stampInst.dataset.x, y: +stampInst.dataset.y,
@@ -2113,15 +2121,19 @@ document.getElementById('undoBtn').addEventListener('click', () => {
 
 document.getElementById('clearBtn').addEventListener('click', () => {
   if (!confirm(t('confirmClear'))) return;
-  // Clear fills + canvas + stamps for current page
-  if (state._pageStates) delete state._pageStates[state.pageKey];
+  // loadPage(..) snapshots the CURRENT (pre-clear) state into _pageStates
+  // before replacing the SVG, so we have to delete that snapshot AFTER
+  // loadPage finishes — otherwise switching to another page and back
+  // would restore the cleared content.
   loadPage(state.pageKey, false);
+  if (state._pageStates) delete state._pageStates[state.pageKey];
+  savePersisted();
   showToast(t('cleared'));
 });
 
 function clearCanvas(addHistory = true) {
   if (addHistory && canvas.width && canvas.height) {
-    state.history.push({ kind: 'stroke', imageData: ctx.getImageData(0, 0, canvas.width, canvas.height) });
+    pushHistory({ kind: 'stroke', imageData: ctx.getImageData(0, 0, canvas.width, canvas.height) });
   }
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
