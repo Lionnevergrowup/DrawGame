@@ -1796,26 +1796,40 @@ function bindFillable() {
     el.addEventListener('touchstart', handler, { passive: false });
   });
 }
-// Delegated SVG click handler, bound exactly once for stamp placement
+// Delegated SVG click handler for stamp placement.
+// We listen to BOTH click and pointerup as a fallback — some touch flows
+// don't reliably synthesize a click on SVG elements, but pointerup always
+// fires. A small ms-window guard prevents the same gesture from placing
+// twice when both events fire.
+let lastStampPlaceTs = 0;
 function svgStampClick(e) {
   if (state.tool !== 'stamp' || !state.stampKey) return;
-  if (e.target.closest('.stamp-instance')) return;
+  if (e.target && e.target.closest && e.target.closest('.stamp-instance')) return;
+  const now = Date.now();
+  if (now - lastStampPlaceTs < 350) return;   // debounce double-fire
   const pt = svgEventToPoint(e);
   if (!pt) return;
+  lastStampPlaceTs = now;
   placeStamp(state.stampKey, pt.x, pt.y, state.color, true, state.pattern, state.stampSize);
 }
 svgEl.addEventListener('click', svgStampClick);
-svgEl.addEventListener('touchend', (e) => {
-  // Some browsers fire only touchend (not click) on SVG. Forward as needed.
-  if (state.tool === 'stamp' && state.stampKey) svgStampClick(e);
-}, { passive: true });
+svgEl.addEventListener('pointerup', svgStampClick);
 function svgEventToPoint(e) {
   const rect = svgEl.getBoundingClientRect();
-  const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-  const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-  const x = (cx / rect.width) * 400;
-  const y = (cy / rect.height) * 300;
-  return { x, y };
+  // Be robust to clicks, touchstart (e.touches), and touchend (e.changedTouches)
+  let clientX, clientY;
+  if (e.touches && e.touches.length > 0) {
+    clientX = e.touches[0].clientX; clientY = e.touches[0].clientY;
+  } else if (e.changedTouches && e.changedTouches.length > 0) {
+    clientX = e.changedTouches[0].clientX; clientY = e.changedTouches[0].clientY;
+  } else if (typeof e.clientX === 'number') {
+    clientX = e.clientX; clientY = e.clientY;
+  } else {
+    return null;
+  }
+  const cx = clientX - rect.left;
+  const cy = clientY - rect.top;
+  return { x: (cx / rect.width) * 400, y: (cy / rect.height) * 300 };
 }
 /* =========================================================================
    Stamps
