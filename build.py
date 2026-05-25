@@ -1736,8 +1736,10 @@ function setTool(t, openStampPicker = true) {
   }
   if (t !== 'stamp') state.stampKey = null;
   if (stampSizeBox) stampSizeBox.style.display = (t === 'stamp') ? '' : 'none';
-  // When user picks stamp tool from the bottom bar, auto-open the stamp picker
-  if (t === 'stamp' && openStampPicker && prev !== 'stamp') {
+  // Open the stamp picker whenever the user explicitly picks the stamp tool,
+  // even if they were already in stamp mode (re-tapping the bottom button
+  // should always show the picker so they can pick a different sticker).
+  if (t === 'stamp' && openStampPicker) {
     buildStampCatTabs(); buildStampGrid(); openModal('stampModal');
   }
   savePersisted();
@@ -2384,7 +2386,7 @@ function buildStampGrid() {
     card.innerHTML = `<svg viewBox="0 0 ${vb} ${vb}">${body.replace(/__C__/g, state.color)}</svg>`;
     card.addEventListener('click', () => {
       state.stampKey = (state.stampKey === key) ? null : key;
-      setTool('stamp');
+      setTool('stamp', /*openStampPicker=*/false);
       buildStampGrid();
       closeModal('stampModal');
       showToast(state.stampKey ? t('stampSelected') : t('stampDeselected'), 1500);
@@ -2706,7 +2708,7 @@ updateBrushPreview();
 brushSizeInput.value = state.brushSize;
 stampSizeInput.value = state.stampSize;
 stampSizeText.textContent = state.stampSize;
-setTool(state.tool);
+setTool(state.tool, /*openStampPicker=*/false);   // restore — don't pop the stamp modal at boot
 loadPage(state.pageKey);
 applyView();
 tickTimer();
