@@ -864,6 +864,15 @@ HTML_BODY = r"""<body>
           <button data-min="10">10分钟</button>
           <button data-min="15">15分钟</button>
         </div>
+        <h4 style="margin:14px 0 4px;font-size:13px;color:#333">玩几轮?(每人都画完算一轮)</h4>
+        <div class="timer-options" id="multiRoundOpts">
+          <button data-r="1">1 轮</button>
+          <button data-r="2">2 轮</button>
+          <button data-r="3">3 轮</button>
+          <button data-r="5">5 轮</button>
+          <button data-r="10">10 轮</button>
+          <button data-r="0">不限</button>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -1154,7 +1163,7 @@ function buildPalette() {
     sw.style.background = c;
     sw.dataset.color = c;
     if (c === '#ffffff') sw.style.borderColor = '#ccc';
-    sw.addEventListener('click', () => selectColor(c));
+    sw.addEventListener('click', () => { selectColor(c); closeModal('colorPop'); });
     swatchesBox.appendChild(sw);
   });
 }
@@ -1883,13 +1892,21 @@ function buildStampGrid() {
 }
 
 /* =========================================================================
-   Timer (supports single + multi-player turn timing)
+   Timer (single + multi-player turn timing with round limit)
    ========================================================================= */
-// state.timer extended: { mode: 'single'|'multi', durationSec, startTs,
-//   elapsedBefore, paused, fired, playerCount, currentPlayer }
-if (!state.timer.mode) state.timer.mode = 'single';
-if (!state.timer.playerCount) state.timer.playerCount = 2;
-if (!state.timer.currentPlayer) state.timer.currentPlayer = 1;
+// state.timer extended: {
+//   mode: 'single'|'multi',
+//   durationSec, startTs, elapsedBefore, paused, fired,
+//   playerCount, currentPlayer,            // multi only
+//   totalRounds, currentRound, done        // multi only
+// }
+const T = state.timer;
+if (!T.mode) T.mode = 'single';
+if (!T.playerCount) T.playerCount = 2;
+if (!T.currentPlayer) T.currentPlayer = 1;
+if (T.totalRounds == null) T.totalRounds = 3;
+if (!T.currentRound) T.currentRound = 1;
+if (T.done == null) T.done = false;
 
 function fmtMs(ms) {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -1897,6 +1914,11 @@ function fmtMs(ms) {
 }
 function tickTimer() {
   const t = state.timer;
+  if (t.done) {
+    timerText.textContent = '🎉 完成';
+    timerChip.className = 'timer-chip';
+    return;
+  }
   if (t.durationSec <= 0) {
     timerText.textContent = '关';
     timerChip.className = 'timer-chip';
@@ -1904,9 +1926,13 @@ function tickTimer() {
   }
   const elapsed = t.paused ? t.elapsedBefore : t.elapsedBefore + (Date.now() - t.startTs);
   const remaining = t.durationSec * 1000 - elapsed;
-  const label = (t.mode === 'multi')
-    ? `P${t.currentPlayer}/${t.playerCount} ${fmtMs(remaining)}`
-    : fmtMs(remaining);
+  let label;
+  if (t.mode === 'multi') {
+    const r = t.totalRounds > 0 ? `R${t.currentRound}/${t.totalRounds}` : `R${t.currentRound}`;
+    label = `P${t.currentPlayer}/${t.playerCount} ${r} ${fmtMs(remaining)}`;
+  } else {
+    label = fmtMs(remaining);
+  }
   timerText.textContent = label;
   timerChip.classList.remove('warn', 'danger');
   if (remaining <= 60_000 && remaining > 0) timerChip.classList.add('warn');
@@ -1919,6 +1945,24 @@ function tickTimer() {
 }
 setInterval(tickTimer, 500);
 
+// Advance to next player in multi mode. Returns true if more turns remain.
+function advanceToNextPlayer() {
+  const t = state.timer;
+  let nextPlayer = (t.currentPlayer % t.playerCount) + 1;
+  let nextRound = t.currentRound + (nextPlayer === 1 ? 1 : 0);
+  if (t.totalRounds > 0 && nextRound > t.totalRounds) {
+    t.done = true;
+    return false;
+  }
+  t.currentPlayer = nextPlayer;
+  t.currentRound = nextRound;
+  t.elapsedBefore = 0;
+  t.startTs = Date.now();
+  t.paused = false;
+  t.fired = false;
+  return true;
+}
+
 function showTimerExpired() {
   const t = state.timer;
   const icon = document.getElementById('timerExpiredIcon');
@@ -1926,32 +1970,51 @@ function showTimerExpired() {
   const sub = document.getElementById('timerExpiredSub');
   const btns = document.getElementById('timerExpiredButtons');
   if (t.mode === 'multi') {
-    const next = (t.currentPlayer % t.playerCount) + 1;
-    icon.textContent = '🔁';
-    title.textContent = '换人啦!';
-    sub.textContent = `玩家 ${t.currentPlayer} 时间到。轮到 玩家 ${next} 啦 🎨`;
-    btns.innerHTML = `<button class="primary-btn" id="timerNextPlayer">让玩家 ${next} 开始 ▶</button>`;
-    document.getElementById('timerNextPlayer').addEventListener('click', () => {
-      t.currentPlayer = next;
-      t.elapsedBefore = 0;
-      t.startTs = Date.now();
-      t.paused = false;
-      t.fired = false;
-      closeModal('timerExpiredModal');
-      tickTimer();
-      savePersisted();
-    });
+    // Peek at what comes next (without mutating state)
+    const nextPlayer = (t.currentPlayer % t.playerCount) + 1;
+    const nextRound = t.currentRound + (nextPlayer === 1 ? 1 : 0);
+    const isLast = t.totalRounds > 0 && nextRound > t.totalRounds;
+    if (isLast) {
+      // Last turn — game over
+      icon.textContent = '🎉';
+      title.textContent = '都画完啦!';
+      sub.textContent = `${t.playerCount} 个小朋友各画了 ${t.totalRounds} 轮 ✨`;
+      btns.innerHTML = `<button class="secondary-btn" id="timerPlayAgain">再玩一局</button>
+                        <button class="primary-btn"   id="timerDone">完成</button>`;
+      document.getElementById('timerPlayAgain').addEventListener('click', () => {
+        t.currentPlayer = 1; t.currentRound = 1; t.done = false;
+        t.elapsedBefore = 0; t.startTs = Date.now();
+        t.paused = false; t.fired = false;
+        closeModal('timerExpiredModal'); tickTimer(); savePersisted();
+      });
+      document.getElementById('timerDone').addEventListener('click', () => {
+        t.done = true;
+        closeModal('timerExpiredModal'); tickTimer(); savePersisted();
+      });
+    } else {
+      icon.textContent = '🔁';
+      title.textContent = '换人啦!';
+      sub.textContent = `玩家 ${t.currentPlayer} 时间到 — 轮到 玩家 ${nextPlayer} ${nextPlayer === 1 ? `(第 ${nextRound} 轮)` : ''} 🎨`;
+      btns.innerHTML = `<button class="primary-btn" id="timerNextPlayer">让玩家 ${nextPlayer} 开始 ▶</button>`;
+      document.getElementById('timerNextPlayer').addEventListener('click', () => {
+        advanceToNextPlayer();
+        closeModal('timerExpiredModal'); tickTimer(); savePersisted();
+      });
+    }
   } else {
     icon.textContent = '⏰';
     title.textContent = '时间到啦!';
     sub.textContent = '画得真棒 🎉';
     btns.innerHTML = `<button class="secondary-btn" id="timerExpired10More">再加 10 分钟</button>
-                      <button class="primary-btn" data-close="timerExpiredModal">好的</button>`;
+                      <button class="primary-btn"   id="timerExpired1More">再加 1 分钟</button>
+                      <button class="primary-btn"   data-close="timerExpiredModal">好的</button>`;
     document.getElementById('timerExpired10More').addEventListener('click', () => {
-      t.durationSec += 600;
-      t.fired = false;
-      closeModal('timerExpiredModal');
-      savePersisted();
+      t.durationSec += 600; t.fired = false;
+      closeModal('timerExpiredModal'); savePersisted();
+    });
+    document.getElementById('timerExpired1More').addEventListener('click', () => {
+      t.durationSec += 60; t.fired = false;
+      closeModal('timerExpiredModal'); savePersisted();
     });
     document.querySelector('#timerExpiredButtons [data-close]')
       .addEventListener('click', () => closeModal('timerExpiredModal'));
@@ -1959,24 +2022,35 @@ function showTimerExpired() {
   openModal('timerExpiredModal');
 }
 
+// If user dismisses the expired modal without clicking a button (taps backdrop
+// or hits ×), in multi-mode auto-advance so the game doesn't get stuck.
+const expiredModal = document.getElementById('timerExpiredModal');
+new MutationObserver(() => {
+  if (!expiredModal.classList.contains('show') && state.timer.fired && state.timer.mode === 'multi' && !state.timer.done) {
+    advanceToNextPlayer();
+    tickTimer();
+    savePersisted();
+  }
+}).observe(expiredModal, { attributes: true, attributeFilter: ['class'] });
+
 function refreshTimerModalSelections() {
   const t = state.timer;
-  // mode tabs
   document.querySelectorAll('.mode-tab').forEach(b =>
     b.classList.toggle('active', b.dataset.mode === t.mode)
   );
   document.getElementById('singleModeBox').style.display = (t.mode === 'single') ? '' : 'none';
   document.getElementById('multiModeBox').style.display  = (t.mode === 'multi')  ? '' : 'none';
-  // single options
   document.querySelectorAll('#timerOptions button').forEach(b => {
     b.classList.toggle('active', t.mode === 'single' && +b.dataset.min === t.durationSec / 60);
   });
-  // multi options
   document.querySelectorAll('#multiCountOpts button').forEach(b => {
     b.classList.toggle('active', t.mode === 'multi' && +b.dataset.n === t.playerCount);
   });
   document.querySelectorAll('#multiTurnOpts button').forEach(b => {
     b.classList.toggle('active', t.mode === 'multi' && +b.dataset.min === t.durationSec / 60);
+  });
+  document.querySelectorAll('#multiRoundOpts button').forEach(b => {
+    b.classList.toggle('active', t.mode === 'multi' && +b.dataset.r === t.totalRounds);
   });
   document.getElementById('timerPauseResume').textContent = t.paused ? '▶ 继续' : '⏸ 暂停';
 }
@@ -1987,15 +2061,22 @@ timerChip.addEventListener('click', () => {
 });
 document.querySelectorAll('.mode-tab').forEach(b => {
   b.addEventListener('click', () => {
-    state.timer.mode = b.dataset.mode;
-    if (state.timer.mode === 'multi') {
-      // Default per-turn duration if not sensible
-      if (state.timer.durationSec === 0 || state.timer.durationSec > 1800) state.timer.durationSec = 60;
-      state.timer.currentPlayer = 1;
+    const t = state.timer;
+    t.mode = b.dataset.mode;
+    if (t.mode === 'multi') {
+      // Switching INTO multi mode: pick a sensible per-turn default
+      if (t.durationSec === 0 || t.durationSec > 1800) t.durationSec = 60;
+      t.currentPlayer = 1;
+      t.currentRound = 1;
+      t.done = false;
+    } else {
+      // Switching back to single — keep durationSec if it's reasonable
+      if (t.durationSec < 60) t.durationSec = 600;
     }
-    state.timer.elapsedBefore = 0;
-    state.timer.startTs = Date.now();
-    state.timer.fired = false;
+    t.elapsedBefore = 0;
+    t.startTs = Date.now();
+    t.paused = false;
+    t.fired = false;
     refreshTimerModalSelections();
     tickTimer();
     savePersisted();
@@ -2009,12 +2090,16 @@ document.getElementById('timerOptions').addEventListener('click', (e) => {
 });
 document.getElementById('multiCountOpts').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return;
-  state.timer.mode = 'multi';
-  state.timer.playerCount = +b.dataset.n;
-  state.timer.currentPlayer = 1;
-  state.timer.elapsedBefore = 0;
-  state.timer.startTs = Date.now();
-  state.timer.fired = false;
+  const t = state.timer;
+  t.mode = 'multi';
+  t.playerCount = +b.dataset.n;
+  t.currentPlayer = 1;
+  t.currentRound = 1;
+  t.done = false;
+  t.elapsedBefore = 0;
+  t.startTs = Date.now();
+  t.paused = false;
+  t.fired = false;
   refreshTimerModalSelections();
   tickTimer();
   savePersisted();
@@ -2022,8 +2107,27 @@ document.getElementById('multiCountOpts').addEventListener('click', (e) => {
 document.getElementById('multiTurnOpts').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return;
   state.timer.mode = 'multi';
+  state.timer.currentRound = 1;
+  state.timer.currentPlayer = 1;
+  state.timer.done = false;
   setTimerDuration(+b.dataset.min * 60);
   refreshTimerModalSelections();
+});
+document.getElementById('multiRoundOpts').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  const t = state.timer;
+  t.mode = 'multi';
+  t.totalRounds = +b.dataset.r;
+  t.currentPlayer = 1;
+  t.currentRound = 1;
+  t.done = false;
+  t.elapsedBefore = 0;
+  t.startTs = Date.now();
+  t.paused = false;
+  t.fired = false;
+  refreshTimerModalSelections();
+  tickTimer();
+  savePersisted();
 });
 function setTimerDuration(sec) {
   state.timer.durationSec = sec;
@@ -2031,12 +2135,15 @@ function setTimerDuration(sec) {
   state.timer.startTs = Date.now();
   state.timer.paused = false;
   state.timer.fired = false;
+  state.timer.done = false;
   tickTimer();
   savePersisted();
 }
 document.getElementById('timerReset').addEventListener('click', () => {
-  if (state.timer.mode === 'multi') state.timer.currentPlayer = 1;
-  setTimerDuration(state.timer.durationSec);
+  const t = state.timer;
+  if (t.mode === 'multi') { t.currentPlayer = 1; t.currentRound = 1; }
+  t.done = false;
+  setTimerDuration(t.durationSec);
   refreshTimerModalSelections();
   showToast('倒计时已重置');
 });

@@ -69,7 +69,7 @@ cd /home/user/DrawGame && python3 build.py
 | Picture/Stamp modals | 分类 tab + 缩略图网格。**选 stamp 工具自动开贴纸窗** |
 | 自定义图上传 | `addCustomPage(dataUrl,label)` → 进 `state.customPages` → 进 LS。删除走缩略图右上 × |
 | **Google 搜图** | `doGoogleSearch()`,使用 Google Custom Search JSON API。用户在 ⚙️ 设置面板填 key + cx,存 localStorage |
-| 倒计时 | **支持单人 + 多人轮流**。`state.timer` { mode, durationSec, startTs, elapsedBefore, paused, fired, playerCount, currentPlayer } |
+| 倒计时 | **支持单人 + 多人轮流**(玩家数 + 每人时长 + 总轮数;最后一轮结束后弹"都画完啦",可"再玩一局")。`state.timer` { mode, durationSec, startTs, elapsedBefore, paused, fired, playerCount, currentPlayer, totalRounds, currentRound, done } |
 | 全屏 | `document.documentElement.requestFullscreen()`,iPad Safari 不支持(提示用"加到主屏幕") |
 | 保存 PNG | `saveBtn`,把 SVG + pattern defs 序列化 + canvas 叠加到离屏 canvas → toBlob |
 

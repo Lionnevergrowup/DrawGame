@@ -1269,13 +1269,16 @@ add('icecream', '🍨 冰淇淋圣代', 'food', '''
 add('pizza', '🍕 披萨', 'food', '''
 <g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <circle class="fillable" fill="#ffffff" cx="200" cy="155" r="135"/>
-  <circle class="fillable" fill="#ffffff" cx="200" cy="155" r="120"/>
-  <g stroke-width="2" fill="none">
-    <line x1="200" y1="35" x2="200" y2="275"/>
-    <line x1="80" y1="155" x2="320" y2="155"/>
-    <line x1="115" y1="70" x2="285" y2="240"/>
-    <line x1="115" y1="240" x2="285" y2="70"/>
-  </g>
+  <!-- 8 cheese slices (so a single tap colors only one slice, not the whole pie) -->
+  <path class="fillable" fill="#ffffff" d="M200 155 L200 35 A120 120 0 0 1 285 70 Z"/>
+  <path class="fillable" fill="#ffffff" d="M200 155 L285 70 A120 120 0 0 1 320 155 Z"/>
+  <path class="fillable" fill="#ffffff" d="M200 155 L320 155 A120 120 0 0 1 285 240 Z"/>
+  <path class="fillable" fill="#ffffff" d="M200 155 L285 240 A120 120 0 0 1 200 275 Z"/>
+  <path class="fillable" fill="#ffffff" d="M200 155 L200 275 A120 120 0 0 1 115 240 Z"/>
+  <path class="fillable" fill="#ffffff" d="M200 155 L115 240 A120 120 0 0 1 80 155 Z"/>
+  <path class="fillable" fill="#ffffff" d="M200 155 L80 155 A120 120 0 0 1 115 70 Z"/>
+  <path class="fillable" fill="#ffffff" d="M200 155 L115 70 A120 120 0 0 1 200 35 Z"/>
+  <!-- Toppings -->
   <ellipse class="fillable" fill="#ffffff" cx="150" cy="100" rx="14" ry="10"/>
   <ellipse class="fillable" fill="#ffffff" cx="250" cy="100" rx="14" ry="10"/>
   <ellipse class="fillable" fill="#ffffff" cx="120" cy="155" rx="14" ry="10"/>
@@ -1350,9 +1353,15 @@ add('fruit', '🍎 水果盘', 'food', '''
 add('donut', '🍩 甜甜圈', 'food', '''
 <g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
   <ellipse class="fillable" fill="#ffffff" cx="200" cy="262" rx="160" ry="14"/>
-  <circle class="fillable" fill="#ffffff" cx="200" cy="160" r="110"/>
-  <circle class="fillable" fill="#ffffff" cx="200" cy="160" r="35"/>
-  <path class="fillable" fill="#ffffff" d="M100 130 Q90 165 110 195 Q140 215 175 215 Q170 200 158 195 Q145 180 145 160 Q145 140 158 130 Q170 115 195 110 Q210 105 200 100 Q190 95 165 102 Q130 110 110 125 Z"/>
+  <!-- 8 ring segments instead of one big circle -->
+  <path class="fillable" fill="#ffffff" d="M235 160 L310 160 A110 110 0 0 1 278 238 L225 185 A35 35 0 0 0 235 160 Z"/>
+  <path class="fillable" fill="#ffffff" d="M225 185 L278 238 A110 110 0 0 1 200 270 L200 195 A35 35 0 0 0 225 185 Z"/>
+  <path class="fillable" fill="#ffffff" d="M200 195 L200 270 A110 110 0 0 1 122 238 L175 185 A35 35 0 0 0 200 195 Z"/>
+  <path class="fillable" fill="#ffffff" d="M175 185 L122 238 A110 110 0 0 1 90 160 L165 160 A35 35 0 0 0 175 185 Z"/>
+  <path class="fillable" fill="#ffffff" d="M165 160 L90 160 A110 110 0 0 1 122 82 L175 135 A35 35 0 0 0 165 160 Z"/>
+  <path class="fillable" fill="#ffffff" d="M175 135 L122 82 A110 110 0 0 1 200 50 L200 125 A35 35 0 0 0 175 135 Z"/>
+  <path class="fillable" fill="#ffffff" d="M200 125 L200 50 A110 110 0 0 1 278 82 L225 135 A35 35 0 0 0 200 125 Z"/>
+  <path class="fillable" fill="#ffffff" d="M225 135 L278 82 A110 110 0 0 1 310 160 L235 160 A35 35 0 0 0 225 135 Z"/>
   <g stroke-width="1.5" fill="none"><path d="M125 110 Q145 120 165 102"/><path d="M125 230 Q150 215 175 220"/><path d="M280 110 Q260 120 245 105"/><path d="M275 230 Q255 215 235 220"/></g>
   <g>
     <ellipse class="fillable" fill="#ffffff" cx="140" cy="80" rx="6" ry="3" transform="rotate(25 140 80)"/>
@@ -1983,23 +1992,26 @@ add('watermelon', '🍉 西瓜', 'food', '''
   <path class="fillable" fill="#ffffff" d="M50 70 A180 180 0 0 1 350 70 Z"/>
   <path class="fillable" fill="#ffffff" d="M55 70 A175 175 0 0 1 345 70 L335 70 A165 165 0 0 0 65 70 Z"/>
   <path class="fillable" fill="#ffffff" d="M65 70 A165 165 0 0 1 335 70 L325 70 A155 155 0 0 0 75 70 Z"/>
-  <path class="fillable" fill="#ffffff" d="M75 70 A155 155 0 0 1 325 70 Z"/>
+  <!-- Inner pink flesh as 4 wedge slices from apex (200, 70) -->
+  <path class="fillable" fill="#ffffff" d="M200 70 L75 70 A155 155 0 0 1 123 113 Z"/>
+  <path class="fillable" fill="#ffffff" d="M200 70 L123 113 A155 155 0 0 1 200 133 Z"/>
+  <path class="fillable" fill="#ffffff" d="M200 70 L200 133 A155 155 0 0 1 277 113 Z"/>
+  <path class="fillable" fill="#ffffff" d="M200 70 L277 113 A155 155 0 0 1 325 70 Z"/>
   <g>
-    <ellipse class="fillable" fill="#1a1a1a" cx="110" cy="100" rx="4" ry="6"/>
-    <ellipse class="fillable" fill="#1a1a1a" cx="145" cy="90" rx="4" ry="6"/>
-    <ellipse class="fillable" fill="#1a1a1a" cx="180" cy="85" rx="4" ry="6"/>
-    <ellipse class="fillable" fill="#1a1a1a" cx="215" cy="85" rx="4" ry="6"/>
-    <ellipse class="fillable" fill="#1a1a1a" cx="250" cy="90" rx="4" ry="6"/>
-    <ellipse class="fillable" fill="#1a1a1a" cx="285" cy="100" rx="4" ry="6"/>
-    <ellipse class="fillable" fill="#1a1a1a" cx="130" cy="130" rx="4" ry="6"/>
-    <ellipse class="fillable" fill="#1a1a1a" cx="165" cy="125" rx="4" ry="6"/>
+    <ellipse class="fillable" fill="#1a1a1a" cx="110" cy="90" rx="4" ry="6"/>
+    <ellipse class="fillable" fill="#1a1a1a" cx="145" cy="85" rx="4" ry="6"/>
+    <ellipse class="fillable" fill="#1a1a1a" cx="180" cy="82" rx="4" ry="6"/>
+    <ellipse class="fillable" fill="#1a1a1a" cx="220" cy="82" rx="4" ry="6"/>
+    <ellipse class="fillable" fill="#1a1a1a" cx="255" cy="85" rx="4" ry="6"/>
+    <ellipse class="fillable" fill="#1a1a1a" cx="290" cy="90" rx="4" ry="6"/>
+    <ellipse class="fillable" fill="#1a1a1a" cx="130" cy="105" rx="4" ry="6"/>
+    <ellipse class="fillable" fill="#1a1a1a" cx="165" cy="100" rx="4" ry="6"/>
+    <ellipse class="fillable" fill="#1a1a1a" cx="200" cy="98" rx="4" ry="6"/>
+    <ellipse class="fillable" fill="#1a1a1a" cx="235" cy="100" rx="4" ry="6"/>
+    <ellipse class="fillable" fill="#1a1a1a" cx="270" cy="105" rx="4" ry="6"/>
+    <ellipse class="fillable" fill="#1a1a1a" cx="155" cy="120" rx="4" ry="6"/>
     <ellipse class="fillable" fill="#1a1a1a" cx="200" cy="120" rx="4" ry="6"/>
-    <ellipse class="fillable" fill="#1a1a1a" cx="235" cy="125" rx="4" ry="6"/>
-    <ellipse class="fillable" fill="#1a1a1a" cx="270" cy="130" rx="4" ry="6"/>
-    <ellipse class="fillable" fill="#1a1a1a" cx="155" cy="160" rx="4" ry="6"/>
-    <ellipse class="fillable" fill="#1a1a1a" cx="195" cy="155" rx="4" ry="6"/>
-    <ellipse class="fillable" fill="#1a1a1a" cx="235" cy="160" rx="4" ry="6"/>
-    <ellipse class="fillable" fill="#1a1a1a" cx="200" cy="200" rx="4" ry="6"/>
+    <ellipse class="fillable" fill="#1a1a1a" cx="245" cy="120" rx="4" ry="6"/>
   </g>
   <ellipse class="fillable" fill="#ffffff" cx="200" cy="240" rx="140" ry="14"/>
   <path class="fillable" fill="#ffffff" d="M70 260 Q200 250 330 260 L335 285 Q200 295 65 285 Z"/>
