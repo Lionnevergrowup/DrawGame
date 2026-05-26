@@ -4500,6 +4500,13 @@ function markFirstPickDone() {
   }
   tickTimer();
   savePersisted();
+  // First time only: prompt the user to set up the timer (single vs multi,
+  // how long, how many players/rounds) so they don't silently get stuck on
+  // a default 10-minute solo countdown they never agreed to.
+  setTimeout(() => {
+    refreshTimerModalSelections();
+    openModal('timerModal');
+  }, 350);
 }
 
 /* =========================================================================
