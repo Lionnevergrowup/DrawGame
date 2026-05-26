@@ -2347,22 +2347,31 @@ function buildPictureGrid() {
 // flag and (re)starts the timer so the initial picker doesn't count as
 // drawing time. No-op for every pick after the first.
 function markFirstPickDone() {
-  if (state.firstPickDone) return;
-  state.firstPickDone = true;
-  state.timer.elapsedBefore = 0;
-  state.timer.startTs = Date.now();
-  state.timer.paused = false;
-  state.timer.fired = false;
-  if (state.timer.mode === 'multi') {
-    state.timer.currentPlayer = 1;
-    state.timer.currentRound = 1;
-    state.timer.done = false;
+  if (!state.firstPickDone) {
+    state.firstPickDone = true;
+    state.timer.elapsedBefore = 0;
+    state.timer.startTs = Date.now();
+    state.timer.paused = false;
+    state.timer.fired = false;
+    if (state.timer.mode === 'multi') {
+      state.timer.currentPlayer = 1;
+      state.timer.currentRound = 1;
+      state.timer.done = false;
+    }
+    tickTimer();
+    savePersisted();
   }
-  tickTimer();
-  savePersisted();
-  // First time only: prompt the user to set up the timer (single vs multi,
-  // how long, how many players/rounds) so they don't silently get stuck on
-  // a default 10-minute solo countdown they never agreed to.
+  // Show the timer settings prompt once per device, decoupled from
+  // firstPickDone so users with existing saved state also see it after
+  // upgrading to this version.
+  maybeShowTimerIntro();
+}
+
+// One-shot timer-setup prompt, gated by its own localStorage flag so it
+// fires for ALL users (new + existing) exactly once after a picture pick.
+function maybeShowTimerIntro() {
+  try { if (localStorage.getItem('cga_timer_intro_seen')) return; } catch (_) { return; }
+  try { localStorage.setItem('cga_timer_intro_seen', '1'); } catch (_) {}
   setTimeout(() => {
     refreshTimerModalSelections();
     openModal('timerModal');
