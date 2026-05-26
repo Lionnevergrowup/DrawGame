@@ -1775,8 +1775,15 @@ function setTool(t, openStampPicker = true) {
    Pages (load / fill bindings)
    ========================================================================= */
 function loadPage(key, restoreState = true) {
-  const page = PAGES[key];
-  if (!page) return;
+  // Fallback if the saved pageKey points to a page that no longer exists
+  // (e.g. user deleted a custom upload while it was selected, or restored
+  // state from an older app version with a renamed key).
+  let page = PAGES[key];
+  if (!page) {
+    key = PAGES.blank ? 'blank' : Object.keys(PAGES)[0];
+    page = PAGES[key];
+    if (!page) return;
+  }
   // Save current page state before switching
   // Snapshot current page state into _pageStates before switching
   if (svgEl.innerHTML) {
@@ -2202,6 +2209,10 @@ function buildPictureCatTabs() {
   pictureCatTabs.innerHTML = '';
   const ids = CATEGORIES.map(c => c[0]);
   if (Object.keys(state.customPages).length) ids.push('custom');
+  // Defensive: if state.pictureCat points to a category that isn't available
+  // (e.g. saved state had 'custom' but the user has since deleted all customs),
+  // snap to the first real category so the grid isn't empty.
+  if (!ids.includes(state.pictureCat)) state.pictureCat = ids[0];
   ids.forEach(id => {
     const b = document.createElement('button');
     b.className = 'cat-tab' + (id === state.pictureCat ? ' active' : '');
@@ -2235,6 +2246,11 @@ function buildPictureGrid() {
         if (x > r.width - 30 && y < 30) {
           delete PAGES[key]; delete state.customPages[key];
           if (state.pageKey === key) { state.pageKey = 'blank'; loadPage('blank'); }
+          // If we just deleted the last custom and we were on that tab,
+          // fall back to the first real category so the grid isn't empty.
+          if (state.pictureCat === 'custom' && !Object.keys(state.customPages).length) {
+            state.pictureCat = CATEGORIES[0][0];
+          }
           savePersisted(); buildPictureCatTabs(); buildPictureGrid();
           return;
         }
@@ -2395,6 +2411,8 @@ document.getElementById('urlLoadBtn').addEventListener('click', async () => {
    ========================================================================= */
 function buildStampCatTabs() {
   stampCatTabs.innerHTML = '';
+  // Defensive: snap state.stampCat to a valid id if the saved one was renamed/removed.
+  if (!STAMP_CATEGORIES.some(c => c[0] === state.stampCat)) state.stampCat = STAMP_CATEGORIES[0][0];
   STAMP_CATEGORIES.forEach(([id]) => {
     const b = document.createElement('button');
     b.className = 'cat-tab' + (id === state.stampCat ? ' active' : '');
