@@ -134,6 +134,9 @@ I18N = {
     'helpFullscreenHead': '⛶ 全屏',
     'helpFullscreenBody': '点 ⛶ 按钮,浏览器进入全屏模式(iPad Safari 也可以从"分享 → 添加到主屏幕"装成 App)。',
     'customColorLabel': '自选任意颜色 →',
+    'resetAll': '🧹 全部重新开始',
+    'resetAllConfirm': '确定要全部重新开始吗?所有画的作品、上传的图片、计时器设置都会被清空,不能撤销。',
+    'resetAllDone': '已重置,正在重新加载…',
   },
   'en': {
     'appTitle': '🎨 Coloring',
@@ -214,6 +217,9 @@ I18N = {
     'helpFullscreenHead': '⛶ Fullscreen',
     'helpFullscreenBody': 'Tap the ⛶ button for browser fullscreen. (iPad Safari: use Share → Add to Home Screen.)',
     'customColorLabel': 'Or pick any color →',
+    'resetAll': '🧹 Start over from scratch',
+    'resetAllConfirm': "Really start over? All your drawings, uploads and timer settings will be wiped. This can't be undone.",
+    'resetAllDone': 'Reset done — reloading…',
   },
 }
 
@@ -911,15 +917,24 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
       padding-bottom: 6px;
       padding-left:   calc(8px + var(--safe-left));
     }
-    header h1 { font-size: 14px; letter-spacing: 0; }
+    header h1 { display: none; }
     .header-spacer { display: none; }
     .header-btns {
-      flex: 1; justify-content: flex-end; gap: 4px; flex-wrap: nowrap;
+      flex: 1; justify-content: flex-end; gap: 4px;
+      flex-wrap: nowrap;
+      overflow-x: auto;        /* if a really wide language ever overflows, allow scroll */
+      scrollbar-width: none;
     }
+    .header-btns::-webkit-scrollbar { display: none; }
     .timer-chip { font-size: 13px; padding: 4px 10px; min-height: 40px; gap: 4px; }
+    /* On phones, headers are icon-only regardless of language — labels are
+       hidden so English ("Pictures"/"Fullscreen") doesn't overflow. */
+    .big-btn .btn-label { display: none; }
+    .big-btn .btn-icon  { font-size: 18px; }
     .big-btn {
-      padding: 6px 8px; font-size: 12px; min-height: 40px; min-width: 40px;
-      gap: 3px; border-radius: 10px;
+      padding: 4px 8px; font-size: 12px;
+      min-height: 40px; min-width: 40px;
+      gap: 0; border-radius: 10px; flex-shrink: 0;
     }
 
     main { flex-direction: column; }
@@ -990,12 +1005,9 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
     .timer-options button { padding: 12px 4px; font-size: 14px; min-height: 44px; }
   }
 
-  /* Tiny phone (iPhone SE etc) */
+  /* Tiny phone (iPhone SE etc) — further compact: smaller buttons + tighter palette */
   @media (max-width: 400px) {
-    header h1 { display: none; }
-    .big-btn .btn-label { display: none; }
-    .big-btn .btn-icon { font-size: 18px; }
-    .big-btn { min-width: 38px; min-height: 40px; padding: 4px 6px; }
+    .big-btn { min-width: 38px; padding: 4px 6px; }
     .timer-chip { font-size: 12px; padding: 3px 8px; gap: 3px; }
     .palette { gap: 10px; padding: 6px 8px; }
     .palette > * { min-width: 100px; }
@@ -1315,6 +1327,7 @@ HTML_BODY = r"""<body>
       <p data-i18n="helpFullscreenBody"></p>
     </div>
     <div class="modal-footer">
+      <button class="secondary-btn" id="resetAllBtn" data-i18n="resetAll" style="background:#fee; color:#c33">🧹 全部重新开始</button>
       <button class="primary-btn" data-close="helpModal" data-i18n="helpClose">明白了!</button>
     </div>
   </div>
@@ -2817,6 +2830,23 @@ document.getElementById('fullscreenBtn').addEventListener('click', async () => {
    ========================================================================= */
 document.getElementById('helpBtn').addEventListener('click', () => openModal('helpModal'));
 document.getElementById('langToggle').addEventListener('click', toggleLang);
+
+// "Start over" — wipe every app key from localStorage and reload, so the
+// user gets the first-visit flow (help → picker → timer setup) fresh.
+document.getElementById('resetAllBtn').addEventListener('click', () => {
+  if (!confirm(t('resetAllConfirm'))) return;
+  try {
+    // Only nuke our own keys (cga_*, gcs_*) so we don't wreck other sites.
+    const toRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith('cga_') || k.startsWith('gcs_'))) toRemove.push(k);
+    }
+    toRemove.forEach(k => localStorage.removeItem(k));
+  } catch (_) {}
+  showToast(t('resetAllDone'), 1500);
+  setTimeout(() => location.reload(), 600);
+});
 
 /* =========================================================================
    Boot
