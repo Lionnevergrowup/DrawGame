@@ -447,10 +447,31 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
   }
   body { display: flex; flex-direction: column; height: 100dvh; }
 
-  /* Top bar — its background extends into the iPhone notch area */
+  /* Top bar — its background extends into the iPhone notch area.
+     Use both constant() (iOS 11.0–11.1) and env() (11.2+) for maximum
+     compatibility, and explicitly set padding-top with var() so the
+     responsive overrides below can adjust the base 8px without losing
+     the safe-area component. */
+  :root {
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+  }
+  @supports (top: constant(safe-area-inset-top)) {
+    :root {
+      --safe-top: constant(safe-area-inset-top);
+      --safe-right: constant(safe-area-inset-right);
+      --safe-bottom: constant(safe-area-inset-bottom);
+      --safe-left: constant(safe-area-inset-left);
+    }
+  }
   header {
     display: flex; align-items: center; gap: 8px;
-    padding: calc(8px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) 8px calc(12px + env(safe-area-inset-left));
+    padding-top:    calc(8px + var(--safe-top));
+    padding-right:  calc(12px + var(--safe-right));
+    padding-bottom: 8px;
+    padding-left:   calc(12px + var(--safe-left));
     background: var(--grad-header);
     color: white;
     box-shadow: var(--shadow-deep);
@@ -627,9 +648,9 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
   /* Bottom toolbar with tools + zoom — lifts above iPhone home indicator */
   .bottom-bar {
     position: absolute;
-    left: calc(12px + env(safe-area-inset-left));
-    right: calc(12px + env(safe-area-inset-right));
-    bottom: calc(12px + env(safe-area-inset-bottom));
+    left:   calc(12px + var(--safe-left));
+    right:  calc(12px + var(--safe-right));
+    bottom: calc(12px + var(--safe-bottom));
     display: flex; align-items: center; justify-content: space-between;
     gap: 8px; pointer-events: none;
   }
@@ -668,7 +689,7 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
     -webkit-backdrop-filter: blur(3px);
     display: none; align-items: center; justify-content: center;
     z-index: 50;
-    padding: calc(12px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
+    padding: calc(12px + var(--safe-top)) calc(12px + var(--safe-right)) calc(12px + var(--safe-bottom)) calc(12px + var(--safe-left));
   }
   .modal.show { display: flex; }
   .modal.show .modal-box { animation: modalIn .26s cubic-bezier(.34,1.4,.5,1); }
@@ -885,7 +906,10 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
     body { font-size: 14px; }
     header {
       flex-wrap: wrap; gap: 6px;
-      padding: calc(6px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) 6px calc(8px + env(safe-area-inset-left));
+      padding-top:    calc(6px + var(--safe-top));
+      padding-right:  calc(8px + var(--safe-right));
+      padding-bottom: 6px;
+      padding-left:   calc(8px + var(--safe-left));
     }
     header h1 { font-size: 14px; letter-spacing: 0; }
     .header-spacer { display: none; }
@@ -921,9 +945,9 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
 
     .stage-wrap { flex: 1; padding: 6px; min-height: 0; }
     .bottom-bar {
-      left: calc(4px + env(safe-area-inset-left));
-      right: calc(4px + env(safe-area-inset-right));
-      bottom: calc(4px + env(safe-area-inset-bottom));
+      left:   calc(4px + var(--safe-left));
+      right:  calc(4px + var(--safe-right));
+      bottom: calc(4px + var(--safe-bottom));
       gap: 4px;
       flex-wrap: wrap;
     }
@@ -940,7 +964,7 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
     /* Modals on phone: take full width */
     .modal {
       align-items: stretch;
-      padding: calc(6px + env(safe-area-inset-top)) calc(6px + env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) calc(6px + env(safe-area-inset-left));
+      padding: calc(6px + var(--safe-top)) calc(6px + var(--safe-right)) calc(6px + var(--safe-bottom)) calc(6px + var(--safe-left));
     }
     .modal-box {
       max-height: 100%; height: 100%; max-width: 100%;
@@ -984,7 +1008,10 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
   @media (max-width: 900px) and (orientation: landscape) and (max-height: 500px) {
     header {
       gap: 4px;
-      padding: calc(4px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) 4px calc(8px + env(safe-area-inset-left));
+      padding-top:    calc(4px + var(--safe-top));
+      padding-right:  calc(8px + var(--safe-right));
+      padding-bottom: 4px;
+      padding-left:   calc(8px + var(--safe-left));
     }
     header h1 { display: none; }
     .timer-chip { font-size: 12px; min-height: 36px; padding: 3px 8px; }
