@@ -211,6 +211,7 @@
     transition: fill 0.15s ease;
   }
   .stage-inner svg .stamp-instance { cursor: pointer; }
+  .stage-inner svg { touch-action: manipulation; }  /* no iOS double-tap-zoom on the drawing */
   .stage-inner canvas { touch-action: none; pointer-events: none; }
   .stage-inner canvas.draw-mode { pointer-events: auto; cursor: crosshair; }
 
@@ -4067,6 +4068,34 @@ function syncCanvasSize() {
   }
 }
 window.addEventListener('resize', () => { syncCanvasSize(); });
+
+// iPad Safari ignores user-scalable=no in the viewport meta, so we explicitly
+// block its built-in double-tap-to-zoom and pinch-zoom on the entire page —
+// otherwise tapping a fill region twice in a row, or two-finger pinching,
+// would zoom the whole UI (toolbars and all) and there's no way to undo it
+// from inside the app. The lower-level pointer / touch events still fire,
+// so our own canvas pinch + fill / brush handling keeps working normally.
+document.addEventListener('gesturestart',  (e) => e.preventDefault(), { passive: false });
+document.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+document.addEventListener('gestureend',    (e) => e.preventDefault(), { passive: false });
+document.addEventListener('dblclick',      (e) => e.preventDefault(), { passive: false });
+// If iOS somehow still zooms the visual viewport (older iPad Safari sometimes
+// bypasses the lockdown above), snap it back to 1× by briefly cycling the
+// viewport meta tag — a known iOS workaround.
+if (window.visualViewport) {
+  let __resetting = false;
+  window.visualViewport.addEventListener('resize', () => {
+    if (__resetting) return;
+    if (window.visualViewport.scale > 1.01) {
+      __resetting = true;
+      const vp = document.querySelector('meta[name="viewport"]');
+      if (!vp) { __resetting = false; return; }
+      const orig = vp.getAttribute('content');
+      vp.setAttribute('content', orig + ', user-scalable=no');
+      setTimeout(() => { vp.setAttribute('content', orig); __resetting = false; }, 100);
+    }
+  });
+}
 
 // Track pointers for pan/zoom & drawing
 const pointers = new Map();
