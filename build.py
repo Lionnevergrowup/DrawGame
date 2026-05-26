@@ -667,7 +667,8 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
     backdrop-filter: blur(3px);
     -webkit-backdrop-filter: blur(3px);
     display: none; align-items: center; justify-content: center;
-    z-index: 50; padding: 12px;
+    z-index: 50;
+    padding: calc(12px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
   }
   .modal.show { display: flex; }
   .modal.show .modal-box { animation: modalIn .26s cubic-bezier(.34,1.4,.5,1); }
@@ -883,7 +884,8 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
     :root { --hit: 44px; }
     body { font-size: 14px; }
     header {
-      flex-wrap: wrap; padding: 6px 8px; gap: 6px;
+      flex-wrap: wrap; gap: 6px;
+      padding: calc(6px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) 6px calc(8px + env(safe-area-inset-left));
     }
     header h1 { font-size: 14px; letter-spacing: 0; }
     .header-spacer { display: none; }
@@ -919,7 +921,10 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
 
     .stage-wrap { flex: 1; padding: 6px; min-height: 0; }
     .bottom-bar {
-      left: 4px; right: 4px; bottom: 4px; gap: 4px;
+      left: calc(4px + env(safe-area-inset-left));
+      right: calc(4px + env(safe-area-inset-right));
+      bottom: calc(4px + env(safe-area-inset-bottom));
+      gap: 4px;
       flex-wrap: wrap;
     }
     .tools, .zoom-tools { padding: 4px; gap: 3px; border-radius: 12px; }
@@ -933,7 +938,10 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
     .zoom-display { font-size: 10px; padding: 0 4px; min-width: 30px; }
 
     /* Modals on phone: take full width */
-    .modal { padding: 6px; align-items: stretch; }
+    .modal {
+      align-items: stretch;
+      padding: calc(6px + env(safe-area-inset-top)) calc(6px + env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) calc(6px + env(safe-area-inset-left));
+    }
     .modal-box {
       max-height: 100%; height: 100%; max-width: 100%;
       border-radius: 14px;
@@ -974,7 +982,10 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
 
   /* Phone landscape: header tighter so canvas keeps height */
   @media (max-width: 900px) and (orientation: landscape) and (max-height: 500px) {
-    header { padding: 4px 8px; gap: 4px; }
+    header {
+      gap: 4px;
+      padding: calc(4px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) 4px calc(8px + env(safe-area-inset-left));
+    }
     header h1 { display: none; }
     .timer-chip { font-size: 12px; min-height: 36px; padding: 3px 8px; }
     .big-btn { font-size: 12px; min-height: 36px; padding: 4px 8px; }
