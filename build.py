@@ -87,6 +87,7 @@ I18N = {
     'timerMinSuffix': '分钟', 'timerPlayerSuffix': '人', 'timerRoundSuffix': '轮',
     'timerUnlimited': '不限', 'timerOff': '关掉',
     'timerResetBtn': '↺ 重置', 'timerPause': '⏸ 暂停', 'timerResume': '▶ 继续',
+    'timerStart': '▶ 开始', 'timerStartToast': '开始计时',
     'timeUp': '时间到啦!', 'greatJob': '画得真棒 🎉',
     'add10Min': '再加 10 分钟', 'add1Min': '再加 1 分钟', 'ok': '好的',
     'switchPlayer': '换人啦!',
@@ -170,6 +171,7 @@ I18N = {
     'timerMinSuffix': 'min', 'timerPlayerSuffix': 'players', 'timerRoundSuffix': 'rounds',
     'timerUnlimited': '∞', 'timerOff': 'Off',
     'timerResetBtn': '↺ Reset', 'timerPause': '⏸ Pause', 'timerResume': '▶ Resume',
+    'timerStart': '▶ Start', 'timerStartToast': 'Timer started',
     'timeUp': 'Time\'s up!', 'greatJob': 'Great job! 🎉',
     'add10Min': '+10 min', 'add1Min': '+1 min', 'ok': 'OK',
     'switchPlayer': 'Switch player!',
@@ -1278,7 +1280,8 @@ HTML_BODY = r"""<body>
     </div>
     <div class="modal-footer">
       <button class="secondary-btn" id="timerReset" data-i18n="timerResetBtn">↺ 重置</button>
-      <button class="primary-btn" id="timerPauseResume" data-i18n="timerPause">⏸ 暂停</button>
+      <button class="secondary-btn" id="timerPauseResume" data-i18n="timerPause">⏸ 暂停</button>
+      <button class="primary-btn" id="timerStart" data-i18n="timerStart">▶ 开始</button>
     </div>
   </div>
 </div>
@@ -2820,6 +2823,22 @@ document.getElementById('timerPauseResume').addEventListener('click', () => {
   }
   refreshTimerModalSelections();
   savePersisted();
+});
+document.getElementById('timerStart').addEventListener('click', () => {
+  const tm = state.timer;
+  tm.elapsedBefore = 0;
+  tm.startTs = Date.now();
+  tm.paused = false;
+  tm.fired = false;
+  tm.done = false;
+  if (tm.mode === 'multi') {
+    tm.currentPlayer = 1;
+    tm.currentRound = 1;
+  }
+  tickTimer();
+  savePersisted();
+  closeModal('timerModal');
+  showToast(t('timerStartToast'), 1200);
 });
 
 /* =========================================================================
