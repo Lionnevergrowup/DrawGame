@@ -88,6 +88,8 @@ I18N = {
     'timerUnlimited': '不限', 'timerOff': '关掉',
     'timerResetBtn': '↺ 重置', 'timerPause': '⏸ 暂停', 'timerResume': '▶ 继续',
     'timerStart': '▶ 开始', 'timerStartToast': '开始计时',
+    'timerRestartConfirm': '现在重新开始计时会清掉当前进度,要继续吗?',
+    'timerOffNoStart': '倒计时关掉了,不需要开始',
     'timeUp': '时间到啦!', 'greatJob': '画得真棒 🎉',
     'add10Min': '再加 10 分钟', 'add1Min': '再加 1 分钟', 'ok': '好的',
     'switchPlayer': '换人啦!',
@@ -102,7 +104,7 @@ I18N = {
     'saveFailed': '保存失败,请重试',
     'nothingToUndo': '没有可以撤销的',
     'cleared': '已清空',
-    'confirmClear': '要清空当前这张画吗?(撤销键可以恢复之前的状态)',
+    'confirmClear': '要清空当前这张画吗?清空后不能撤销。',
     'fullscreenNotSupported': '当前浏览器不支持全屏 — iPad Safari 请用"分享 → 添加到主屏幕"',
     'cantFullscreen': '无法进入全屏: ',
     'stampSelected': '在画上点一下放贴纸', 'stampDeselected': '取消贴纸',
@@ -172,6 +174,8 @@ I18N = {
     'timerUnlimited': '∞', 'timerOff': 'Off',
     'timerResetBtn': '↺ Reset', 'timerPause': '⏸ Pause', 'timerResume': '▶ Resume',
     'timerStart': '▶ Start', 'timerStartToast': 'Timer started',
+    'timerRestartConfirm': 'Restarting now will reset current progress. Continue?',
+    'timerOffNoStart': 'Timer is off, nothing to start',
     'timeUp': 'Time\'s up!', 'greatJob': 'Great job! 🎉',
     'add10Min': '+10 min', 'add1Min': '+1 min', 'ok': 'OK',
     'switchPlayer': 'Switch player!',
@@ -186,7 +190,7 @@ I18N = {
     'saveFailed': 'Save failed, please retry',
     'nothingToUndo': 'Nothing to undo',
     'cleared': 'Cleared',
-    'confirmClear': 'Clear this drawing? (Undo can restore it.)',
+    'confirmClear': 'Clear this drawing? This cannot be undone.',
     'fullscreenNotSupported': 'Your browser doesn\'t support fullscreen — on iPad Safari use "Share → Add to Home Screen"',
     'cantFullscreen': 'Cannot enter fullscreen: ',
     'stampSelected': 'Tap on the canvas to place', 'stampDeselected': 'Sticker deselected',
@@ -1479,15 +1483,15 @@ function loadPersisted() {
     if (!raw) return;
     const data = JSON.parse(raw);
     Object.assign(state, {
-      tool: data.tool || state.tool,
-      color: data.color || state.color,
-      pattern: data.pattern || state.pattern,
-      brushSize: data.brushSize || state.brushSize,
-      stampSize: data.stampSize || state.stampSize,
-      pageKey: data.pageKey || state.pageKey,
-      pictureCat: data.pictureCat || state.pictureCat,
-      stampCat: data.stampCat || state.stampCat,
-      view: data.view || state.view,
+      tool: data.tool ?? state.tool,
+      color: data.color ?? state.color,
+      pattern: data.pattern ?? state.pattern,
+      brushSize: data.brushSize ?? state.brushSize,
+      stampSize: data.stampSize ?? state.stampSize,
+      pageKey: data.pageKey ?? state.pageKey,
+      pictureCat: data.pictureCat ?? state.pictureCat,
+      stampCat: data.stampCat ?? state.stampCat,
+      view: data.view ?? state.view,
       customPages: data.customPages || {},
       firstPickDone: !!data.firstPickDone,
       lang: data.lang === 'en' ? 'en' : 'cn',
@@ -1579,7 +1583,7 @@ function capturePageState() {
   let strokes = null;
   try {
     // Avoid serializing huge images: only save if non-empty
-    if (canvasHasContent()) strokes = canvas.toDataURL('image/png');
+    if (canvasDirty && canvasHasContent()) strokes = canvas.toDataURL('image/png');
   } catch (e) {}
   return { fills, stamps, strokes };
 }
@@ -1623,6 +1627,7 @@ function applyPageState(s) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       ctx.restore();
+      canvasDirty = true;
     };
     img.src = s.strokes;
   }
@@ -1684,6 +1689,8 @@ function selectColor(c) {
   if (curSw) curSw.style.background = c;
   updateBrushPreview();
   updatePatternDefs();
+  const sm = document.getElementById('stampModal');
+  if (sm && sm.classList.contains('show')) buildStampGrid();
   savePersisted();
 }
 customColor.addEventListener('input', e => {
@@ -2003,6 +2010,9 @@ const pointers = new Map();
 let drawing = false;
 let lastX = 0, lastY = 0;
 let strokeSnapshot = null;
+// Tracks whether the brush canvas has any non-empty pixel since the last
+// clear/load. Avoids a full getImageData scan on every debounced save.
+let canvasDirty = false;
 let pinchStart = null;
 
 function canvasEventToLocal(e) {
@@ -2013,6 +2023,7 @@ function canvasEventToLocal(e) {
 function startStroke(x, y) {
   strokeSnapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
   drawing = true;
+  canvasDirty = true;
   lastX = x; lastY = y;
   drawSegment(x, y, x, y);
 }
@@ -2229,6 +2240,7 @@ function clearCanvas(addHistory = true) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.restore();
+  canvasDirty = false;
 }
 
 document.getElementById('saveBtn').addEventListener('click', async () => {
@@ -2688,14 +2700,23 @@ function showTimerExpired() {
 }
 
 // If user dismisses the expired modal without clicking a button (taps backdrop
-// or hits ×), in multi-mode auto-advance so the game doesn't get stuck.
+// or hits ×), in multi-mode auto-advance so the game doesn't get stuck — but
+// NOT on the last turn (the "all done" modal needs the user to choose
+// playAgain vs finish; backdrop-dismiss there should just mark finished).
 const expiredModal = document.getElementById('timerExpiredModal');
 new MutationObserver(() => {
-  if (!expiredModal.classList.contains('show') && state.timer.fired && state.timer.mode === 'multi' && !state.timer.done) {
+  const tm = state.timer;
+  if (expiredModal.classList.contains('show') || !tm.fired || tm.mode !== 'multi' || tm.done) return;
+  const nextPlayer = (tm.currentPlayer % tm.playerCount) + 1;
+  const nextRound = tm.currentRound + (nextPlayer === 1 ? 1 : 0);
+  const isLast = tm.totalRounds > 0 && nextRound > tm.totalRounds;
+  if (isLast) {
+    tm.done = true;
+  } else {
     advanceToNextPlayer();
-    tickTimer();
-    savePersisted();
   }
+  tickTimer();
+  savePersisted();
 }).observe(expiredModal, { attributes: true, attributeFilter: ['class'] });
 
 function refreshTimerModalSelections() {
@@ -2826,6 +2847,15 @@ document.getElementById('timerPauseResume').addEventListener('click', () => {
 });
 document.getElementById('timerStart').addEventListener('click', () => {
   const tm = state.timer;
+  if (tm.durationSec === 0) {
+    showToast(t('timerOffNoStart'), 1500);
+    return;
+  }
+  const elapsed = tm.paused
+    ? tm.elapsedBefore
+    : tm.elapsedBefore + (Date.now() - tm.startTs);
+  const midGame = (tm.mode === 'multi' && tm.currentRound > 1) || elapsed > 5000;
+  if (midGame && !confirm(t('timerRestartConfirm'))) return;
   tm.elapsedBefore = 0;
   tm.startTs = Date.now();
   tm.paused = false;
@@ -2864,11 +2894,11 @@ document.getElementById('langToggle').addEventListener('click', toggleLang);
 document.getElementById('resetAllBtn').addEventListener('click', () => {
   if (!confirm(t('resetAllConfirm'))) return;
   try {
-    // Only nuke our own keys (cga_*, gcs_*) so we don't wreck other sites.
+    // Only nuke our own keys (cga_*) so we don't wreck other sites.
     const toRemove = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (k && (k.startsWith('cga_') || k.startsWith('gcs_'))) toRemove.push(k);
+      if (k && k.startsWith('cga_')) toRemove.push(k);
     }
     toRemove.forEach(k => localStorage.removeItem(k));
   } catch (_) {}
