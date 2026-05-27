@@ -137,7 +137,7 @@ I18N = {
     'helpFullscreenHead': '⛶ 全屏',
     'helpFullscreenBody': '点 ⛶ 按钮,浏览器进入全屏模式(iPad Safari 也可以从"分享 → 添加到主屏幕"装成 App)。',
     'customColorLabel': '自选任意颜色 →',
-    'resetAll': '🧹 全部重新开始',
+    'resetAll': '🧹 全部重新开始', 'resetShort': '重置',
     'resetAllConfirm': '确定要全部重新开始吗?所有画的作品、上传的图片、计时器设置都会被清空,不能撤销。',
     'resetAllDone': '已重置,正在重新加载…',
   },
@@ -223,7 +223,7 @@ I18N = {
     'helpFullscreenHead': '⛶ Fullscreen',
     'helpFullscreenBody': 'Tap the ⛶ button for browser fullscreen. (iPad Safari: use Share → Add to Home Screen.)',
     'customColorLabel': 'Or pick any color →',
-    'resetAll': '🧹 Start over from scratch',
+    'resetAll': '🧹 Start over from scratch', 'resetShort': 'Reset',
     'resetAllConfirm': "Really start over? All your drawings, uploads and timer settings will be wiped. This can't be undone.",
     'resetAllDone': 'Reset done — reloading…',
   },
@@ -1059,6 +1059,7 @@ HTML_BODY = r"""<body>
     <button class="big-btn" id="saveBtn"><span class="btn-icon">💾</span><span class="btn-label" data-i18n="save">保存</span></button>
     <button class="big-btn" id="fullscreenBtn"><span class="btn-icon">⛶</span><span class="btn-label" data-i18n="fullscreen">全屏</span></button>
     <button class="big-btn" id="langToggle" title="Switch language / 切换语言"><span class="btn-icon">🌐</span><span class="btn-label">EN</span></button>
+    <button class="big-btn danger" id="resetCacheBtn" data-i18n-title="resetAll" title="🧹 全部重新开始"><span class="btn-icon">🔄</span><span class="btn-label" data-i18n="resetShort">重置</span></button>
     <button class="big-btn" id="helpBtn">?</button>
   </div>
 </header>
@@ -2912,7 +2913,7 @@ document.getElementById('langToggle').addEventListener('click', toggleLang);
 
 // "Start over" — wipe every app key from localStorage and reload, so the
 // user gets the first-visit flow (help → picker → timer setup) fresh.
-document.getElementById('resetAllBtn').addEventListener('click', () => {
+function doResetAll() {
   if (!confirm(t('resetAllConfirm'))) return;
   try {
     // Only nuke our own keys (cga_*) so we don't wreck other sites.
@@ -2925,7 +2926,9 @@ document.getElementById('resetAllBtn').addEventListener('click', () => {
   } catch (_) {}
   showToast(t('resetAllDone'), 1500);
   setTimeout(() => location.reload(), 600);
-});
+}
+document.getElementById('resetAllBtn').addEventListener('click', doResetAll);
+document.getElementById('resetCacheBtn').addEventListener('click', doResetAll);
 
 /* =========================================================================
    Boot
