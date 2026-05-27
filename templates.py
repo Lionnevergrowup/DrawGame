@@ -608,7 +608,6 @@ add('mermaid', '🧜‍♀️ 美人鱼', 'fantasy', '''
   <g><circle class="fillable" fill="#ffffff" cx="190" cy="232" r="6"/><circle class="fillable" fill="#ffffff" cx="210" cy="232" r="6"/><circle class="fillable" fill="#ffffff" cx="185" cy="250" r="6"/><circle class="fillable" fill="#ffffff" cx="200" cy="250" r="6"/><circle class="fillable" fill="#ffffff" cx="215" cy="250" r="6"/><circle class="fillable" fill="#ffffff" cx="180" cy="268" r="6"/><circle class="fillable" fill="#ffffff" cx="195" cy="268" r="6"/><circle class="fillable" fill="#ffffff" cx="210" cy="268" r="6"/><circle class="fillable" fill="#ffffff" cx="225" cy="268" r="6"/></g>
   <path class="fillable" fill="#ffffff" d="M163 282 Q130 270 110 285 Q140 295 168 290 Z"/>
   <path class="fillable" fill="#ffffff" d="M237 282 Q270 270 290 285 Q260 295 232 290 Z"/>
-  <g><circle class="fillable" fill="#ffffff" cx="65" cy="80" r="5"/><circle class="fillable" fill="#ffffff" cx="335" cy="100" r="5"/><circle class="fillable" fill="#ffffff" cx="75" cy="60" r="3"/></g>
 </g>
 ''')
 
