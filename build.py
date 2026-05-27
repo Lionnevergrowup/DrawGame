@@ -77,7 +77,7 @@ I18N = {
     'gcsClear': '清空', 'gcsSave': '保存',
     'stampPickerTitle': '⭐ 选个贴纸,然后在画上点一下放上去',
     'stampPickerHint': '小贴士:再点一次同一个贴纸可以取消选中。贴纸用当前颜色着色。',
-    'timerTitle': '⏱ 倒计时',
+    'timerTitle': '⏱ 倒计时', 'timerHint': '点击设置倒计时',
     'timerSingle': '单人', 'timerMulti': '多人轮流',
     'timerSinglePrompt': '画多久?到时间会弹提示。',
     'timerMultiPrompt': '每个人轮流画固定时间,时间一到提示换下一个人。',
@@ -163,7 +163,7 @@ I18N = {
     'gcsClear': 'Clear', 'gcsSave': 'Save',
     'stampPickerTitle': '⭐ Pick a sticker, then tap the canvas to place it',
     'stampPickerHint': 'Tip: tap the same sticker again to deselect. Stickers use the current color.',
-    'timerTitle': '⏱ Timer',
+    'timerTitle': '⏱ Timer', 'timerHint': 'Tap to set timer',
     'timerSingle': 'Solo', 'timerMulti': 'Take turns',
     'timerSinglePrompt': 'How long? Reminder will pop when time\'s up.',
     'timerMultiPrompt': 'Each player takes a turn; reminder pops to switch players.',
@@ -1050,7 +1050,7 @@ HTML_BODY = r"""<body>
 
 <header>
   <h1 data-i18n="appTitle">🎨 画图填色</h1>
-  <div class="timer-chip" id="timerChip" data-i18n-title="timerTitle" title="点击设置倒计时">⏱ <span id="timerText">10:00</span></div>
+  <div class="timer-chip" id="timerChip" data-i18n-title="timerHint" title="点击设置倒计时">⏱ <span id="timerText">10:00</span></div>
   <div class="header-spacer"></div>
   <div class="header-btns">
     <button class="big-btn" id="pickPictureBtn"><span class="btn-icon">🖼️</span><span class="btn-label" data-i18n="pickPicture">选图</span></button>
@@ -1298,10 +1298,8 @@ HTML_BODY = r"""<body>
       <h2 style="font-size:24px; margin:8px 0; color:var(--accent-dark)" id="timerExpiredTitle">时间到啦!</h2>
       <p style="font-size:16px;color:#555;" id="timerExpiredSub">画得真棒 🎉</p>
     </div>
-    <div class="modal-footer" style="justify-content:center;gap:10px" id="timerExpiredButtons">
-      <button class="secondary-btn" id="timerExpired10More">再加 10 分钟</button>
-      <button class="primary-btn" data-close="timerExpiredModal">好的</button>
-    </div>
+    <!-- Buttons are injected by showTimerExpired() based on mode/turn. -->
+    <div class="modal-footer" style="justify-content:center;gap:10px" id="timerExpiredButtons"></div>
   </div>
 </div>
 
@@ -1602,6 +1600,23 @@ function canvasHasContent() {
   return false;
 }
 
+// Trim _pageStates to the `keep` most-recently-snapshotted entries (plus
+// `currentKey` always). Relies on JS object insertion order: the page we
+// just saved was assigned last, so iterating in reverse keeps it.
+function trimPageStates(keep, currentKey) {
+  const ps = state._pageStates;
+  if (!ps) return;
+  const keys = Object.keys(ps);
+  if (keys.length <= keep) return;
+  const kept = new Set([currentKey]);
+  for (let i = keys.length - 1; i >= 0 && kept.size < keep; i--) {
+    kept.add(keys[i]);
+  }
+  for (const k of keys) {
+    if (!kept.has(k)) delete ps[k];
+  }
+}
+
 function applyPageState(s) {
   if (!s) return;
   if (Array.isArray(s.fills)) {
@@ -1851,7 +1866,13 @@ function loadPage(key, restoreState = true) {
   if (svgEl.innerHTML) {
     state._pageStates = state._pageStates || {};
     const snap = capturePageState();
-    if (snap) state._pageStates[state.pageKey] = snap;
+    if (snap) {
+      state._pageStates[state.pageKey] = snap;
+      // Cap retained pages so a user who flips through all 100 templates
+      // doesn't accumulate 100 PNG dataURLs in localStorage. Keep the
+      // 30 most-recently-touched plus the one we're about to load.
+      trimPageStates(30, key);
+    }
   }
   state.pageKey = key;
   state.history = [];
@@ -2942,12 +2963,13 @@ function openPickerAfterBoot() {
 try {
   if (!localStorage.getItem('cga_help_seen')) {
     openModal('helpModal');
-    localStorage.setItem('cga_help_seen', '1');
-    // When user closes help, open picker
+    // When user closes help, mark seen + open picker. Setting the LS flag
+    // only on close means a reload-during-help still re-shows help next time.
     const helpModal = document.getElementById('helpModal');
     const obs = new MutationObserver(() => {
       if (!helpModal.classList.contains('show')) {
         obs.disconnect();
+        try { localStorage.setItem('cga_help_seen', '1'); } catch (_) {}
         setTimeout(openPickerAfterBoot, 250);
       }
     });
