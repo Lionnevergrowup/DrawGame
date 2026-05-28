@@ -58,7 +58,7 @@ I18N = {
   'cn': {
     'appTitle': '🎨 画图填色',
     'pickPicture': '选图', 'undo': '撤销', 'clear': '清空', 'save': '保存',
-    'fullscreen': '全屏', 'help': '?',
+    'help': '?',
     'colorsLabel': '颜色', 'patternsLabel': '纹路', 'patternsLabelFull': '纹路',
     'brushSize': '画笔粗细', 'stampSize': '贴纸大小',
     'toolFill': '填色', 'toolBrush': '画笔', 'toolEraser': '橡皮', 'toolStamp': '贴纸',
@@ -106,8 +106,6 @@ I18N = {
     'nothingToUndo': '没有可以撤销的',
     'cleared': '已清空',
     'confirmClear': '要清空当前这张画吗?清空后不能撤销。',
-    'fullscreenNotSupported': '当前浏览器不支持全屏 — iPad Safari 请用"分享 → 添加到主屏幕"',
-    'cantFullscreen': '无法进入全屏: ',
     'stampSelected': '在画上点一下放贴纸', 'stampDeselected': '取消贴纸',
     'storageFull': '存储已满,旧画作可能无法保存',
     'searchingImages': '正在搜图…',
@@ -130,13 +128,13 @@ I18N = {
     'helpEraser': '橡皮:擦掉画笔笔迹(不会擦掉填的颜色,要还原颜色用"撤销")。',
     'helpStamp': '贴纸:点顶上 贴纸 选一个,在画上点一下就贴一个,可以重复贴。',
     'helpZoomHead': '🔍 放大缩小',
-    'helpZoomBody': 'iPad 上两根手指捏合可放大缩小,捏住拖动可移动画面。电脑上用左下的 +/− 按钮,或滚轮 + Ctrl/Cmd。',
+    'helpZoomBody': 'iPad 上两根手指捏合放大缩小、捏住拖动移动画面(防止小手抖动加了死区,要稍微张大点才会动)。电脑上用左下 +/− 按钮,或 Ctrl/Cmd + 滚轮。',
     'helpAutosaveHead': '💾 自动保存',
     'helpAutosaveBody': '每画一笔都自动存在浏览器里,关掉再打开,你画到一半的画会自动找回来。换图也会记住,不会丢。',
     'helpTimerHead': '⏱ 倒计时',
-    'helpTimerBody': '顶上的 ⏱ 按钮设置画多久(默认 10 分钟),到时间会弹提示。',
-    'helpFullscreenHead': '⛶ 全屏',
-    'helpFullscreenBody': '点 ⛶ 按钮,浏览器进入全屏模式(iPad Safari 也可以从"分享 → 添加到主屏幕"装成 App)。',
+    'helpTimerBody': '点 ⏱ 按钮打开设置(默认多人轮流,2 个人,每人 1 分钟,5 轮)。改了任何设置按"完成"就按新设置重新开始计时;没改就继续之前的。每个选项有"更多…"可以输入自定义数字。',
+    'helpResetHead': '🔄 重置',
+    'helpResetBody': '顶上红色 🔄 按钮清空所有画作 + 设置,回到第一次打开的样子。误按了会先弹确认框。',
     'customColorLabel': '自选任意颜色 →',
     'resetAll': '🧹 全部重新开始', 'resetShort': '重置',
     'resetAllConfirm': '确定要全部重新开始吗?所有画的作品、上传的图片、计时器设置都会被清空,不能撤销。',
@@ -145,7 +143,7 @@ I18N = {
   'en': {
     'appTitle': '🎨 Coloring',
     'pickPicture': 'Pictures', 'undo': 'Undo', 'clear': 'Clear', 'save': 'Save',
-    'fullscreen': 'Fullscreen', 'help': '?',
+    'help': '?',
     'colorsLabel': 'Colors', 'patternsLabel': 'Patterns', 'patternsLabelFull': 'Patterns',
     'brushSize': 'Brush size', 'stampSize': 'Sticker size',
     'toolFill': 'Fill', 'toolBrush': 'Brush', 'toolEraser': 'Erase', 'toolStamp': 'Sticker',
@@ -193,8 +191,6 @@ I18N = {
     'nothingToUndo': 'Nothing to undo',
     'cleared': 'Cleared',
     'confirmClear': 'Clear this drawing? This cannot be undone.',
-    'fullscreenNotSupported': 'Your browser doesn\'t support fullscreen — on iPad Safari use "Share → Add to Home Screen"',
-    'cantFullscreen': 'Cannot enter fullscreen: ',
     'stampSelected': 'Tap on the canvas to place', 'stampDeselected': 'Sticker deselected',
     'storageFull': 'Storage full, older drawings may not save',
     'searchingImages': 'Searching…',
@@ -217,13 +213,13 @@ I18N = {
     'helpEraser': 'Eraser: tap a colored region to reset it, tap a sticker to remove, drag to erase brush strokes.',
     'helpStamp': 'Sticker: tap Sticker at the top, pick a sticker, then tap on the canvas to place it.',
     'helpZoomHead': '🔍 Zoom',
-    'helpZoomBody': 'iPad: pinch with two fingers to zoom and pan. Desktop: use +/− buttons or Ctrl/Cmd + scroll wheel.',
+    'helpZoomBody': 'iPad: pinch with two fingers to zoom, two-finger drag to pan. A small dead zone keeps tiny finger wobble from moving the view. Desktop: +/− buttons at the bottom, or Ctrl/Cmd + scroll wheel.',
     'helpAutosaveHead': '💾 Autosave',
     'helpAutosaveBody': 'Every change is saved in your browser. Close and reopen and your work is still there. Each picture is saved separately.',
     'helpTimerHead': '⏱ Timer',
-    'helpTimerBody': 'Tap the ⏱ chip at top to set how long (default 10 min). A reminder pops when time\'s up.',
-    'helpFullscreenHead': '⛶ Fullscreen',
-    'helpFullscreenBody': 'Tap the ⛶ button for browser fullscreen. (iPad Safari: use Share → Add to Home Screen.)',
+    'helpTimerBody': 'Tap ⏱ to open settings (default: multi-player, 2 players, 1 min/turn, 5 rounds). Change anything and tap Done — timer restarts with the new settings. Leave it alone — timer just resumes. Each group has a "More…" button for custom numbers.',
+    'helpResetHead': '🔄 Reset',
+    'helpResetBody': 'The red 🔄 button at the top wipes every drawing + setting back to first-launch state. Confirms before nuking.',
     'customColorLabel': 'Or pick any color →',
     'resetAll': '🧹 Start over from scratch', 'resetShort': 'Reset',
     'resetAllConfirm': "Really start over? All your drawings, uploads and timer settings will be wiped. This can't be undone.",
@@ -1060,7 +1056,6 @@ HTML_BODY = r"""<body>
     <button class="big-btn" id="undoBtn"><span class="btn-icon">↶</span><span class="btn-label" data-i18n="undo">撤销</span></button>
     <button class="big-btn danger" id="clearBtn"><span class="btn-icon">🗑</span><span class="btn-label" data-i18n="clear">清空</span></button>
     <button class="big-btn" id="saveBtn"><span class="btn-icon">💾</span><span class="btn-label" data-i18n="save">保存</span></button>
-    <button class="big-btn" id="fullscreenBtn"><span class="btn-icon">⛶</span><span class="btn-label" data-i18n="fullscreen">全屏</span></button>
     <button class="big-btn" id="langToggle" title="Switch language / 切换语言"><span class="btn-icon">🌐</span><span class="btn-label">EN</span></button>
     <button class="big-btn danger" id="resetCacheBtn" data-i18n-title="resetAll" title="🧹 全部重新开始"><span class="btn-icon">🔄</span><span class="btn-label" data-i18n="resetShort">重置</span></button>
     <button class="big-btn" id="helpBtn">?</button>
@@ -1343,8 +1338,8 @@ HTML_BODY = r"""<body>
       <p data-i18n="helpAutosaveBody"></p>
       <h3 data-i18n="helpTimerHead"></h3>
       <p data-i18n="helpTimerBody"></p>
-      <h3 data-i18n="helpFullscreenHead"></h3>
-      <p data-i18n="helpFullscreenBody"></p>
+      <h3 data-i18n="helpResetHead"></h3>
+      <p data-i18n="helpResetBody"></p>
     </div>
     <div class="modal-footer">
       <button class="secondary-btn" id="resetAllBtn" data-i18n="resetAll" style="background:#fee; color:#c33">🧹 全部重新开始</button>
@@ -3058,17 +3053,6 @@ new MutationObserver(() => {
   if (!_timerModalEl.classList.contains('show')) finishTimerModal(false);
 }).observe(_timerModalEl, { attributes: true, attributeFilter: ['class'] });
 
-/* =========================================================================
-   Fullscreen
-   ========================================================================= */
-document.getElementById('fullscreenBtn').addEventListener('click', async () => {
-  try {
-    if (document.fullscreenElement) await document.exitFullscreen();
-    else if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
-    else if (document.documentElement.webkitRequestFullscreen) document.documentElement.webkitRequestFullscreen();
-    else showToast(t('fullscreenNotSupported'), 3000);
-  } catch (e) { showToast(t('cantFullscreen') + e.message, 2500); }
-});
 
 /* =========================================================================
    Help
