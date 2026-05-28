@@ -2044,6 +2044,27 @@ let strokeSnapshot = null;
 let canvasDirty = false;
 let pinchStart = null;
 
+// Kid-friendly pinch tuning: small finger jitter should not move the view.
+// PAN_DEADZONE px of midpoint travel is ignored before pan starts; afterwards
+// movement is 1:1. ZOOM_DAMP < 1 reduces sensitivity (sqrt halves it).
+const PAN_DEADZONE = 12;
+const ZOOM_DEADZONE = 0.12;  // ratio must drift past ±12% to start zooming
+const ZOOM_DAMP = 0.5;
+function dampPan(delta) {
+  const a = Math.abs(delta);
+  if (a <= PAN_DEADZONE) return 0;
+  return Math.sign(delta) * (a - PAN_DEADZONE);
+}
+function dampZoom(rawRatio) {
+  // Apply a flat dead zone around 1.0 first…
+  if (rawRatio > 1 - ZOOM_DEADZONE && rawRatio < 1 + ZOOM_DEADZONE) return 1;
+  // …then take the surplus past the dead zone and dampen with a power curve.
+  const sign = rawRatio > 1 ? 1 : -1;
+  const surplus = sign > 0 ? rawRatio - (1 + ZOOM_DEADZONE) : (1 - ZOOM_DEADZONE) - rawRatio;
+  const damped = Math.pow(1 + surplus, ZOOM_DAMP) - 1;
+  return 1 + sign * damped;
+}
+
 function canvasEventToLocal(e) {
   const rect = canvas.getBoundingClientRect();
   return { x: e.clientX - rect.left, y: e.clientY - rect.top };
@@ -2119,9 +2140,13 @@ canvas.addEventListener('pointermove', (e) => {
     const pts = [...pointers.values()];
     const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
     const mid = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
-    const ratio = dist / pinchStart.dist;
+    const ratio = dampZoom(dist / pinchStart.dist);
     const newScale = Math.max(1, Math.min(5, pinchStart.view.scale * ratio));
-    setView(pinchStart.view.tx + (mid.x - pinchStart.mid.x), pinchStart.view.ty + (mid.y - pinchStart.mid.y), newScale);
+    setView(
+      pinchStart.view.tx + dampPan(mid.x - pinchStart.mid.x),
+      pinchStart.view.ty + dampPan(mid.y - pinchStart.mid.y),
+      newScale,
+    );
     return;
   }
   if (pointers.size !== 1) return;
@@ -2226,11 +2251,11 @@ stageInner.addEventListener('pointermove', (e) => {
     const pts = [...stagePointers.values()];
     const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
     const mid = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
-    const ratio = dist / stagePinchStart.dist;
+    const ratio = dampZoom(dist / stagePinchStart.dist);
     const newScale = Math.max(1, Math.min(5, stagePinchStart.view.scale * ratio));
     setView(
-      stagePinchStart.view.tx + (mid.x - stagePinchStart.mid.x),
-      stagePinchStart.view.ty + (mid.y - stagePinchStart.mid.y),
+      stagePinchStart.view.tx + dampPan(mid.x - stagePinchStart.mid.x),
+      stagePinchStart.view.ty + dampPan(mid.y - stagePinchStart.mid.y),
       newScale,
     );
     e.preventDefault();
