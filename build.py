@@ -85,7 +85,7 @@ I18N = {
     'timerHowLongTurn': '每人多长时间?',
     'timerHowManyRounds': '玩几轮?(每人都画完算一轮)',
     'timerMinSuffix': '分钟', 'timerPlayerSuffix': '人', 'timerRoundSuffix': '轮',
-    'timerUnlimited': '不限', 'timerOff': '关掉',
+    'timerUnlimited': '不限', 'timerOff': '关掉', 'timerMoreBtn': '更多…',
     'timerRestartBtn': '↺ 从头开始', 'timerDoneBtn': '✓ 完成',
     'timerStartToast': '从头开始计时',
     'timerPausedHint': '⏸ 已暂停 — 改了就按新的来,没改就继续',
@@ -172,7 +172,7 @@ I18N = {
     'timerHowLongTurn': 'Per turn?',
     'timerHowManyRounds': 'How many rounds? (everyone draws once per round)',
     'timerMinSuffix': 'min', 'timerPlayerSuffix': 'players', 'timerRoundSuffix': 'rounds',
-    'timerUnlimited': '∞', 'timerOff': 'Off',
+    'timerUnlimited': '∞', 'timerOff': 'Off', 'timerMoreBtn': 'More…',
     'timerRestartBtn': '↺ Restart', 'timerDoneBtn': '✓ Done',
     'timerStartToast': 'Timer restarted',
     'timerPausedHint': '⏸ Paused — Done will resume, changes restart fresh',
@@ -1264,7 +1264,6 @@ HTML_BODY = r"""<body>
           <button data-n="2">2 <span data-i18n="timerPlayerSuffix">人</span></button>
           <button data-n="3">3 <span data-i18n="timerPlayerSuffix">人</span></button>
           <button data-n="4">4 <span data-i18n="timerPlayerSuffix">人</span></button>
-          <button data-n="5">5 <span data-i18n="timerPlayerSuffix">人</span></button>
         </div>
         <h4 data-i18n="timerHowLongTurn" style="margin:14px 0 4px;font-size:13px;color:#333">每人多长时间?</h4>
         <div class="timer-options" id="multiTurnOpts">
@@ -1279,9 +1278,12 @@ HTML_BODY = r"""<body>
           <button data-r="1">1 <span data-i18n="timerRoundSuffix">轮</span></button>
           <button data-r="2">2 <span data-i18n="timerRoundSuffix">轮</span></button>
           <button data-r="3">3 <span data-i18n="timerRoundSuffix">轮</span></button>
+          <button data-r="4">4 <span data-i18n="timerRoundSuffix">轮</span></button>
           <button data-r="5">5 <span data-i18n="timerRoundSuffix">轮</span></button>
-          <button data-r="10">10 <span data-i18n="timerRoundSuffix">轮</span></button>
-          <button data-r="0" data-i18n="timerUnlimited">不限</button>
+          <button data-r="more" id="multiRoundMoreBtn" data-i18n="timerMoreBtn">更多…</button>
+          <input id="multiRoundCustom" type="number" min="1" max="999" inputmode="numeric"
+                 placeholder="6+" style="display:none;width:80px;padding:8px 10px;border:2px solid var(--accent);
+                 border-radius:10px;font-size:16px;font-weight:600;text-align:center;outline:none;"/>
         </div>
       </div>
     </div>
@@ -2670,8 +2672,9 @@ function buildStampGrid() {
 const T = state.timer;
 if (!T.mode) T.mode = 'single';
 if (!T.playerCount) T.playerCount = 2;
+if (T.playerCount > 4) T.playerCount = 4;   // options now cap at 4 — clamp old saved values
 if (!T.currentPlayer) T.currentPlayer = 1;
-if (T.totalRounds == null) T.totalRounds = 3;
+if (T.totalRounds == null) T.totalRounds = 5;
 if (!T.currentRound) T.currentRound = 1;
 if (T.done == null) T.done = false;
 // Backwards-compat: previously the single-mode options went up to 60 minutes.
@@ -2839,9 +2842,22 @@ function refreshTimerModalSelections() {
   document.querySelectorAll('#multiTurnOpts button').forEach(b => {
     b.classList.toggle('active', tm.mode === 'multi' && +b.dataset.min === tm.durationSec / 60);
   });
+  // Round picker: highlight matching preset, OR if totalRounds is a custom
+  // value (6+), show it on the 更多 button and keep that one active.
+  const presetRounds = new Set([1, 2, 3, 4, 5]);
+  const isCustom = tm.mode === 'multi' && !presetRounds.has(tm.totalRounds);
   document.querySelectorAll('#multiRoundOpts button').forEach(b => {
-    b.classList.toggle('active', tm.mode === 'multi' && +b.dataset.r === tm.totalRounds);
+    if (b.dataset.r === 'more') {
+      b.classList.toggle('active', isCustom);
+      b.textContent = isCustom ? tm.totalRounds + ' ' + t('timerRoundSuffix') : t('timerMoreBtn');
+    } else {
+      b.classList.toggle('active', tm.mode === 'multi' && +b.dataset.r === tm.totalRounds);
+    }
   });
+  // Hide the inline custom input whenever we re-render (it's only shown
+  // for the few seconds the user is typing).
+  const customInput = document.getElementById('multiRoundCustom');
+  if (customInput) customInput.style.display = 'none';
 }
 
 // "Edit timer settings" snapshot. While the modal is open the running
@@ -2943,9 +2959,37 @@ document.getElementById('multiTurnOpts').addEventListener('click', (e) => {
 document.getElementById('multiRoundOpts').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return;
   state.timer.mode = 'multi';
+  if (b.dataset.r === 'more') {
+    // Reveal the inline number input. User types a value and we commit
+    // it on Enter or blur.
+    const input = document.getElementById('multiRoundCustom');
+    input.style.display = '';
+    // Pre-populate with current value if it's already a custom (6+) number
+    const cur = state.timer.totalRounds;
+    input.value = cur > 5 ? cur : '';
+    input.focus();
+    input.select();
+    return;
+  }
   state.timer.totalRounds = +b.dataset.r;
   refreshTimerModalSelections();
 });
+const _roundCustom = document.getElementById('multiRoundCustom');
+function commitCustomRounds() {
+  const v = parseInt(_roundCustom.value, 10);
+  if (Number.isFinite(v) && v >= 1 && v <= 999) {
+    state.timer.mode = 'multi';
+    state.timer.totalRounds = v;
+  }
+  refreshTimerModalSelections();
+}
+_roundCustom.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); commitCustomRounds(); _roundCustom.blur(); }
+  if (e.key === 'Escape') { _roundCustom.value = ''; _roundCustom.blur(); }
+});
+_roundCustom.addEventListener('blur', commitCustomRounds);
+// Stop the modal-backdrop click from also being interpreted as input loss.
+_roundCustom.addEventListener('click', (e) => e.stopPropagation());
 
 // 从头开始 / Restart — force a fresh start with currently-selected
 // settings, then close.
