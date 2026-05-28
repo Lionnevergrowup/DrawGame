@@ -654,7 +654,7 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
     transition: fill 0.15s ease;
   }
   .stage-inner svg .stamp-instance { cursor: pointer; }
-  .stage-inner svg { touch-action: none; }  /* no iOS double-tap or pinch consumption — JS handles it */
+  .stage-inner svg { touch-action: manipulation; }  /* keep synthetic tap→click for fillable regions; pinch is handled on stage-inner */
   .stage-inner canvas { touch-action: none; pointer-events: none; }
   .stage-inner canvas.draw-mode { pointer-events: auto; cursor: crosshair; }
 
@@ -3007,19 +3007,16 @@ function doResetAll() {
   __resetting = true;
   savePersisted.cancel();
   try {
-    // Only nuke our own keys (cga_*) so we don't wreck other sites.
+    // Nuke ONLY our own keys (cga_*) so we don't wreck other sites — and
+    // intentionally including cga_help_seen / cga_timer_intro_seen so the
+    // reload behaves like a brand-new visitor: help modal → picker → timer
+    // setup. No sessionStorage shortcut.
     const toRemove = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
       if (k && k.startsWith('cga_')) toRemove.push(k);
     }
     toRemove.forEach(k => localStorage.removeItem(k));
-    // After a reset the user expects to land DIRECTLY on the default
-    // picture (panda) with the default tool + solid color, not on the
-    // help + picker modals that the first-run flow normally shows.
-    // sessionStorage survives the reload below but doesn't leak into a
-    // brand-new tab, so genuinely new visitors still get the intro.
-    sessionStorage.setItem('cga_skip_intro', '1');
   } catch (_) {}
   showToast(t('resetAllDone'), 1500);
   setTimeout(() => location.reload(), 600);
@@ -3060,14 +3057,9 @@ function openPickerAfterBoot() {
   openModal('pictureModal');
 }
 // First-run: help, then picker. Returning visit: jump straight to picker.
-// Exception: a fresh reset (sessionStorage flag from doResetAll) skips both
-// modals and drops the user on the default page (panda) so "reset" means
-// "back to defaults", not "redo the whole onboarding flow".
+// (Reset wipes cga_help_seen too, so post-reset re-runs this first-visit path.)
 try {
-  if (sessionStorage.getItem('cga_skip_intro')) {
-    sessionStorage.removeItem('cga_skip_intro');
-    try { localStorage.setItem('cga_help_seen', '1'); } catch (_) {}
-  } else if (!localStorage.getItem('cga_help_seen')) {
+  if (!localStorage.getItem('cga_help_seen')) {
     openModal('helpModal');
     // When user closes help, mark seen + open picker. Setting the LS flag
     // only on close means a reload-during-help still re-shows help next time.
