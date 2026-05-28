@@ -59,7 +59,7 @@ I18N = {
     'appTitle': '🎨 画图填色',
     'pickPicture': '选图', 'undo': '撤销', 'clear': '清空', 'save': '保存',
     'help': '?',
-    'colorsLabel': '颜色', 'patternsLabel': '纹路', 'patternsLabelFull': '纹路',
+    'colorsLabel': '颜色', 'patternsLabel': '纹路',
     'brushSize': '画笔粗细', 'stampSize': '贴纸大小',
     'toolFill': '填色', 'toolBrush': '画笔', 'toolEraser': '橡皮', 'toolStamp': '贴纸',
     'zoomOutTitle': '缩小', 'zoomInTitle': '放大', 'zoomResetTitle': '复位 100%',
@@ -85,10 +85,9 @@ I18N = {
     'timerHowLongTurn': '每人多长时间?',
     'timerHowManyRounds': '玩几轮?(每人都画完算一轮)',
     'timerMinSuffix': '分钟', 'timerPlayerSuffix': '人', 'timerRoundSuffix': '轮',
-    'timerUnlimited': '不限', 'timerOff': '关掉', 'timerMoreBtn': '更多…',
+    'timerOff': '关掉', 'timerMoreBtn': '更多…',
     'timerRestartBtn': '↺ 从头开始', 'timerDoneBtn': '✓ 完成',
     'timerStartToast': '从头开始计时',
-    'timerPausedHint': '⏸ 已暂停 — 改了就按新的来,没改就继续',
     'timerResumed': '继续计时',
     'timerAppliedToast': '按新设置重新开始',
     'timeUp': '时间到啦!', 'greatJob': '画得真棒 🎉',
@@ -117,7 +116,6 @@ I18N = {
     'searchClickToLoad': '点这里载入',
     'searchLoading': '正在载入…',
     'corsWarning': '这张图禁止跨站加载,只能预览/上色但保存 PNG 可能失败。继续吗?',
-    'timerResetToast': '倒计时已重置',
     'helpIntro': '给小朋友的画图和涂色应用,在电脑/iPad/手机的浏览器里就能玩。',
     'helpPickHead': '🖼️ 选图',
     'helpPickBody': '点顶上 选图 按钮打开图库,有 100 张图按 🐾 动物 / 🌊 海洋 / 🦕 童话 / 🚗 交通 / 🌸 自然 / 🍰 食物 / 🎉 节日 分类。还可以上传你自己的图。',
@@ -144,7 +142,7 @@ I18N = {
     'appTitle': '🎨 Coloring',
     'pickPicture': 'Pictures', 'undo': 'Undo', 'clear': 'Clear', 'save': 'Save',
     'help': '?',
-    'colorsLabel': 'Colors', 'patternsLabel': 'Patterns', 'patternsLabelFull': 'Patterns',
+    'colorsLabel': 'Colors', 'patternsLabel': 'Patterns',
     'brushSize': 'Brush size', 'stampSize': 'Sticker size',
     'toolFill': 'Fill', 'toolBrush': 'Brush', 'toolEraser': 'Erase', 'toolStamp': 'Sticker',
     'zoomOutTitle': 'Zoom out', 'zoomInTitle': 'Zoom in', 'zoomResetTitle': 'Reset 100%',
@@ -170,10 +168,9 @@ I18N = {
     'timerHowLongTurn': 'Per turn?',
     'timerHowManyRounds': 'How many rounds? (everyone draws once per round)',
     'timerMinSuffix': 'min', 'timerPlayerSuffix': 'players', 'timerRoundSuffix': 'rounds',
-    'timerUnlimited': '∞', 'timerOff': 'Off', 'timerMoreBtn': 'More…',
+    'timerOff': 'Off', 'timerMoreBtn': 'More…',
     'timerRestartBtn': '↺ Restart', 'timerDoneBtn': '✓ Done',
     'timerStartToast': 'Timer restarted',
-    'timerPausedHint': '⏸ Paused — Done will resume, changes restart fresh',
     'timerResumed': 'Resumed',
     'timerAppliedToast': 'Restarted with new settings',
     'timeUp': 'Time\'s up!', 'greatJob': 'Great job! 🎉',
@@ -202,7 +199,6 @@ I18N = {
     'searchClickToLoad': 'Tap to load',
     'searchLoading': 'Loading…',
     'corsWarning': 'This image blocks cross-site loading — preview/color works but saving PNG may fail. Continue?',
-    'timerResetToast': 'Timer reset',
     'helpIntro': 'A drawing and coloring app for kids. Works in any browser on PC / iPad / phone.',
     'helpPickHead': '🖼️ Pictures',
     'helpPickBody': 'Tap Pictures at the top to open the gallery — 100 pictures organized in 10 categories. You can also upload your own.',
@@ -1235,8 +1231,8 @@ HTML_BODY = r"""<body>
     </div>
     <div class="modal-body">
       <div style="display:flex;gap:6px;margin-bottom:14px">
-        <button class="mode-tab active" data-mode="single" data-i18n="timerSingle">单人</button>
-        <button class="mode-tab" data-mode="multi" data-i18n="timerMulti">多人轮流</button>
+        <button class="mode-tab" data-mode="single" data-i18n="timerSingle">单人</button>
+        <button class="mode-tab active" data-mode="multi" data-i18n="timerMulti">多人轮流</button>
       </div>
 
       <div id="singleModeBox" style="display:none">
@@ -1433,6 +1429,11 @@ function applyI18n() {
   if (typeof buildStampGrid === 'function') buildStampGrid();
   if (typeof buildPatternTiles === 'function') buildPatternTiles();
   if (typeof updateCurrentPatternPreview === 'function') updateCurrentPatternPreview();
+  // The timer modal's "更多…" buttons can have a custom label like "10 分钟" /
+  // "50 轮" injected at runtime. data-i18n above just reset them to "更多…",
+  // so re-run the option-group refresh to restore custom labels in the new
+  // language.
+  if (typeof refreshTimerModalSelections === 'function') refreshTimerModalSelections();
   // Document language attribute (so font rendering and accessibility line up)
   document.documentElement.lang = state.lang === 'en' ? 'en' : 'zh-CN';
 }
@@ -1461,7 +1462,10 @@ const state = {
   lang: 'cn',  // 'cn' or 'en'
   history: [],   // session-only undo stack — see pushHistory() below for cap
   timer: {
-    durationSec: 600,
+    // Default mode is 'multi' (assigned in the normalization block below).
+    // Multi turn preset range is 1-5 min, so default to 1 min so a fresh
+    // visitor sees "1 分钟" highlighted instead of "10 分钟" on 更多.
+    durationSec: 60,
     startTs: Date.now(),
     elapsedBefore: 0,
     paused: false,
@@ -1916,18 +1920,20 @@ function bindFillable() {
   // (i.e. only in fill / stamp tool modes). Eraser is handled via the
   // canvas pointer flow with hit-testing — see eraserTapHitTest above.
   svgEl.querySelectorAll('.fillable').forEach(el => {
-    const handler = (e) => {
+    // Click only. We used to also bind touchstart for "reliability" but that
+    // fired on the first finger of a two-finger pinch and painted a region
+    // the kid was trying to zoom into. touch-action: manipulation on the SVG
+    // already makes click reliable for taps, and browsers correctly suppress
+    // click on multi-touch gestures.
+    el.addEventListener('click', (e) => {
       if (state.tool !== 'fill') return;
-      e.preventDefault();
       const prev = el.getAttribute('fill') || '#ffffff';
       const next = currentFillValue();
       if (prev === next) return;
       pushHistory({ kind: 'fill', el, prevColor: prev });
       el.setAttribute('fill', next);
       savePersisted();
-    };
-    el.addEventListener('click', handler);
-    el.addEventListener('touchstart', handler, { passive: false });
+    });
   });
 }
 // Delegated SVG click handler for stamp placement.
@@ -2028,16 +2034,16 @@ document.addEventListener('dblclick',      (e) => e.preventDefault(), { passive:
 // bypasses the lockdown above), snap it back to 1× by briefly cycling the
 // viewport meta tag — a known iOS workaround.
 if (window.visualViewport) {
-  let __resetting = false;
+  let __vpAdjusting = false;
   window.visualViewport.addEventListener('resize', () => {
-    if (__resetting) return;
+    if (__vpAdjusting) return;
     if (window.visualViewport.scale > 1.01) {
-      __resetting = true;
+      __vpAdjusting = true;
       const vp = document.querySelector('meta[name="viewport"]');
-      if (!vp) { __resetting = false; return; }
+      if (!vp) { __vpAdjusting = false; return; }
       const orig = vp.getAttribute('content');
       vp.setAttribute('content', orig + ', user-scalable=no');
-      setTimeout(() => { vp.setAttribute('content', orig); __resetting = false; }, 100);
+      setTimeout(() => { vp.setAttribute('content', orig); __vpAdjusting = false; }, 100);
     }
   });
 }
@@ -2675,19 +2681,24 @@ function buildStampGrid() {
 //   playerCount, currentPlayer,            // multi only
 //   totalRounds, currentRound, done        // multi only
 // }
-const T = state.timer;
-if (!T.mode) T.mode = 'multi';
-if (!T.playerCount) T.playerCount = 2;
-if (!T.currentPlayer) T.currentPlayer = 1;
-if (T.totalRounds == null) T.totalRounds = 5;
-// Multi mode wants short turns (1-5 min default). Normalize a stale duration
-// inherited from single mode so multi opens with a sensible value.
-if (T.mode === 'multi' && (T.durationSec < 60 || T.durationSec > 10800)) T.durationSec = 60;
-if (!T.currentRound) T.currentRound = 1;
-if (T.done == null) T.done = false;
-// Backwards-compat: previously the single-mode options went up to 60 minutes.
-// We capped the max at 15 minutes — clamp old saved values to fit.
-if (T.mode === 'single' && T.durationSec > 900) T.durationSec = 600;
+// Fill in any missing timer fields with safe defaults. Called both at
+// module-eval time (so the timer chip + first-load tick make sense) and
+// again after loadPersisted() restores saved state, since saved state
+// can be missing newer fields or have stale values for renamed ones.
+function normalizeTimerState() {
+  const T = state.timer;
+  if (!T.mode) T.mode = 'multi';
+  if (!T.playerCount) T.playerCount = 2;
+  if (!T.currentPlayer) T.currentPlayer = 1;
+  if (T.totalRounds == null) T.totalRounds = 5;
+  if (!T.currentRound) T.currentRound = 1;
+  if (T.done == null) T.done = false;
+  // Custom 更多 input max is 180 min in both modes — clamp anything
+  // weirdly large from a corrupt save. 1 sec floor avoids divide-by-zero.
+  if (T.durationSec == null) T.durationSec = (T.mode === 'multi') ? 60 : 600;
+  if (T.durationSec > 10800) T.durationSec = (T.mode === 'multi') ? 60 : 600;
+}
+normalizeTimerState();
 
 function fmtMs(ms) {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -3092,6 +3103,9 @@ document.getElementById('resetCacheBtn').addEventListener('click', doResetAll);
    Boot
    ========================================================================= */
 loadPersisted();
+// Saved state from older app versions can be missing newer fields; re-run
+// normalization so the timer chip + modal show coherent values.
+normalizeTimerState();
 buildPalette();
 selectColor(state.color);
 buildPatternTiles();
