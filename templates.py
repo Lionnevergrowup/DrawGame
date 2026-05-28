@@ -296,9 +296,6 @@ add('owl', '🦉 猫头鹰', 'animal', '''
     <path class="fillable" fill="#ffffff" d="M50 45 L52 52 L60 52 L54 56 L56 64 L50 60 L44 64 L46 56 L40 52 L48 52 Z"/>
     <path class="fillable" fill="#ffffff" d="M340 50 L342 57 L350 57 L344 61 L346 69 L340 65 L334 69 L336 61 L330 57 L338 57 Z"/>
     <path class="fillable" fill="#ffffff" d="M70 130 L72 137 L80 137 L74 141 L76 149 L70 145 L64 149 L66 141 L60 137 L68 137 Z"/>
-    <circle class="fillable" fill="#ffffff" cx="350" cy="135" r="3"/>
-    <circle class="fillable" fill="#ffffff" cx="40" cy="200" r="2.5"/>
-    <circle class="fillable" fill="#ffffff" cx="370" cy="220" r="2.5"/>
   </g>
   <ellipse class="fillable" fill="#ffffff" cx="200" cy="175" rx="68" ry="80"/>
   <ellipse class="fillable" fill="#ffffff" cx="200" cy="200" rx="40" ry="55"/>
@@ -460,12 +457,10 @@ add('jellyfish', '🪼 水母', 'ocean', '''
   <path class="fillable" fill="#ffffff" d="M255 155 Q260 145 280 145 Q283 158 270 162 Z"/>
   <g>
     <circle class="fillable" fill="#ffffff" cx="155" cy="100" r="6"/>
-    <circle class="fillable" fill="#ffffff" cx="185" cy="110" r="5"/>
-    <circle class="fillable" fill="#ffffff" cx="215" cy="105" r="6"/>
-    <circle class="fillable" fill="#ffffff" cx="245" cy="115" r="5"/>
-    <circle class="fillable" fill="#ffffff" cx="200" cy="85" r="4"/>
-    <circle class="fillable" fill="#ffffff" cx="170" cy="125" r="4"/>
-    <circle class="fillable" fill="#ffffff" cx="230" cy="125" r="4"/>
+    <circle class="fillable" fill="#ffffff" cx="200" cy="85" r="6"/>
+    <circle class="fillable" fill="#ffffff" cx="245" cy="105" r="6"/>
+    <circle class="fillable" fill="#ffffff" cx="180" cy="125" r="5"/>
+    <circle class="fillable" fill="#ffffff" cx="220" cy="125" r="5"/>
   </g>
   <path class="fillable" fill="#ffffff" d="M130 160 Q120 200 130 240 Q140 280 130 290 Q125 270 122 235 Q118 195 126 160 Z"/>
   <path class="fillable" fill="#ffffff" d="M158 162 Q150 200 165 235 Q155 270 162 285 Q170 260 168 230 Q170 195 164 162 Z"/>
@@ -604,7 +599,7 @@ add('mermaid', '🧜‍♀️ 美人鱼', 'fantasy', '''
   <path class="fillable" fill="#ffffff" d="M180 145 Q175 175 200 178 Q225 175 220 145 Z"/>
   <path class="fillable" fill="#ffffff" d="M180 178 Q175 200 178 220 Q220 220 222 178 Q220 195 200 200 Q180 195 180 178 Z"/>
   <path class="fillable" fill="#ffffff" d="M178 220 Q160 250 165 280 Q200 280 235 280 Q240 250 222 220 Z"/>
-  <g><circle class="fillable" fill="#ffffff" cx="190" cy="232" r="6"/><circle class="fillable" fill="#ffffff" cx="210" cy="232" r="6"/><circle class="fillable" fill="#ffffff" cx="185" cy="250" r="6"/><circle class="fillable" fill="#ffffff" cx="200" cy="250" r="6"/><circle class="fillable" fill="#ffffff" cx="215" cy="250" r="6"/><circle class="fillable" fill="#ffffff" cx="180" cy="268" r="6"/><circle class="fillable" fill="#ffffff" cx="195" cy="268" r="6"/><circle class="fillable" fill="#ffffff" cx="210" cy="268" r="6"/><circle class="fillable" fill="#ffffff" cx="225" cy="268" r="6"/></g>
+  <g><circle class="fillable" fill="#ffffff" cx="190" cy="232" r="6"/><circle class="fillable" fill="#ffffff" cx="210" cy="232" r="6"/><circle class="fillable" fill="#ffffff" cx="200" cy="250" r="6"/><circle class="fillable" fill="#ffffff" cx="190" cy="268" r="6"/><circle class="fillable" fill="#ffffff" cx="210" cy="268" r="6"/></g>
   <path class="fillable" fill="#ffffff" d="M163 282 Q130 270 110 285 Q140 295 168 290 Z"/>
   <path class="fillable" fill="#ffffff" d="M237 282 Q270 270 290 285 Q260 295 232 290 Z"/>
 </g>
@@ -667,7 +662,7 @@ add('princess', '👸 公主', 'fantasy', '''
   <path class="fillable" fill="#ffffff" d="M275 175 L235 165 L235 240 L275 250 Z"/>
   <path class="fillable" fill="#ffffff" d="M155 175 Q155 240 130 285 Q160 290 200 290 Q240 290 270 285 Q245 240 245 175 Z"/>
   <path class="fillable" fill="#ffffff" d="M165 200 Q200 205 235 200 L235 220 Q200 225 165 220 Z"/>
-  <g><circle class="fillable" fill="#ffffff" cx="180" cy="240" r="5"/><circle class="fillable" fill="#ffffff" cx="200" cy="248" r="5"/><circle class="fillable" fill="#ffffff" cx="220" cy="240" r="5"/><circle class="fillable" fill="#ffffff" cx="170" cy="265" r="5"/><circle class="fillable" fill="#ffffff" cx="190" cy="272" r="5"/><circle class="fillable" fill="#ffffff" cx="210" cy="272" r="5"/><circle class="fillable" fill="#ffffff" cx="230" cy="265" r="5"/></g>
+  <g><circle class="fillable" fill="#ffffff" cx="180" cy="240" r="5"/><circle class="fillable" fill="#ffffff" cx="220" cy="240" r="5"/><circle class="fillable" fill="#ffffff" cx="170" cy="265" r="5"/><circle class="fillable" fill="#ffffff" cx="200" cy="272" r="5"/><circle class="fillable" fill="#ffffff" cx="230" cy="265" r="5"/></g>
   <circle class="fillable" fill="#ffffff" cx="138" cy="245" r="6"/>
   <line x1="138" y1="245" x2="138" y2="285"/>
   <path class="fillable" fill="#ffffff" d="M132 220 L138 200 L144 220 L138 235 Z"/>
@@ -783,7 +778,7 @@ add('airplane', '✈️ 飞机', 'vehicle', '''
 
 add('rocket', '🚀 太空火箭', 'vehicle', '''
 <g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
-  <g stroke-width="1.5"><path class="fillable" fill="#ffffff" d="M50 50 L53 60 L63 60 L55 66 L58 76 L50 70 L42 76 L45 66 L37 60 L47 60 Z"/><path class="fillable" fill="#ffffff" d="M340 60 L343 70 L353 70 L345 76 L348 86 L340 80 L332 86 L335 76 L327 70 L337 70 Z"/><path class="fillable" fill="#ffffff" d="M80 230 L83 240 L93 240 L85 246 L88 256 L80 250 L72 256 L75 246 L67 240 L77 240 Z"/><path class="fillable" fill="#ffffff" d="M320 250 L323 260 L333 260 L325 266 L328 276 L320 270 L312 276 L315 266 L307 260 L317 260 Z"/><circle class="fillable" fill="#ffffff" cx="30" cy="120" r="3"/><circle class="fillable" fill="#ffffff" cx="100" cy="160" r="2.5"/><circle class="fillable" fill="#ffffff" cx="370" cy="130" r="3"/><circle class="fillable" fill="#ffffff" cx="50" cy="200" r="2.5"/><circle class="fillable" fill="#ffffff" cx="280" cy="190" r="2.5"/><circle class="fillable" fill="#ffffff" cx="125" cy="80" r="2"/><circle class="fillable" fill="#ffffff" cx="265" cy="60" r="2"/></g>
+  <g stroke-width="1.5"><path class="fillable" fill="#ffffff" d="M50 50 L53 60 L63 60 L55 66 L58 76 L50 70 L42 76 L45 66 L37 60 L47 60 Z"/><path class="fillable" fill="#ffffff" d="M340 60 L343 70 L353 70 L345 76 L348 86 L340 80 L332 86 L335 76 L327 70 L337 70 Z"/><path class="fillable" fill="#ffffff" d="M80 230 L83 240 L93 240 L85 246 L88 256 L80 250 L72 256 L75 246 L67 240 L77 240 Z"/><path class="fillable" fill="#ffffff" d="M320 250 L323 260 L333 260 L325 266 L328 276 L320 270 L312 276 L315 266 L307 260 L317 260 Z"/></g>
   <circle class="fillable" fill="#ffffff" cx="335" cy="105" r="24"/>
   <ellipse fill="none" cx="335" cy="105" rx="40" ry="9"/>
   <circle class="fillable" fill="#ffffff" cx="60" cy="180" r="20"/>
@@ -1125,17 +1120,13 @@ add('cake', '🎂 生日蛋糕', 'food', '''
   <path class="fillable" fill="#ffffff" d="M207 75 Q202 85 207 90 Q212 85 207 75 Z"/>
   <path class="fillable" fill="#ffffff" d="M224 80 Q219 90 224 95 Q229 90 224 80 Z"/>
   <g>
-    <circle class="fillable" fill="#ffffff" cx="130" cy="240" r="5"/>
-    <circle class="fillable" fill="#ffffff" cx="160" cy="240" r="5"/>
-    <circle class="fillable" fill="#ffffff" cx="190" cy="240" r="5"/>
+    <circle class="fillable" fill="#ffffff" cx="140" cy="240" r="5"/>
+    <circle class="fillable" fill="#ffffff" cx="180" cy="240" r="5"/>
     <circle class="fillable" fill="#ffffff" cx="220" cy="240" r="5"/>
-    <circle class="fillable" fill="#ffffff" cx="250" cy="240" r="5"/>
-    <circle class="fillable" fill="#ffffff" cx="280" cy="240" r="5"/>
+    <circle class="fillable" fill="#ffffff" cx="260" cy="240" r="5"/>
   </g>
   <g>
-    <circle class="fillable" fill="#ffffff" cx="150" cy="195" r="4"/>
     <circle class="fillable" fill="#ffffff" cx="200" cy="200" r="4"/>
-    <circle class="fillable" fill="#ffffff" cx="250" cy="195" r="4"/>
   </g>
 </g>
 ''')
@@ -1152,17 +1143,11 @@ add('icecream', '🍨 冰淇淋圣代', 'food', '''
   <line x1="200" y1="38" x2="200" y2="25"/>
   <path fill="none" d="M200 25 Q195 18 200 12"/>
   <g stroke-width="1.5">
-    <ellipse class="fillable" fill="#ffffff" cx="155" cy="125" rx="3" ry="2" transform="rotate(20 155 125)"/>
-    <ellipse class="fillable" fill="#ffffff" cx="175" cy="135" rx="3" ry="2" transform="rotate(-30 175 135)"/>
-    <ellipse class="fillable" fill="#ffffff" cx="215" cy="130" rx="3" ry="2" transform="rotate(40 215 130)"/>
-    <ellipse class="fillable" fill="#ffffff" cx="240" cy="125" rx="3" ry="2" transform="rotate(-20 240 125)"/>
-    <ellipse class="fillable" fill="#ffffff" cx="190" cy="145" rx="3" ry="2" transform="rotate(-10 190 145)"/>
-    <ellipse class="fillable" fill="#ffffff" cx="225" cy="155" rx="3" ry="2" transform="rotate(30 225 155)"/>
-    <ellipse class="fillable" fill="#ffffff" cx="160" cy="180" rx="3" ry="2" transform="rotate(-25 160 180)"/>
-    <ellipse class="fillable" fill="#ffffff" cx="235" cy="180" rx="3" ry="2" transform="rotate(20 235 180)"/>
-    <ellipse class="fillable" fill="#ffffff" cx="200" cy="190" rx="3" ry="2"/>
-    <ellipse class="fillable" fill="#ffffff" cx="175" cy="195" rx="3" ry="2" transform="rotate(45 175 195)"/>
-    <ellipse class="fillable" fill="#ffffff" cx="220" cy="200" rx="3" ry="2" transform="rotate(-15 220 200)"/>
+    <ellipse class="fillable" fill="#ffffff" cx="165" cy="125" rx="3" ry="2" transform="rotate(20 165 125)"/>
+    <ellipse class="fillable" fill="#ffffff" cx="235" cy="125" rx="3" ry="2" transform="rotate(-20 235 125)"/>
+    <ellipse class="fillable" fill="#ffffff" cx="200" cy="140" rx="3" ry="2"/>
+    <ellipse class="fillable" fill="#ffffff" cx="180" cy="155" rx="3" ry="2" transform="rotate(-25 180 155)"/>
+    <ellipse class="fillable" fill="#ffffff" cx="220" cy="155" rx="3" ry="2" transform="rotate(30 220 155)"/>
   </g>
 </g>
 ''')
@@ -1194,16 +1179,6 @@ add('pizza', '🍕 披萨', 'food', '''
     <circle class="fillable" fill="#ffffff" cx="200" cy="155" r="6"/>
     <circle class="fillable" fill="#ffffff" cx="175" cy="175" r="6"/>
     <circle class="fillable" fill="#ffffff" cx="225" cy="175" r="6"/>
-    <circle class="fillable" fill="#ffffff" cx="150" cy="140" r="6"/>
-    <circle class="fillable" fill="#ffffff" cx="250" cy="140" r="6"/>
-  </g>
-  <g>
-    <path class="fillable" fill="#ffffff" d="M120 120 Q118 125 124 128 Q128 122 120 120 Z"/>
-    <path class="fillable" fill="#ffffff" d="M275 120 Q273 125 279 128 Q283 122 275 120 Z"/>
-    <path class="fillable" fill="#ffffff" d="M180 195 Q178 200 184 203 Q188 197 180 195 Z"/>
-    <path class="fillable" fill="#ffffff" d="M215 195 Q213 200 219 203 Q223 197 215 195 Z"/>
-    <path class="fillable" fill="#ffffff" d="M155 175 Q153 180 159 183 Q163 177 155 175 Z"/>
-    <path class="fillable" fill="#ffffff" d="M240 175 Q238 180 244 183 Q248 177 240 175 Z"/>
   </g>
 </g>
 ''')
@@ -1272,15 +1247,11 @@ add('hamburger', '🍔 汉堡', 'food', '''
   <ellipse class="fillable" fill="#ffffff" cx="200" cy="280" rx="155" ry="12"/>
   <path class="fillable" fill="#ffffff" d="M60 130 Q60 60 200 60 Q340 60 340 130 Z"/>
   <g>
-    <circle class="fillable" fill="#ffffff" cx="100" cy="100" r="4"/>
-    <circle class="fillable" fill="#ffffff" cx="140" cy="80" r="4"/>
-    <circle class="fillable" fill="#ffffff" cx="180" cy="70" r="4"/>
-    <circle class="fillable" fill="#ffffff" cx="220" cy="70" r="4"/>
-    <circle class="fillable" fill="#ffffff" cx="260" cy="80" r="4"/>
-    <circle class="fillable" fill="#ffffff" cx="300" cy="100" r="4"/>
-    <circle class="fillable" fill="#ffffff" cx="120" cy="118" r="4"/>
-    <circle class="fillable" fill="#ffffff" cx="200" cy="100" r="4"/>
-    <circle class="fillable" fill="#ffffff" cx="280" cy="118" r="4"/>
+    <circle class="fillable" fill="#ffffff" cx="130" cy="90" r="4"/>
+    <circle class="fillable" fill="#ffffff" cx="180" cy="75" r="4"/>
+    <circle class="fillable" fill="#ffffff" cx="220" cy="75" r="4"/>
+    <circle class="fillable" fill="#ffffff" cx="270" cy="90" r="4"/>
+    <circle class="fillable" fill="#ffffff" cx="200" cy="105" r="4"/>
   </g>
   <path class="fillable" fill="#ffffff" d="M50 130 Q60 145 90 138 Q120 150 150 138 Q180 150 210 138 Q240 150 270 138 Q300 150 350 130 L348 158 Q300 165 270 158 Q240 165 210 158 Q180 165 150 158 Q120 165 90 158 Q60 165 52 158 Z"/>
   <rect class="fillable" fill="#ffffff" x="55" y="160" width="290" height="20" rx="3"/>
@@ -1870,7 +1841,7 @@ add('lollipop', '🍭 棒棒糖', 'food', '''
   <circle class="fillable" fill="#ffffff" cx="199" cy="142" r="42"/>
   <path class="fillable" fill="#ffffff" d="M199 105 L208 132 L235 132 L213 148 L222 175 L199 158 L176 175 L185 148 L163 132 L190 132 Z"/>
   <circle class="fillable" fill="#ffffff" cx="269" cy="130" r="46"/>
-  <g><circle class="fillable" fill="#ffffff" cx="250" cy="115" r="5"/><circle class="fillable" fill="#ffffff" cx="275" cy="110" r="5"/><circle class="fillable" fill="#ffffff" cx="295" cy="120" r="5"/><circle class="fillable" fill="#ffffff" cx="255" cy="140" r="5"/><circle class="fillable" fill="#ffffff" cx="285" cy="145" r="5"/><circle class="fillable" fill="#ffffff" cx="270" cy="130" r="5"/><circle class="fillable" fill="#ffffff" cx="240" cy="130" r="4"/><circle class="fillable" fill="#ffffff" cx="295" cy="135" r="4"/></g>
+  <g><circle class="fillable" fill="#ffffff" cx="250" cy="115" r="5"/><circle class="fillable" fill="#ffffff" cx="290" cy="115" r="5"/><circle class="fillable" fill="#ffffff" cx="270" cy="130" r="5"/><circle class="fillable" fill="#ffffff" cx="250" cy="145" r="5"/><circle class="fillable" fill="#ffffff" cx="290" cy="145" r="5"/></g>
 </g>
 ''')
 
@@ -2037,7 +2008,7 @@ add('chef', '👨‍🍳 厨师', 'people', '''
   <path class="fillable" fill="#ffffff" d="M217 132 Q225 145 205 145 Z"/>
   <path class="fillable" fill="#ffffff" d="M140 165 L260 165 L275 270 L125 270 Z"/>
   <line x1="200" y1="165" x2="200" y2="270"/>
-  <g><circle class="fillable" fill="#ffffff" cx="175" cy="195" r="3"/><circle class="fillable" fill="#ffffff" cx="175" cy="215" r="3"/><circle class="fillable" fill="#ffffff" cx="175" cy="235" r="3"/><circle class="fillable" fill="#ffffff" cx="225" cy="195" r="3"/><circle class="fillable" fill="#ffffff" cx="225" cy="215" r="3"/><circle class="fillable" fill="#ffffff" cx="225" cy="235" r="3"/></g>
+  <g><circle class="fillable" fill="#ffffff" cx="175" cy="195" r="3"/><circle class="fillable" fill="#ffffff" cx="175" cy="220" r="3"/><circle class="fillable" fill="#ffffff" cx="175" cy="245" r="3"/><circle class="fillable" fill="#ffffff" cx="225" cy="205" r="3"/><circle class="fillable" fill="#ffffff" cx="225" cy="230" r="3"/></g>
   <path class="fillable" fill="#ffffff" d="M125 220 L100 270 L130 270 Z"/>
   <path class="fillable" fill="#ffffff" d="M275 220 L300 270 L270 270 Z"/>
   <path class="fillable" fill="#ffffff" d="M260 165 L290 200 L310 195 L320 205 L295 230 L260 195 Z"/>
