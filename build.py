@@ -1250,9 +1250,8 @@ HTML_BODY = r"""<body>
           <button data-min="1">1<span data-i18n="timerMinSuffix">分钟</span></button>
           <button data-min="2">2<span data-i18n="timerMinSuffix">分钟</span></button>
           <button data-min="3">3<span data-i18n="timerMinSuffix">分钟</span></button>
+          <button data-min="4">4<span data-i18n="timerMinSuffix">分钟</span></button>
           <button data-min="5">5<span data-i18n="timerMinSuffix">分钟</span></button>
-          <button data-min="10">10<span data-i18n="timerMinSuffix">分钟</span></button>
-          <button data-min="15">15<span data-i18n="timerMinSuffix">分钟</span></button>
           <button data-min="0" data-i18n="timerOff">关掉</button>
           <button data-min="more" id="singleMoreBtn" data-i18n="timerMoreBtn">更多…</button>
           <input id="singleCustom" type="number" min="1" max="180" inputmode="numeric"
@@ -2867,7 +2866,7 @@ function refreshTimerModalSelections() {
     refreshOptionGroup({
       selector: '#timerOptions', dataKey: 'min',
       value: tm.durationSec / 60,
-      presets: new Set([0, 1, 2, 3, 5, 10, 15]),
+      presets: new Set([0, 1, 2, 3, 4, 5]),
       formatCustom: (v) => v + ' ' + t('timerMinSuffix'),
     });
   }
