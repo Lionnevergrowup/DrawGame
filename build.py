@@ -86,10 +86,11 @@ I18N = {
     'timerHowManyRounds': '玩几轮?(每人都画完算一轮)',
     'timerMinSuffix': '分钟', 'timerPlayerSuffix': '人', 'timerRoundSuffix': '轮',
     'timerUnlimited': '不限', 'timerOff': '关掉',
-    'timerResetBtn': '↺ 重置', 'timerPause': '⏸ 暂停', 'timerResume': '▶ 继续',
-    'timerStart': '▶ 开始', 'timerStartToast': '开始计时',
-    'timerRestartConfirm': '现在重新开始计时会清掉当前进度,要继续吗?',
-    'timerOffNoStart': '倒计时关掉了,不需要开始',
+    'timerRestartBtn': '↺ 从头开始', 'timerDoneBtn': '✓ 完成',
+    'timerStartToast': '从头开始计时',
+    'timerPausedHint': '⏸ 已暂停 — 改了就按新的来,没改就继续',
+    'timerResumed': '继续计时',
+    'timerAppliedToast': '按新设置重新开始',
     'timeUp': '时间到啦!', 'greatJob': '画得真棒 🎉',
     'add10Min': '再加 10 分钟', 'add1Min': '再加 1 分钟', 'ok': '好的',
     'switchPlayer': '换人啦!',
@@ -172,10 +173,11 @@ I18N = {
     'timerHowManyRounds': 'How many rounds? (everyone draws once per round)',
     'timerMinSuffix': 'min', 'timerPlayerSuffix': 'players', 'timerRoundSuffix': 'rounds',
     'timerUnlimited': '∞', 'timerOff': 'Off',
-    'timerResetBtn': '↺ Reset', 'timerPause': '⏸ Pause', 'timerResume': '▶ Resume',
-    'timerStart': '▶ Start', 'timerStartToast': 'Timer started',
-    'timerRestartConfirm': 'Restarting now will reset current progress. Continue?',
-    'timerOffNoStart': 'Timer is off, nothing to start',
+    'timerRestartBtn': '↺ Restart', 'timerDoneBtn': '✓ Done',
+    'timerStartToast': 'Timer restarted',
+    'timerPausedHint': '⏸ Paused — Done will resume, changes restart fresh',
+    'timerResumed': 'Resumed',
+    'timerAppliedToast': 'Restarted with new settings',
     'timeUp': 'Time\'s up!', 'greatJob': 'Great job! 🎉',
     'add10Min': '+10 min', 'add1Min': '+1 min', 'ok': 'OK',
     'switchPlayer': 'Switch player!',
@@ -1285,9 +1287,8 @@ HTML_BODY = r"""<body>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="secondary-btn" id="timerReset" data-i18n="timerResetBtn">↺ 重置</button>
-      <button class="secondary-btn" id="timerPauseResume" data-i18n="timerPause">⏸ 暂停</button>
-      <button class="primary-btn" id="timerStart" data-i18n="timerStart">▶ 开始</button>
+      <button class="secondary-btn" id="timerRestart" data-i18n="timerRestartBtn">↺ 从头开始</button>
+      <button class="primary-btn" id="timerDone" data-i18n="timerDoneBtn">✓ 完成</button>
     </div>
   </div>
 </div>
@@ -2494,10 +2495,7 @@ function markFirstPickDone() {
 function maybeShowTimerIntro() {
   try { if (localStorage.getItem('cga_timer_intro_seen')) return; } catch (_) { return; }
   try { localStorage.setItem('cga_timer_intro_seen', '1'); } catch (_) {}
-  setTimeout(() => {
-    refreshTimerModalSelections();
-    openModal('timerModal');
-  }, 350);
+  setTimeout(openTimerModal, 350);
 }
 
 /* =========================================================================
@@ -2845,138 +2843,126 @@ function refreshTimerModalSelections() {
   document.querySelectorAll('#multiRoundOpts button').forEach(b => {
     b.classList.toggle('active', tm.mode === 'multi' && +b.dataset.r === tm.totalRounds);
   });
-  document.getElementById('timerPauseResume').textContent = tm.paused ? t('timerResume') : t('timerPause');
 }
 
-timerChip.addEventListener('click', () => {
+// "Edit timer settings" snapshot. While the modal is open the running
+// timer is auto-paused, options just stage changes (no live restart),
+// and the close handler decides between "resume" and "restart with new
+// settings" by diffing against the snapshot.
+let _timerSnapshot = null;
+function openTimerModal() {
+  const tm = state.timer;
+  // Auto-pause the running timer while user is in settings.
+  if (!tm.paused && !tm.done && tm.durationSec > 0) {
+    tm.elapsedBefore = tm.elapsedBefore + (Date.now() - tm.startTs);
+    tm.paused = true;
+    tickTimer();
+  }
+  _timerSnapshot = {
+    mode: tm.mode,
+    durationSec: tm.durationSec,
+    playerCount: tm.playerCount,
+    totalRounds: tm.totalRounds,
+  };
   refreshTimerModalSelections();
   openModal('timerModal');
-});
+}
+
+// Called when modal closes (Done button, ×, or backdrop click) via the
+// MutationObserver below. Diffs current settings against the snapshot:
+// changed → restart with new settings; same → unpause + resume.
+function finishTimerModal(force) {
+  const tm = state.timer;
+  if (!_timerSnapshot && !force) return;
+  const snap = _timerSnapshot;
+  _timerSnapshot = null;
+  const changed = snap && (
+    snap.mode !== tm.mode ||
+    snap.durationSec !== tm.durationSec ||
+    snap.playerCount !== tm.playerCount ||
+    snap.totalRounds !== tm.totalRounds
+  );
+  if (force || changed) {
+    tm.elapsedBefore = 0;
+    tm.startTs = Date.now();
+    tm.paused = false;
+    tm.fired = false;
+    tm.done = false;
+    if (tm.mode === 'multi') {
+      tm.currentPlayer = 1;
+      tm.currentRound = 1;
+    }
+    tickTimer();
+    savePersisted();
+    if (tm.durationSec > 0) showToast(force ? t('timerStartToast') : t('timerAppliedToast'), 1200);
+  } else {
+    // No changes — resume from pause
+    tm.paused = false;
+    tm.startTs = Date.now();
+    tickTimer();
+    savePersisted();
+    if (tm.durationSec > 0) showToast(t('timerResumed'), 1000);
+  }
+}
+
+timerChip.addEventListener('click', openTimerModal);
+
+// Options just stage changes — no live timer reset. The diff at close
+// decides whether to restart.
 document.querySelectorAll('.mode-tab').forEach(b => {
   b.addEventListener('click', () => {
     const tm = state.timer;
     tm.mode = b.dataset.mode;
     if (tm.mode === 'multi') {
-      // Switching INTO multi mode: pick a sensible per-turn default
       if (tm.durationSec === 0 || tm.durationSec > 1800) tm.durationSec = 60;
-      tm.currentPlayer = 1;
-      tm.currentRound = 1;
-      tm.done = false;
     } else {
-      // Switching back to single — keep durationSec if it's reasonable
       if (tm.durationSec < 60) tm.durationSec = 600;
     }
-    tm.elapsedBefore = 0;
-    tm.startTs = Date.now();
-    tm.paused = false;
-    tm.fired = false;
     refreshTimerModalSelections();
-    tickTimer();
-    savePersisted();
   });
 });
 document.getElementById('timerOptions').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return;
   state.timer.mode = 'single';
-  setTimerDuration(+b.dataset.min * 60);
+  state.timer.durationSec = +b.dataset.min * 60;
   refreshTimerModalSelections();
 });
 document.getElementById('multiCountOpts').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return;
-  const tm = state.timer;
-  tm.mode = 'multi';
-  tm.playerCount = +b.dataset.n;
-  tm.currentPlayer = 1;
-  tm.currentRound = 1;
-  tm.done = false;
-  tm.elapsedBefore = 0;
-  tm.startTs = Date.now();
-  tm.paused = false;
-  tm.fired = false;
+  state.timer.mode = 'multi';
+  state.timer.playerCount = +b.dataset.n;
   refreshTimerModalSelections();
-  tickTimer();
-  savePersisted();
 });
 document.getElementById('multiTurnOpts').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return;
   state.timer.mode = 'multi';
-  state.timer.currentRound = 1;
-  state.timer.currentPlayer = 1;
-  state.timer.done = false;
-  setTimerDuration(+b.dataset.min * 60);
+  state.timer.durationSec = +b.dataset.min * 60;
   refreshTimerModalSelections();
 });
 document.getElementById('multiRoundOpts').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return;
-  const tm = state.timer;
-  tm.mode = 'multi';
-  tm.totalRounds = +b.dataset.r;
-  tm.currentPlayer = 1;
-  tm.currentRound = 1;
-  tm.done = false;
-  tm.elapsedBefore = 0;
-  tm.startTs = Date.now();
-  tm.paused = false;
-  tm.fired = false;
+  state.timer.mode = 'multi';
+  state.timer.totalRounds = +b.dataset.r;
   refreshTimerModalSelections();
-  tickTimer();
-  savePersisted();
 });
-function setTimerDuration(sec) {
-  state.timer.durationSec = sec;
-  state.timer.elapsedBefore = 0;
-  state.timer.startTs = Date.now();
-  state.timer.paused = false;
-  state.timer.fired = false;
-  state.timer.done = false;
-  tickTimer();
-  savePersisted();
-}
-document.getElementById('timerReset').addEventListener('click', () => {
-  const tm = state.timer;
-  if (tm.mode === 'multi') { tm.currentPlayer = 1; tm.currentRound = 1; }
-  tm.done = false;
-  setTimerDuration(tm.durationSec);
-  refreshTimerModalSelections();
-  showToast(t('timerResetToast'));
-});
-document.getElementById('timerPauseResume').addEventListener('click', () => {
-  const tm = state.timer;
-  if (tm.paused) {
-    tm.paused = false;
-    tm.startTs = Date.now();
-  } else {
-    tm.paused = true;
-    tm.elapsedBefore = tm.elapsedBefore + (Date.now() - tm.startTs);
-  }
-  refreshTimerModalSelections();
-  savePersisted();
-});
-document.getElementById('timerStart').addEventListener('click', () => {
-  const tm = state.timer;
-  if (tm.durationSec === 0) {
-    showToast(t('timerOffNoStart'), 1500);
-    return;
-  }
-  const elapsed = tm.paused
-    ? tm.elapsedBefore
-    : tm.elapsedBefore + (Date.now() - tm.startTs);
-  const midGame = (tm.mode === 'multi' && tm.currentRound > 1) || elapsed > 5000;
-  if (midGame && !confirm(t('timerRestartConfirm'))) return;
-  tm.elapsedBefore = 0;
-  tm.startTs = Date.now();
-  tm.paused = false;
-  tm.fired = false;
-  tm.done = false;
-  if (tm.mode === 'multi') {
-    tm.currentPlayer = 1;
-    tm.currentRound = 1;
-  }
-  tickTimer();
-  savePersisted();
+
+// 从头开始 / Restart — force a fresh start with currently-selected
+// settings, then close.
+document.getElementById('timerRestart').addEventListener('click', () => {
+  finishTimerModal(true);
   closeModal('timerModal');
-  showToast(t('timerStartToast'), 1200);
 });
+// ✓ 完成 / Done — just close. The MutationObserver below picks up the
+// hide and runs finishTimerModal (resume or restart based on diff).
+document.getElementById('timerDone').addEventListener('click', () => {
+  closeModal('timerModal');
+});
+// Modal can also close via × or backdrop click — observe the .show
+// class so finishTimerModal runs regardless of which path was used.
+const _timerModalEl = document.getElementById('timerModal');
+new MutationObserver(() => {
+  if (!_timerModalEl.classList.contains('show')) finishTimerModal(false);
+}).observe(_timerModalEl, { attributes: true, attributeFilter: ['class'] });
 
 /* =========================================================================
    Fullscreen
