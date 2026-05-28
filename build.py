@@ -1271,9 +1271,8 @@ HTML_BODY = r"""<body>
           <button data-min="1">1<span data-i18n="timerMinSuffix">分钟</span></button>
           <button data-min="2">2<span data-i18n="timerMinSuffix">分钟</span></button>
           <button data-min="3">3<span data-i18n="timerMinSuffix">分钟</span></button>
+          <button data-min="4">4<span data-i18n="timerMinSuffix">分钟</span></button>
           <button data-min="5">5<span data-i18n="timerMinSuffix">分钟</span></button>
-          <button data-min="10">10<span data-i18n="timerMinSuffix">分钟</span></button>
-          <button data-min="15">15<span data-i18n="timerMinSuffix">分钟</span></button>
         </div>
         <h4 data-i18n="timerHowManyRounds" style="margin:14px 0 4px;font-size:13px;color:#333">玩几轮?(每人都画完算一轮)</h4>
         <div class="timer-options" id="multiRoundOpts">
@@ -2914,7 +2913,9 @@ document.querySelectorAll('.mode-tab').forEach(b => {
     const tm = state.timer;
     tm.mode = b.dataset.mode;
     if (tm.mode === 'multi') {
-      if (tm.durationSec === 0 || tm.durationSec > 1800) tm.durationSec = 60;
+      // Multi-turn options are 1-5 min; default to 1 min if current
+      // duration is outside that range (e.g. carried over from single).
+      if (tm.durationSec < 60 || tm.durationSec > 300) tm.durationSec = 60;
     } else {
       if (tm.durationSec < 60) tm.durationSec = 600;
     }
