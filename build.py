@@ -1473,6 +1473,7 @@ function debounce(fn, ms) {
   let t = null;
   const debounced = (...a) => { clearTimeout(t); t = setTimeout(() => { fn(...a); t = null; }, ms); };
   debounced.flush = (...a) => { if (t) { clearTimeout(t); t = null; } fn(...a); };
+  debounced.cancel = () => { if (t) { clearTimeout(t); t = null; } };
   return debounced;
 }
 
@@ -1514,7 +1515,12 @@ function loadPersisted() {
   } catch (e) { console.warn('load failed', e); }
 }
 
+// Kill switch: doResetAll sets this to true so any in-flight or
+// timer-triggered savePersisted call between the LS wipe and the reload
+// can't restore the wiped state.
+let __resetting = false;
 const savePersisted = debounce(() => {
+  if (__resetting) return;
   try {
     // Normalize the running timer: fold the elapsed time since startTs into
     // elapsedBefore and reset startTs to now. This makes the saved state
@@ -2915,6 +2921,12 @@ document.getElementById('langToggle').addEventListener('click', toggleLang);
 // user gets the first-visit flow (help → picker → timer setup) fresh.
 function doResetAll() {
   if (!confirm(t('resetAllConfirm'))) return;
+  // Cancel any pending debounced save and flip the kill switch BEFORE
+  // wiping LS, so a stroke saved 100ms ago doesn't fire its 350ms-debounced
+  // savePersisted between the wipe and the reload — which would restore
+  // the colors we just nuked.
+  __resetting = true;
+  savePersisted.cancel();
   try {
     // Only nuke our own keys (cga_*) so we don't wreck other sites.
     const toRemove = [];
