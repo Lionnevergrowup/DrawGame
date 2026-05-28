@@ -220,6 +220,7 @@
     position: absolute; inset: 0;
     transform-origin: 0 0;
     transition: transform .12s ease-out;
+    touch-action: none;  /* let our own pointer code handle pinch / pan / tap */
   }
   .stage-inner.dragging { transition: none; }
   .stage-inner svg, .stage-inner canvas {
@@ -232,7 +233,7 @@
     transition: fill 0.15s ease;
   }
   .stage-inner svg .stamp-instance { cursor: pointer; }
-  .stage-inner svg { touch-action: manipulation; }  /* no iOS double-tap-zoom on the drawing */
+  .stage-inner svg { touch-action: none; }  /* no iOS double-tap or pinch consumption — JS handles it */
   .stage-inner canvas { touch-action: none; pointer-events: none; }
   .stage-inner canvas.draw-mode { pointer-events: auto; cursor: crosshair; }
 
@@ -4053,6 +4054,59 @@ function pointerEnd(e) {
 canvas.addEventListener('pointerup', pointerEnd);
 canvas.addEventListener('pointercancel', pointerEnd);
 canvas.addEventListener('pointerleave', pointerEnd);
+
+// Two-finger pinch / pan also needs to work when canvas is non-interactive
+// (fill or stamp mode) — canvas has pointer-events:none then, so its
+// pointerdown listener never fires. Bind a parallel set of pinch-only
+// handlers on stageInner so two-finger gestures work for all tools.
+// Uses its own pointer map so it doesn't double-count with canvas listeners
+// in brush/eraser mode (where both elements receive bubbled events).
+const stagePointers = new Map();
+let stagePinchStart = null;
+stageInner.addEventListener('pointerdown', (e) => {
+  // Skip touches that already went to canvas in draw mode — its handler
+  // already manages pinch there. We only need this fallback when canvas
+  // is non-interactive (fill / stamp tools).
+  if (state.tool === 'brush' || state.tool === 'eraser') return;
+  stagePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (stagePointers.size === 2) {
+    const pts = [...stagePointers.values()];
+    stagePinchStart = {
+      dist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y),
+      mid: { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 },
+      view: { ...state.view },
+    };
+    stageInner.classList.add('dragging');
+    e.preventDefault();
+  }
+});
+stageInner.addEventListener('pointermove', (e) => {
+  if (!stagePointers.has(e.pointerId)) return;
+  stagePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (stagePointers.size === 2 && stagePinchStart) {
+    const pts = [...stagePointers.values()];
+    const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    const mid = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+    const ratio = dist / stagePinchStart.dist;
+    const newScale = Math.max(1, Math.min(5, stagePinchStart.view.scale * ratio));
+    setView(
+      stagePinchStart.view.tx + (mid.x - stagePinchStart.mid.x),
+      stagePinchStart.view.ty + (mid.y - stagePinchStart.mid.y),
+      newScale,
+    );
+    e.preventDefault();
+  }
+});
+function stagePointerEnd(e) {
+  stagePointers.delete(e.pointerId);
+  if (stagePointers.size < 2) {
+    stagePinchStart = null;
+    stageInner.classList.remove('dragging');
+  }
+}
+stageInner.addEventListener('pointerup', stagePointerEnd);
+stageInner.addEventListener('pointercancel', stagePointerEnd);
+stageInner.addEventListener('pointerleave', stagePointerEnd);
 
 // Wheel-zoom
 stage.addEventListener('wheel', (e) => {
