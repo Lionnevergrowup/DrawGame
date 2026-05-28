@@ -1567,25 +1567,31 @@ const savePersisted = debounce(() => {
   }
 }, 350);
 
+function fillToSaveable(f) {
+  if (!f || f === '#ffffff') return null;
+  const m = f.match(/^url\(#([^)]+)\)$/);
+  if (m) {
+    const patEl = document.getElementById(m[1]);
+    if (patEl) {
+      const pkey = patEl.getAttribute('data-pkey');
+      const pcolor = patEl.getAttribute('data-pcolor');
+      if (pkey) return { p: pkey, c: pcolor };
+    }
+  }
+  return f;
+}
 function capturePageState() {
-  // Capture fill colors of fillable elements (by index) + canvas pixels (PNG)
+  // Capture fill colors of fillable elements (by index) + canvas pixels (PNG).
+  // The bg-fill rect is captured separately so older saved states (without
+  // a bg-fill rect) still address subject elements by the same indices.
   if (!svgEl) return null;
   const fills = [];
-  svgEl.querySelectorAll('.fillable').forEach((el, i) => {
-    const f = el.getAttribute('fill');
-    if (!f || f === '#ffffff') return;
-    // If it's a pattern url, look up the pattern def to extract (pattern,color)
-    const m = f.match(/^url\(#([^)]+)\)$/);
-    if (m) {
-      const patEl = document.getElementById(m[1]);
-      if (patEl) {
-        const pkey = patEl.getAttribute('data-pkey');
-        const pcolor = patEl.getAttribute('data-pcolor');
-        if (pkey) { fills.push([i, { p: pkey, c: pcolor }]); return; }
-      }
-    }
-    fills.push([i, f]);
+  svgEl.querySelectorAll('.fillable:not(.bg-fill)').forEach((el, i) => {
+    const saveable = fillToSaveable(el.getAttribute('fill'));
+    if (saveable !== null) fills.push([i, saveable]);
   });
+  const bgEl = svgEl.querySelector('.fillable.bg-fill');
+  const bg = bgEl ? fillToSaveable(bgEl.getAttribute('fill')) : null;
   // Capture stamps placed in SVG
   const stamps = [];
   svgEl.querySelectorAll('.stamp-instance').forEach(g => {
@@ -1603,7 +1609,7 @@ function capturePageState() {
     // Avoid serializing huge images: only save if non-empty
     if (canvasDirty && canvasHasContent()) strokes = canvas.toDataURL('image/png');
   } catch (e) {}
-  return { fills, stamps, strokes };
+  return { fills, stamps, strokes, bg };
 }
 
 function canvasHasContent() {
@@ -1640,7 +1646,9 @@ function trimPageStates(keep, currentKey) {
 function applyPageState(s) {
   if (!s) return;
   if (Array.isArray(s.fills)) {
-    const fillables = svgEl.querySelectorAll('.fillable');
+    // Use the non-bg fillables so indices are stable across the bg-fill rect
+    // being prepended at runtime. Saves from before bg-fill still work.
+    const fillables = svgEl.querySelectorAll('.fillable:not(.bg-fill)');
     s.fills.forEach(([i, f]) => {
       if (!fillables[i]) return;
       if (f && typeof f === 'object' && f.p) {
@@ -1649,6 +1657,16 @@ function applyPageState(s) {
         fillables[i].setAttribute('fill', f);
       }
     });
+  }
+  if (s.bg !== undefined && s.bg !== null) {
+    const bgEl = svgEl.querySelector('.fillable.bg-fill');
+    if (bgEl) {
+      if (typeof s.bg === 'object' && s.bg.p) {
+        bgEl.setAttribute('fill', patternInstanceFor(s.bg.p, s.bg.c));
+      } else {
+        bgEl.setAttribute('fill', s.bg);
+      }
+    }
   }
   if (Array.isArray(s.stamps)) {
     s.stamps.forEach(st => placeStamp(st.key, st.x, st.y, st.color, false, st.pattern, st.size));
@@ -1901,7 +1919,13 @@ function loadPage(key, restoreState = true) {
     svgEl.innerHTML =
       `<image href="${page.dataUrl}" x="0" y="0" width="400" height="300" preserveAspectRatio="xMidYMid meet"/>`;
   } else {
-    svgEl.innerHTML = page.svg;
+    // Prepend a full-canvas background fillable so that taps in empty
+    // areas (between subject elements) flood-fill the background. The
+    // subject groups sit on top in document order, so taps on subject
+    // elements still go to those elements. Stroke is forced to none so
+    // the rect doesn't pick up the subject group's heavy black border.
+    const bgRect = '<rect class="fillable bg-fill" fill="#ffffff" stroke="none" x="0" y="0" width="400" height="300"/>';
+    svgEl.innerHTML = bgRect + page.svg;
   }
   bindFillable();
   clearCanvas(false);
