@@ -3786,21 +3786,42 @@ function bindFillable() {
   // Direct SVG handlers only fire when canvas isn't catching clicks
   // (i.e. only in fill / stamp tool modes). Eraser is handled via the
   // canvas pointer flow with hit-testing — see eraserTapHitTest above.
+  function doFill(el) {
+    const prev = el.getAttribute('fill') || '#ffffff';
+    const next = currentFillValue();
+    if (prev === next) return;
+    pushHistory({ kind: 'fill', el, prevColor: prev });
+    el.setAttribute('fill', next);
+    savePersisted();
+  }
   svgEl.querySelectorAll('.fillable').forEach(el => {
-    // Click only. We used to also bind touchstart for "reliability" but that
-    // fired on the first finger of a two-finger pinch and painted a region
-    // the kid was trying to zoom into. touch-action: manipulation on the SVG
-    // already makes click reliable for taps, and browsers correctly suppress
-    // click on multi-touch gestures.
-    el.addEventListener('click', (e) => {
+    // Desktop / mouse: click is reliable.
+    el.addEventListener('click', () => {
       if (state.tool !== 'fill') return;
-      const prev = el.getAttribute('fill') || '#ffffff';
-      const next = currentFillValue();
-      if (prev === next) return;
-      pushHistory({ kind: 'fill', el, prevColor: prev });
-      el.setAttribute('fill', next);
-      savePersisted();
+      doFill(el);
     });
+    // Touch: click synthesis is unreliable inside SVG on iOS Safari when the
+    // ancestor has touch-action: none for pinch handling. Use touchend with
+    // tap-vs-pinch detection: only fill if (a) finger didn't move much, and
+    // (b) no other fingers are still down (so it wasn't a pinch).
+    let touchStart = null;
+    el.addEventListener('touchstart', (e) => {
+      if (state.tool !== 'fill') { touchStart = null; return; }
+      if (e.touches.length > 1) { touchStart = null; return; }
+      const t = e.touches[0];
+      touchStart = { x: t.clientX, y: t.clientY };
+    }, { passive: true });
+    el.addEventListener('touchend', (e) => {
+      const start = touchStart; touchStart = null;
+      if (!start || state.tool !== 'fill') return;
+      if (e.touches.length > 0) return;  // other fingers still down → pinch
+      const t = e.changedTouches[0];
+      const dx = t.clientX - start.x;
+      const dy = t.clientY - start.y;
+      if (dx * dx + dy * dy > 144) return;  // moved > 12px → drag, not tap
+      e.preventDefault();  // suppress the duplicate synthesized click
+      doFill(el);
+    }, { passive: false });
   });
 }
 // Delegated SVG click handler for stamp placement.
