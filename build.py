@@ -107,6 +107,7 @@ I18N = {
     'confirmClear': '要清空当前这张画吗?清空后不能撤销。',
     'confirmDeleteCustom': '删除自己上传的图 "{0}"?这张画也会一起删掉。',
     'customEmpty': '还没有自己上传的图。<br>点上面的 上传图片 选张照片,或者粘贴图片网址。',
+    'randomPicture': '🎲 随便一张',
     'stampSelected': '在画上点一下放贴纸', 'stampDeselected': '取消贴纸',
     'storageFull': '存储已满,旧画作可能无法保存',
     'searchingImages': '正在搜图…',
@@ -193,6 +194,7 @@ I18N = {
     'confirmClear': 'Clear this drawing? This cannot be undone.',
     'confirmDeleteCustom': 'Delete uploaded picture "{0}"? Any coloring on it will be lost too.',
     'customEmpty': 'No uploaded pictures yet.<br>Tap Upload Image above to pick a photo, or paste an image URL.',
+    'randomPicture': '🎲 Random pick',
     'stampSelected': 'Tap on the canvas to place', 'stampDeselected': 'Sticker deselected',
     'storageFull': 'Storage full, older drawings may not save',
     'searchingImages': 'Searching…',
@@ -1156,6 +1158,9 @@ HTML_BODY = r"""<body>
         <button class="ghost-btn" id="urlLoadBtn" data-i18n="urlLoadBtn">载入</button>
       </div>
       <div class="cat-tabs" id="pictureCatTabs"></div>
+      <div style="display:flex;justify-content:flex-end;margin:-4px 2px 6px;">
+        <button class="ghost-btn" id="randomPictureBtn" data-i18n="randomPicture" style="font-size:13px;padding:6px 12px;">🎲 随便一张</button>
+      </div>
       <div class="picker-grid" id="pictureGrid"></div>
     </div>
   </div>
@@ -2492,6 +2497,17 @@ document.querySelectorAll('.modal').forEach(m => {
 });
 document.getElementById('pickPictureBtn').addEventListener('click', () => {
   buildPictureCatTabs(); buildPictureGrid(); openModal('pictureModal');
+});
+document.getElementById('randomPictureBtn').addEventListener('click', () => {
+  // Pick a random built-in template (not custom uploads) and load it.
+  // Excludes the currently-loaded one and "blank" so we never re-show
+  // the same page or land on the empty board.
+  const keys = Object.keys(PAGES).filter(k => !PAGES[k].custom && k !== 'blank' && k !== state.pageKey);
+  if (!keys.length) return;
+  const pick = keys[Math.floor(Math.random() * keys.length)];
+  loadPage(pick);
+  closeModal('pictureModal');
+  markFirstPickDone();
 });
 
 function buildPictureCatTabs() {
