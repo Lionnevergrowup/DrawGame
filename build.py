@@ -595,6 +595,17 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
   .pop-swatch-pat { border-radius: 10px; overflow: hidden; background: #fff; }
   .pop-swatch-pat svg { width: 100%; height: 100%; display: block; }
   .pop-label { font-size: 14px; font-weight: 600; color: #333; }
+  .recent-colors {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;
+    margin-top: 6px; min-height: 0;
+  }
+  .recent-colors:empty { display: none; }
+  .recent-colors button {
+    width: 100%; aspect-ratio: 1; border-radius: 8px;
+    border: 2px solid #fff; padding: 0; cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,.12);
+  }
+  .recent-colors button:active { transform: scale(.9); }
   .palette-section h3 {
     margin: 0 0 6px; font-size: 12px; color: #666;
     text-transform: uppercase; letter-spacing: 1px;
@@ -1076,6 +1087,7 @@ HTML_BODY = r"""<body>
       <span class="pop-swatch" id="curColorSwatch"></span>
       <span class="pop-label" data-i18n="colorsLabel">颜色</span>
     </button>
+    <div id="recentColors" class="recent-colors" aria-label="recently used colors"></div>
     <button class="pop-btn" id="openPatternPop" data-i18n-title="patternsLabel" title="纹路">
       <span class="pop-swatch pop-swatch-pat"><svg viewBox="0 0 30 30" id="curPatternPreview"><rect width="30" height="30" fill="#4ab3ff"/></svg></span>
       <span class="pop-label" id="curPatternName">纯色</span>
@@ -1487,6 +1499,7 @@ const state = {
     fired: false,
   },
   customPages: {}, // key -> { name, dataUrl }
+  recentColors: [], // last 5 picked colors, most-recent first
 };
 
 // Cap the undo stack so brush-stroke imageData entries (a few MB each at
@@ -1528,6 +1541,7 @@ function loadPersisted() {
       stampCat: data.stampCat ?? state.stampCat,
       view: data.view ?? state.view,
       customPages: data.customPages || {},
+      recentColors: Array.isArray(data.recentColors) ? data.recentColors : [],
       firstPickDone: !!data.firstPickDone,
       lang: data.lang === 'en' ? 'en' : 'cn',
     });
@@ -1576,6 +1590,7 @@ const savePersisted = debounce(() => {
       brushSize: state.brushSize, stampSize: state.stampSize, pageKey: state.pageKey,
       pictureCat: state.pictureCat, stampCat: state.stampCat,
       view: state.view, customPages: state.customPages,
+      recentColors: state.recentColors,
       timer: state.timer, pageStates,
       firstPickDone: state.firstPickDone,
       lang: state.lang,
@@ -1756,7 +1771,7 @@ function buildPalette() {
     swatchesBox.appendChild(sw);
   });
 }
-function selectColor(c) {
+function selectColor(c, fromRecent) {
   state.color = c;
   customColor.value = (c.length === 7 && c.startsWith('#')) ? c : '#000000';
   document.querySelectorAll('.swatch').forEach(s => s.classList.toggle('active', s.dataset.color === c));
@@ -1766,7 +1781,28 @@ function selectColor(c) {
   updatePatternDefs();
   const sm = document.getElementById('stampModal');
   if (sm && sm.classList.contains('show')) buildStampGrid();
+  // Track recently used colors (cap 5, most-recent first). Don't move
+  // entries when they're re-picked via the recent strip itself — the
+  // strip's job is "what did I use a moment ago", not "what did I last
+  // tap on", so jumping things around feels disorienting.
+  if (!fromRecent) {
+    state.recentColors = state.recentColors || [];
+    state.recentColors = [c, ...state.recentColors.filter(x => x !== c)].slice(0, 5);
+    renderRecentColors();
+  }
   savePersisted();
+}
+function renderRecentColors() {
+  const host = document.getElementById('recentColors');
+  if (!host) return;
+  host.innerHTML = '';
+  (state.recentColors || []).forEach(c => {
+    const b = document.createElement('button');
+    b.style.background = c;
+    b.title = c;
+    b.addEventListener('click', () => selectColor(c, /*fromRecent=*/true));
+    host.appendChild(b);
+  });
 }
 customColor.addEventListener('input', e => {
   selectColor(e.target.value);
@@ -3280,7 +3316,8 @@ loadPersisted();
 // normalization so the timer chip + modal show coherent values.
 normalizeTimerState();
 buildPalette();
-selectColor(state.color);
+selectColor(state.color, /*fromRecent=*/true);  // boot restore: don't touch the saved recents
+renderRecentColors();
 buildPatternTiles();
 updatePatternDefs();
 updateBrushPreview();
