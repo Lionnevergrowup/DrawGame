@@ -797,11 +797,12 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
   .picker-card.custom::after {
     content: '×';
     position: absolute; top: 4px; right: 4px;
-    width: 22px; height: 22px;
-    background: rgba(0,0,0,.55); color: #fff;
+    width: 28px; height: 28px;
+    background: rgba(220,40,60,.85); color: #fff;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 16px; line-height: 1;
+    font-size: 20px; line-height: 1; font-weight: 700;
+    box-shadow: 0 2px 6px rgba(0,0,0,.25);
   }
   .picker-card.custom img { width: 100%; flex: 1; object-fit: contain; }
 
@@ -2005,8 +2006,17 @@ function bindFillable() {
 // twice when both events fire.
 let lastStampPlaceTs = 0;
 function svgStampClick(e) {
-  if (state.tool !== 'stamp' || !state.stampKey) return;
+  if (state.tool !== 'stamp') return;
   if (e.target && e.target.closest && e.target.closest('.stamp-instance')) return;
+  // Stamp tool active but no sticker picked yet — open the picker so the
+  // user can pick one instead of silently no-op'ing.
+  if (!state.stampKey) {
+    const now = Date.now();
+    if (now - lastStampPlaceTs < 350) return;
+    lastStampPlaceTs = now;
+    buildStampCatTabs(); buildStampGrid(); openModal('stampModal');
+    return;
+  }
   const now = Date.now();
   if (now - lastStampPlaceTs < 350) return;   // debounce double-fire
   const pt = svgEventToPoint(e);
@@ -2522,7 +2532,7 @@ function buildPictureGrid() {
       if (page.custom) {
         const r = card.getBoundingClientRect();
         const x = e.clientX - r.left, y = e.clientY - r.top;
-        if (x > r.width - 30 && y < 30) {
+        if (x > r.width - 36 && y < 36) {
           // Confirm before nuking — a tiny 30×30 corner is easy to hit by
           // accident, and the upload is the only copy.
           if (!confirm(tFmt('confirmDeleteCustom', label))) return;
