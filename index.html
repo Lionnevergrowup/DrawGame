@@ -4521,11 +4521,37 @@ function addCustomPage(dataUrl, label) {
   closeModal('pictureModal');
   markFirstPickDone();
 }
-document.getElementById('fileInput').addEventListener('change', (e) => {
+// Downsize an uploaded image to fit in ~800×600 before storing — keeps
+// the localStorage footprint small (a 12-megapixel phone photo would
+// otherwise eat the entire quota with one upload).
+function downsizeImageDataUrl(dataUrl, maxW = 800, maxH = 600) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const ratio = Math.min(maxW / img.width, maxH / img.height, 1);
+      if (ratio >= 1 && dataUrl.length < 250_000) { resolve(dataUrl); return; }
+      const w = Math.max(1, Math.round(img.width * ratio));
+      const h = Math.max(1, Math.round(img.height * ratio));
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      // JPEG for photos (4-8× smaller); keep PNG if the source was PNG
+      // (often a line drawing where compression artifacts would show).
+      const fmt = /^data:image\/png/.test(dataUrl) ? 'image/png' : 'image/jpeg';
+      resolve(c.toDataURL(fmt, 0.85));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+document.getElementById('fileInput').addEventListener('change', async (e) => {
   const f = e.target.files && e.target.files[0];
   if (!f) return;
   const reader = new FileReader();
-  reader.onload = () => addCustomPage(reader.result, f.name.replace(/\.[^.]+$/, ''));
+  reader.onload = async () => {
+    const small = await downsizeImageDataUrl(reader.result);
+    addCustomPage(small, f.name.replace(/\.[^.]+$/, ''));
+  };
   reader.readAsDataURL(f);
   e.target.value = '';
 });
