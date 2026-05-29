@@ -105,6 +105,8 @@ I18N = {
     'nothingToUndo': '没有可以撤销的',
     'cleared': '已清空',
     'confirmClear': '要清空当前这张画吗?清空后不能撤销。',
+    'confirmDeleteCustom': '删除自己上传的图 "{0}"?这张画也会一起删掉。',
+    'customEmpty': '还没有自己上传的图。<br>点上面的 上传图片 选张照片,或者粘贴图片网址。',
     'stampSelected': '在画上点一下放贴纸', 'stampDeselected': '取消贴纸',
     'storageFull': '存储已满,旧画作可能无法保存',
     'searchingImages': '正在搜图…',
@@ -189,6 +191,8 @@ I18N = {
     'nothingToUndo': 'Nothing to undo',
     'cleared': 'Cleared',
     'confirmClear': 'Clear this drawing? This cannot be undone.',
+    'confirmDeleteCustom': 'Delete uploaded picture "{0}"? Any coloring on it will be lost too.',
+    'customEmpty': 'No uploaded pictures yet.<br>Tap Upload Image above to pick a photo, or paste an image URL.',
     'stampSelected': 'Tap on the canvas to place', 'stampDeselected': 'Sticker deselected',
     'storageFull': 'Storage full, older drawings may not save',
     'searchingImages': 'Searching…',
@@ -530,6 +534,8 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
   .big-btn:active { transform: scale(.92); box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 1px 3px rgba(0,0,0,.12); }
   .big-btn.danger { background: linear-gradient(180deg, rgba(255,200,200,.45), rgba(255,180,180,.2)); }
   .big-btn.danger:active { background: linear-gradient(180deg, rgba(255,170,170,.6), rgba(255,150,150,.3)); }
+  .big-btn.disabled-look { opacity: .35; cursor: default; }
+  .big-btn.disabled-look:active { transform: none; }
 
   /* Main layout */
   main {
@@ -1483,6 +1489,13 @@ const MAX_HISTORY = 25;
 function pushHistory(entry) {
   state.history.push(entry);
   while (state.history.length > MAX_HISTORY) state.history.shift();
+  refreshUndoBtn();
+}
+function refreshUndoBtn() {
+  const btn = document.getElementById('undoBtn');
+  if (!btn) return;
+  btn.disabled = state.history.length === 0;
+  btn.classList.toggle('disabled-look', state.history.length === 0);
 }
 
 function debounce(fn, ms) {
@@ -1917,6 +1930,7 @@ function loadPage(key, restoreState = true) {
   }
   state.pageKey = key;
   state.history = [];
+  refreshUndoBtn();
 
   if (page.custom && page.dataUrl) {
     svgEl.innerHTML =
@@ -2386,6 +2400,7 @@ document.getElementById('undoBtn').addEventListener('click', () => {
   else if (last.kind === 'stroke') ctx.putImageData(last.imageData, 0, 0);
   else if (last.kind === 'stamp' && last.el && last.el.parentNode) last.el.parentNode.removeChild(last.el);
   else if (last.kind === 'stamp-removed') placeStamp(last.key, last.x, last.y, last.color, false, last.pattern, last.size);
+  refreshUndoBtn();
   savePersisted();
 });
 
@@ -2508,6 +2523,9 @@ function buildPictureGrid() {
         const r = card.getBoundingClientRect();
         const x = e.clientX - r.left, y = e.clientY - r.top;
         if (x > r.width - 30 && y < 30) {
+          // Confirm before nuking — a tiny 30×30 corner is easy to hit by
+          // accident, and the upload is the only copy.
+          if (!confirm(tFmt('confirmDeleteCustom', label))) return;
           delete PAGES[key]; delete state.customPages[key];
           if (state.pageKey === key) { state.pageKey = 'blank'; loadPage('blank'); }
           // If we just deleted the last custom and we were on that tab,
@@ -2525,6 +2543,13 @@ function buildPictureGrid() {
     });
     pictureGrid.appendChild(card);
   });
+  // Empty-state hint for the custom tab when no uploads exist yet.
+  if (state.pictureCat === 'custom' && !pictureGrid.children.length) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: #888; font-size: 15px; line-height: 1.6;';
+    empty.innerHTML = '📁 ' + t('customEmpty');
+    pictureGrid.appendChild(empty);
+  }
 }
 
 // Called when the user first picks any picture — flips the firstPickDone
