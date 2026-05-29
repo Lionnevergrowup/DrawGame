@@ -135,6 +135,7 @@ I18N = {
     'helpResetBody': '顶上红色 🔄 按钮清空所有画作 + 设置,回到第一次打开的样子。误按了会先弹确认框。',
     'customColorLabel': '自选任意颜色 →',
     'resetAll': '🧹 全部重新开始', 'resetShort': '重置',
+    'musicLabel': '音乐', 'musicOn': '🎵 音乐已开', 'musicOff': '🔇 点开开音乐',
     'resetAllConfirm': '确定要全部重新开始吗?所有画的作品、上传的图片、计时器设置都会被清空,不能撤销。',
     'resetAllDone': '已重置,正在重新加载…',
   },
@@ -218,6 +219,7 @@ I18N = {
     'helpResetBody': 'The red 🔄 button at the top wipes every drawing + setting back to first-launch state. Confirms before nuking.',
     'customColorLabel': 'Or pick any color →',
     'resetAll': '🧹 Start over from scratch', 'resetShort': 'Reset',
+    'musicLabel': 'Music', 'musicOn': '🎵 Music on', 'musicOff': '🔇 Tap for music',
     'resetAllConfirm': "Really start over? All your drawings, uploads and timer settings will be wiped. This can't be undone.",
     'resetAllDone': 'Reset done — reloading…',
   },
@@ -1053,6 +1055,7 @@ HTML_BODY = r"""<body>
     <button class="big-btn danger" id="clearBtn"><span class="btn-icon">🗑</span><span class="btn-label" data-i18n="clear">清空</span></button>
     <button class="big-btn" id="saveBtn"><span class="btn-icon">💾</span><span class="btn-label" data-i18n="save">保存</span></button>
     <button class="big-btn" id="langToggle" title="Switch language / 切换语言"><span class="btn-icon">🌐</span><span class="btn-label">EN</span></button>
+    <button class="big-btn" id="musicBtn" data-i18n-title="musicOff" title="🎵 音乐"><span class="btn-icon" id="musicIcon">🔇</span><span class="btn-label" data-i18n="musicLabel">音乐</span></button>
     <button class="big-btn danger" id="resetCacheBtn" data-i18n-title="resetAll" title="🧹 全部重新开始"><span class="btn-icon">🔄</span><span class="btn-label" data-i18n="resetShort">重置</span></button>
     <button class="big-btn" id="helpBtn">?</button>
   </div>
@@ -3115,6 +3118,80 @@ new MutationObserver(() => {
    ========================================================================= */
 document.getElementById('helpBtn').addEventListener('click', () => openModal('helpModal'));
 document.getElementById('langToggle').addEventListener('click', toggleLang);
+
+/* =========================================================================
+   Background music — ambient pentatonic chimes synthesized on the fly via
+   Web Audio API. No external audio file, no network deps. Off by default;
+   user taps the 🎵 button to turn on. Choice persists across sessions but
+   we re-require a user gesture before audio actually starts (browser
+   autoplay policy).
+   ========================================================================= */
+let audioCtx = null;
+let musicOn = false;
+let musicTimer = null;
+const musicBtnEl = document.getElementById('musicBtn');
+const musicIconEl = document.getElementById('musicIcon');
+// C major pentatonic across two octaves — calm, kid-friendly, no
+// dissonance no matter which two notes overlap.
+const MUSIC_NOTES = [
+  261.63, 293.66, 329.63, 392.00, 440.00,   // C4 D4 E4 G4 A4
+  523.25, 587.33, 659.25, 783.99, 880.00,   // C5 D5 E5 G5 A5
+];
+function playOneNote() {
+  if (!musicOn || !audioCtx) return;
+  const freq = MUSIC_NOTES[Math.floor(Math.random() * MUSIC_NOTES.length)];
+  const t0 = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+  // Soft attack, long decay — chime/bell feel
+  gain.gain.setValueAtTime(0, t0);
+  gain.gain.linearRampToValueAtTime(0.05, t0 + 0.12);
+  gain.gain.exponentialRampToValueAtTime(0.001, t0 + 3.2);
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start(t0);
+  osc.stop(t0 + 3.4);
+  // Schedule next note 0.8-2.0s out; occasionally a brief overlapping
+  // second note for a hint of chord.
+  const gap = 800 + Math.random() * 1200;
+  if (Math.random() < 0.25) setTimeout(playOneNote, 200);   // overlap second note
+  musicTimer = setTimeout(playOneNote, gap);
+}
+function startMusic() {
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    audioCtx = new AC();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  musicOn = true;
+  playOneNote();
+  updateMusicBtn();
+}
+function stopMusic() {
+  musicOn = false;
+  if (musicTimer) { clearTimeout(musicTimer); musicTimer = null; }
+  // Don't tear down audioCtx — reusing it avoids re-asking for permission
+  updateMusicBtn();
+}
+function updateMusicBtn() {
+  musicIconEl.textContent = musicOn ? '🎵' : '🔇';
+  const k = musicOn ? 'musicOn' : 'musicOff';
+  musicBtnEl.setAttribute('data-i18n-title', k);
+  musicBtnEl.title = t(k);
+}
+musicBtnEl.addEventListener('click', () => {
+  if (musicOn) stopMusic();
+  else startMusic();
+});
+// Pause music when tab is hidden so we're not playing in the background
+// when the user has switched to another app.
+document.addEventListener('visibilitychange', () => {
+  if (!audioCtx || !musicOn) return;
+  if (document.visibilityState === 'hidden') audioCtx.suspend();
+  else audioCtx.resume();
+});
 
 // "Start over" — wipe every app key from localStorage and reload, so the
 // user gets the first-visit flow (help → picker → timer setup) fresh.
