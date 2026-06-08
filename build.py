@@ -3254,21 +3254,28 @@ function playOneNote() {
   if (!musicOn || !audioCtx) return;
   const freq = MUSIC_NOTES[Math.floor(Math.random() * MUSIC_NOTES.length)];
   const t0 = audioCtx.currentTime;
-  const osc = audioCtx.createOscillator();
+  // Mix a sine (clean tone) with a soft triangle one octave down for a
+  // bit of warmth — kalimba-ish instead of a pure beep.
+  const sine = audioCtx.createOscillator();
+  const tri  = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
-  osc.type = 'sine';
-  osc.frequency.value = freq;
-  // Soft attack, long decay — chime/bell feel
+  sine.type = 'sine';      sine.frequency.value = freq;
+  tri.type  = 'triangle';  tri.frequency.value  = freq / 2;
+  // Soft attack, long bell-like decay. Volume varies slightly so
+  // repeated notes don't feel mechanical.
+  const peak = 0.04 + Math.random() * 0.02;
   gain.gain.setValueAtTime(0, t0);
-  gain.gain.linearRampToValueAtTime(0.05, t0 + 0.12);
-  gain.gain.exponentialRampToValueAtTime(0.001, t0 + 3.2);
-  osc.connect(gain).connect(audioCtx.destination);
-  osc.start(t0);
-  osc.stop(t0 + 3.4);
-  // Schedule next note 0.8-2.0s out; occasionally a brief overlapping
+  gain.gain.linearRampToValueAtTime(peak, t0 + 0.10);
+  gain.gain.exponentialRampToValueAtTime(0.001, t0 + 3.0 + Math.random() * 0.8);
+  sine.connect(gain);
+  tri.connect(gain);
+  gain.connect(audioCtx.destination);
+  sine.start(t0); tri.start(t0);
+  sine.stop(t0 + 3.8); tri.stop(t0 + 3.8);
+  // Schedule next note 0.9-2.3s out; occasionally a brief overlapping
   // second note for a hint of chord.
-  const gap = 800 + Math.random() * 1200;
-  if (Math.random() < 0.25) setTimeout(playOneNote, 200);   // overlap second note
+  const gap = 900 + Math.random() * 1400;
+  if (Math.random() < 0.22) setTimeout(playOneNote, 220);   // overlap second note
   musicTimer = setTimeout(playOneNote, gap);
 }
 function startMusic() {
