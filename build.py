@@ -139,6 +139,7 @@ I18N = {
     'customColorLabel': '自选任意颜色 →',
     'resetAll': '🧹 全部重新开始', 'resetShort': '重置',
     'musicLabel': '音乐', 'musicOn': '🎵 音乐已开', 'musicOff': '🔇 点开开音乐',
+    'refreshLabel': '刷新', 'refreshTitle': '↻ 刷新页面(添加到主屏幕后没地址栏可以用)',
     'resetAllConfirm': '确定要全部重新开始吗?所有画的作品、上传的图片、计时器设置都会被清空,不能撤销。',
     'resetAllDone': '已重置,正在重新加载…',
   },
@@ -226,6 +227,7 @@ I18N = {
     'customColorLabel': 'Or pick any color →',
     'resetAll': '🧹 Start over from scratch', 'resetShort': 'Reset',
     'musicLabel': 'Music', 'musicOn': '🎵 Music on', 'musicOff': '🔇 Tap for music',
+    'refreshLabel': 'Refresh', 'refreshTitle': '↻ Reload the page (handy when running as a home-screen app)',
     'resetAllConfirm': "Really start over? All your drawings, uploads and timer settings will be wiped. This can't be undone.",
     'resetAllDone': 'Reset done — reloading…',
   },
@@ -1076,6 +1078,7 @@ HTML_BODY = r"""<body>
     <button class="big-btn" id="saveBtn"><span class="btn-icon">💾</span><span class="btn-label" data-i18n="save">保存</span></button>
     <button class="big-btn" id="langToggle" title="Switch language / 切换语言"><span class="btn-icon">🌐</span><span class="btn-label">EN</span></button>
     <button class="big-btn" id="musicBtn" data-i18n-title="musicOff" title="🎵 音乐"><span class="btn-icon" id="musicIcon">🔇</span><span class="btn-label" data-i18n="musicLabel">音乐</span></button>
+    <button class="big-btn" id="refreshBtn" data-i18n-title="refreshTitle" title="刷新页面"><span class="btn-icon">↻</span><span class="btn-label" data-i18n="refreshLabel">刷新</span></button>
     <button class="big-btn danger" id="resetCacheBtn" data-i18n-title="resetAll" title="🧹 全部重新开始"><span class="btn-icon">🔄</span><span class="btn-label" data-i18n="resetShort">重置</span></button>
     <button class="big-btn" id="helpBtn">?</button>
   </div>
@@ -3230,6 +3233,14 @@ new MutationObserver(() => {
    Help
    ========================================================================= */
 document.getElementById('helpBtn').addEventListener('click', () => openModal('helpModal'));
+// Refresh: equivalent to the browser reload button. Needed because iOS
+// home-screen-installed apps have no address bar / reload control.
+// Flush any pending debounced save first so a stroke saved &lt;350ms ago
+// isn't lost in the reload.
+document.getElementById('refreshBtn').addEventListener('click', () => {
+  try { savePersisted.flush(); } catch (_) {}
+  location.reload();
+});
 document.getElementById('langToggle').addEventListener('click', toggleLang);
 
 /* =========================================================================
