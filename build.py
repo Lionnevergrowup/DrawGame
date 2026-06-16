@@ -430,6 +430,12 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<!-- Tell iOS Safari (and the home-screen WebView) not to aggressively cache
+     the page — without these, deploying a new version doesn't show up after
+     "Add to Home Screen" until the user fully closes and reopens. -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 <title>卡通画图填色</title>
 <style>
   :root {
@@ -3235,11 +3241,15 @@ new MutationObserver(() => {
 document.getElementById('helpBtn').addEventListener('click', () => openModal('helpModal'));
 // Refresh: equivalent to the browser reload button. Needed because iOS
 // home-screen-installed apps have no address bar / reload control.
-// Flush any pending debounced save first so a stroke saved &lt;350ms ago
-// isn't lost in the reload.
+// Flush any pending debounced save first so a stroke saved <350ms ago
+// isn't lost in the reload. Append a fresh ?v=timestamp so iOS Safari /
+// home-screen-installed apps can't serve a stale cached HTML — plain
+// location.reload() reads the cache.
 document.getElementById('refreshBtn').addEventListener('click', () => {
   try { savePersisted.flush(); } catch (_) {}
-  location.reload();
+  const url = new URL(location.href);
+  url.searchParams.set('v', Date.now());
+  location.replace(url.toString());
 });
 document.getElementById('langToggle').addEventListener('click', toggleLang);
 
