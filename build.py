@@ -3289,13 +3289,11 @@ document.getElementById('langToggle').addEventListener('click', toggleLang);
    ========================================================================= */
 const MUSIC_LS_KEY = 'cga_music';
 const MUSIC_MAX_VOICES = 6;
-const MUSIC_NOTE_SECS = 3.8;
-// C major pentatonic across two octaves: calm, no dissonance however
-// two notes overlap.
-const MUSIC_NOTES = [
-  261.63, 293.66, 329.63, 392.00, 440.00,   // C4 D4 E4 G4 A4
-  523.25, 587.33, 659.25, 783.99, 880.00,   // C5 D5 E5 G5 A5
-];
+const MUSIC_NOTE_SECS = 6.5;
+// Low, slow A-minor pentatonic (A3 C4 D4 E4 G4 A4 C5): mellow and sleepy.
+// The melody takes small random steps instead of jumping, so it drifts.
+const MUSIC_NOTES = [220.00, 261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
+let musicIdx = 2;
 const musicBtnEl = document.getElementById('musicBtn');
 const musicIconEl = document.getElementById('musicIcon');
 let musicWanted = true;
@@ -3328,17 +3326,18 @@ function musicTrigger() {
   const t0 = ctx.currentTime;
   while (musicVoiceEnds.length && musicVoiceEnds[0] <= t0) musicVoiceEnds.shift();
   if (musicVoiceEnds.length >= MUSIC_MAX_VOICES) return;
-  const freq = MUSIC_NOTES[Math.floor(Math.random() * MUSIC_NOTES.length)];
-  // Sine plus a soft triangle one octave down: kalimba-ish, not a beep.
+  musicIdx = Math.max(0, Math.min(MUSIC_NOTES.length - 1, musicIdx + Math.floor(Math.random() * 5) - 2));
+  const freq = MUSIC_NOTES[musicIdx];
+  // Sine plus a soft triangle one octave down: warm, not a beep.
   const sine = ctx.createOscillator();
   const tri  = ctx.createOscillator();
   const gain = ctx.createGain();
   sine.type = 'sine';      sine.frequency.value = freq;
   tri.type  = 'triangle';  tri.frequency.value  = freq / 2;
-  const peak = 0.04 + Math.random() * 0.02;
+  const peak = 0.025 + Math.random() * 0.01;
   gain.gain.setValueAtTime(0, t0);
-  gain.gain.linearRampToValueAtTime(peak, t0 + 0.10);
-  gain.gain.exponentialRampToValueAtTime(0.001, t0 + 3.0 + Math.random() * 0.8);
+  gain.gain.linearRampToValueAtTime(peak, t0 + 0.6);
+  gain.gain.exponentialRampToValueAtTime(0.001, t0 + 5.5 + Math.random() * 0.8);
   sine.connect(gain); tri.connect(gain); gain.connect(musicMaster);
   sine.start(t0);                 tri.start(t0);
   sine.stop(t0 + MUSIC_NOTE_SECS); tri.stop(t0 + MUSIC_NOTE_SECS);
@@ -3356,8 +3355,8 @@ function musicTick() {
   musicChain = null;                         // the timer that called us has fired
   if (!musicShouldPlay()) return;            // musicSync() restarts us when allowed
   musicTrigger();
-  if (Math.random() < 0.22) musicOneShot(220);   // sometimes a second note: hint of chord
-  musicChain = setTimeout(musicTick, 900 + Math.random() * 1400);
+  if (Math.random() < 0.10) musicOneShot(600);   // rarely a second note: soft chord
+  musicChain = setTimeout(musicTick, 2800 + Math.random() * 2800);
 }
 // Make actual playback match the desired state.
 function musicSync() {
