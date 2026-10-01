@@ -651,7 +651,7 @@
 </head>
 <body>
 
-<span id="verBadge">v54 · 10-01 14:44</span>
+<span id="verBadge">v55 · 10-01 14:48</span>
 <header>
   <h1 data-i18n="appTitle">🎨 画图填色</h1>
   <div class="timer-chip" id="timerChip" data-i18n-title="timerHint" title="点击设置倒计时">⏱ <span id="timerText">10:00</span></div>
@@ -5127,22 +5127,23 @@ document.getElementById('langToggle').addEventListener('click', toggleLang);
    button mutes it and the choice is remembered (cga_music = '0').
 
    Rules (each one is a bug we already hit):
-   - Exactly ONE scheduling chain. The occasional overlapping note is a
-     one-shot that schedules nothing. When it re-armed the chain, every
-     overlap added a permanent extra chain, the note count grew exponentially
-     and the audio died about a minute in.
+   - Exactly ONE scheduling chain, never more. An earlier version let the
+     overlapping-note path re-arm its own chain; the chains multiplied, the
+     note count grew exponentially and the audio died about a minute in.
    - Hard cap on simultaneously ringing notes (safety net).
    - Nothing plays unless the context is running AND the page is visible;
      all pending timers are cancelled the moment that stops being true, so
      no backlog of notes can burst out later.
    ========================================================================= */
 const MUSIC_LS_KEY = 'cga_music';
-const MUSIC_MAX_VOICES = 6;
-const MUSIC_NOTE_SECS = 6.5;
-// Low, slow A-minor pentatonic (A3 C4 D4 E4 G4 A4 C5): mellow and sleepy.
-// The melody takes small random steps instead of jumping, so it drifts.
-const MUSIC_NOTES = [220.00, 261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
-let musicIdx = 2;
+const MUSIC_MAX_VOICES = 10;
+const MUSIC_NOTE_SECS = 1.6;     // bass note length (melody plucks are 1.2s)
+const MUSIC_BEAT_MS = 260;       // eighth-note grid, about 115 bpm
+// Bright C major pentatonic (C4 D4 E4 G4 A4 C5 D5 E5 G5 A5): cheerful and
+// can never clash. The melody takes small random steps, so it hums a tune.
+const MUSIC_NOTES = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00];
+let musicIdx = 4;
+let musicBeat = 0;
 const musicBtnEl = document.getElementById('musicBtn');
 const musicIconEl = document.getElementById('musicIcon');
 let musicWanted = true;
@@ -5150,7 +5151,6 @@ try { musicWanted = localStorage.getItem(MUSIC_LS_KEY) !== '0'; } catch (_) {}
 let audioCtx = null;
 let musicMaster = null;              // gain bus every note goes through
 let musicChain = null;               // timer id of THE scheduling chain (null = stopped)
-const musicOneShots = new Set();     // timer ids of pending overlap notes
 const musicVoiceEnds = [];           // audio-clock end times of ringing notes
 
 function musicEnsureAudio() {
@@ -5169,43 +5169,41 @@ function musicShouldPlay() {
          document.visibilityState === 'visible';
 }
 // Play ONE note. Never schedules anything.
-function musicTrigger() {
+function musicTrigger(freqOverride, secs, peakOverride) {
   const ctx = audioCtx;
   if (!ctx || !musicMaster) return;
   const t0 = ctx.currentTime;
   while (musicVoiceEnds.length && musicVoiceEnds[0] <= t0) musicVoiceEnds.shift();
   if (musicVoiceEnds.length >= MUSIC_MAX_VOICES) return;
-  musicIdx = Math.max(0, Math.min(MUSIC_NOTES.length - 1, musicIdx + Math.floor(Math.random() * 5) - 2));
-  const freq = MUSIC_NOTES[musicIdx];
+  let freq = freqOverride;
+  if (!freq) {
+    musicIdx = Math.max(0, Math.min(MUSIC_NOTES.length - 1, musicIdx + Math.floor(Math.random() * 5) - 2));
+    freq = MUSIC_NOTES[musicIdx];
+  }
+  const len = secs || 1.2;
   // Sine plus a soft triangle one octave down: warm, not a beep.
   const sine = ctx.createOscillator();
   const tri  = ctx.createOscillator();
   const gain = ctx.createGain();
   sine.type = 'sine';      sine.frequency.value = freq;
   tri.type  = 'triangle';  tri.frequency.value  = freq / 2;
-  const peak = 0.025 + Math.random() * 0.01;
+  const peak = peakOverride || (0.045 + Math.random() * 0.015);
   gain.gain.setValueAtTime(0, t0);
-  gain.gain.linearRampToValueAtTime(peak, t0 + 0.6);
-  gain.gain.exponentialRampToValueAtTime(0.001, t0 + 5.5 + Math.random() * 0.8);
+  gain.gain.linearRampToValueAtTime(peak, t0 + 0.012);   // quick pluck attack
+  gain.gain.exponentialRampToValueAtTime(0.001, t0 + len);
   sine.connect(gain); tri.connect(gain); gain.connect(musicMaster);
   sine.start(t0);                 tri.start(t0);
-  sine.stop(t0 + MUSIC_NOTE_SECS); tri.stop(t0 + MUSIC_NOTE_SECS);
-  musicVoiceEnds.push(t0 + MUSIC_NOTE_SECS);
+  sine.stop(t0 + len + 0.05); tri.stop(t0 + len + 0.05);
+  musicVoiceEnds.push(t0 + len + 0.05);
 }
-function musicOneShot(ms) {
-  const id = setTimeout(() => {
-    musicOneShots.delete(id);
-    if (musicShouldPlay()) musicTrigger();
-  }, ms);
-  musicOneShots.add(id);
-}
-// THE single scheduling chain.
+// THE single scheduling chain: one tick per eighth note.
 function musicTick() {
   musicChain = null;                         // the timer that called us has fired
   if (!musicShouldPlay()) return;            // musicSync() restarts us when allowed
-  musicTrigger();
-  if (Math.random() < 0.10) musicOneShot(600);   // rarely a second note: soft chord
-  musicChain = setTimeout(musicTick, 2800 + Math.random() * 2800);
+  const beat = musicBeat++ % 16;
+  if (beat % 8 === 0) musicTrigger(MUSIC_NOTES[0] / 2, MUSIC_NOTE_SECS, 0.05);   // soft low bass on the downbeat
+  if (beat % 4 === 0 || Math.random() < 0.6) musicTrigger();                      // melody, with the odd rest
+  musicChain = setTimeout(musicTick, MUSIC_BEAT_MS);
 }
 // Make actual playback match the desired state.
 function musicSync() {
@@ -5219,8 +5217,6 @@ function musicSync() {
     if (musicChain === null) musicTick();
   } else {
     if (musicChain !== null) { clearTimeout(musicChain); musicChain = null; }
-    musicOneShots.forEach(id => clearTimeout(id));
-    musicOneShots.clear();
     if (musicMaster) {
       const bus = musicMaster; musicMaster = null;
       try { bus.gain.cancelScheduledValues(0); bus.gain.setTargetAtTime(0, audioCtx.currentTime, 0.04); } catch (_) {}
