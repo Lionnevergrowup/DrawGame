@@ -135,7 +135,7 @@ I18N = {
     'helpTimerHead': '⏱ 倒计时',
     'helpTimerBody': '点 ⏱ 按钮打开设置(默认多人轮流,2 个人,每人 1 分钟,5 轮)。改了任何设置按"完成"就按新设置重新开始计时;没改就继续之前的。每个选项有"更多…"可以输入自定义数字。',
     'helpMusicHead': '🎵 背景音乐',
-    'helpMusicBody': '打开页面后轻点一下屏幕,轻柔的背景音乐就会响起(浏览器要求先点一下才能出声)。想关就点顶上的 🎵 按钮,下次打开也会记住。如果没声音,请检查设备音量和 iPhone 侧边的静音开关。',
+    'helpMusicBody': '打开页面后轻点一下屏幕,轻柔的背景音乐就会响起(浏览器要求先点一下才能出声)。想关就点顶上的 🎵 按钮,下次打开也会记住。如果没声音,请检查设备音量。',
     'helpRefreshHead': '↻ 刷新',
     'helpRefreshBody': '顶上的 ↻ 按钮会重新载入页面并拿到最新版本(加到主屏幕后没有地址栏,可以用它)。刷新前会先保存画的内容。',
     'helpResetHead': '🔄 重置',
@@ -227,7 +227,7 @@ I18N = {
     'helpTimerHead': '⏱ Timer',
     'helpTimerBody': 'Tap ⏱ to open settings (default: multi-player, 2 players, 1 min/turn, 5 rounds). Change anything and tap Done — timer restarts with the new settings. Leave it alone — timer just resumes. Each group has a "More…" button for custom numbers.',
     'helpMusicHead': '🎵 Music',
-    'helpMusicBody': 'Soft background music starts after your first tap on the screen (browsers only allow sound after a tap). Tap the 🎵 button at the top to mute it; it remembers your choice. No sound? Check the device volume and the iPhone side silent switch.',
+    'helpMusicBody': 'Soft background music starts after your first tap on the screen (browsers only allow sound after a tap). Tap the 🎵 button at the top to mute it; it remembers your choice. No sound? Check the device volume.',
     'helpRefreshHead': '↻ Refresh',
     'helpRefreshBody': 'The ↻ button at the top reloads the page and picks up the latest version (handy for a home-screen app, which has no address bar). Your drawing is saved first.',
     'helpResetHead': '🔄 Reset',
@@ -3306,6 +3306,9 @@ function musicEnsureAudio() {
   if (!AC) return null;
   try { audioCtx = new AC(); } catch (_) { return null; }
   audioCtx.onstatechange = musicOnState;   // iOS may interrupt / suspend us
+  // iOS: the hardware silent switch mutes Web Audio unless the page declares
+  // a playback audio session (Safari 16.4+). Harmless on other browsers.
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (_) {}
   return audioCtx;
 }
 function musicShouldPlay() {
@@ -3389,6 +3392,13 @@ function musicUnlock() {
   if (!musicEnsureAudio()) return;
   let p = null;
   try { p = audioCtx.resume(); } catch (_) {}
+  // Older iOS only unlocks output after a (silent) buffer plays inside the gesture.
+  try {
+    const src = audioCtx.createBufferSource();
+    src.buffer = audioCtx.createBuffer(1, 1, 22050);
+    src.connect(audioCtx.destination);
+    src.start(0);
+  } catch (_) {}
   if (p && p.then) p.then(musicOnState, musicOnState); else musicOnState();
 }
 const MUSIC_UNLOCK_EVENTS = ['pointerup', 'touchend', 'click', 'keydown'];
