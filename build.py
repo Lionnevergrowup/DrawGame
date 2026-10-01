@@ -444,6 +444,11 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
+<!-- Icons: SVG favicon is inlined (page stays self-contained); the iOS
+     home-screen icon must be a real PNG file next to index.html. -->
+<link rel="icon" type="image/svg+xml" href="__ICON_DATA_URI__" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<meta name="theme-color" content="#5b8def" />
 <title>卡通画图填色</title>
 <style>
   :root {
@@ -3528,6 +3533,14 @@ def js_template_literal(svg):
     # Escape backticks and ${
     return svg.replace('\\', '\\\\').replace('`', '\\`').replace('${', '\\${')
 
+def icon_data_uri():
+    """icon.svg as a data: URI so the favicon needs no extra request."""
+    import urllib.parse
+    svg = open(os.path.join(ROOT, 'icon.svg'), encoding='utf-8').read()
+    svg = ' '.join(svg.split())
+    return 'data:image/svg+xml,' + urllib.parse.quote(svg, safe="/:=,;()' ")
+
+
 def build_version():
     """Monotonic build label shown on the page: v<commit count + 1> and UTC build time.
     (+1 because the commit that contains this build does not exist yet.)"""
@@ -3568,7 +3581,7 @@ def write_html():
         .replace('__TEMPLATE_NAMES_EN__', json.dumps(TEMPLATE_NAMES_EN, ensure_ascii=False)) \
         .replace('__STAMP_NAMES__', json.dumps(STAMP_NAMES_EN, ensure_ascii=False))
 
-    html = (HTML_HEAD_CSS + HTML_BODY + js).replace('__VERSION__', build_version())
+    html = (HTML_HEAD_CSS + HTML_BODY + js).replace('__VERSION__', build_version()).replace('__ICON_DATA_URI__', icon_data_uri())
     out = os.path.join(ROOT, 'index.html')
     with open(out, 'w', encoding='utf-8') as f:
         f.write(html)
