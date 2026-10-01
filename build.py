@@ -134,11 +134,15 @@ I18N = {
     'helpAutosaveBody': '每画一笔都自动存在浏览器里,关掉再打开,你画到一半的画会自动找回来。换图也会记住,不会丢。',
     'helpTimerHead': '⏱ 倒计时',
     'helpTimerBody': '点 ⏱ 按钮打开设置(默认多人轮流,2 个人,每人 1 分钟,5 轮)。改了任何设置按"完成"就按新设置重新开始计时;没改就继续之前的。每个选项有"更多…"可以输入自定义数字。',
+    'helpMusicHead': '🎵 背景音乐',
+    'helpMusicBody': '打开页面后轻点一下屏幕,轻柔的背景音乐就会响起(浏览器要求先点一下才能出声)。想关就点顶上的 🎵 按钮,下次打开也会记住。如果没声音,请检查设备音量和 iPhone 侧边的静音开关。',
+    'helpRefreshHead': '↻ 刷新',
+    'helpRefreshBody': '顶上的 ↻ 按钮会重新载入页面并拿到最新版本(加到主屏幕后没有地址栏,可以用它)。刷新前会先保存画的内容。',
     'helpResetHead': '🔄 重置',
     'helpResetBody': '顶上红色 🔄 按钮清空所有画作 + 设置,回到第一次打开的样子。误按了会先弹确认框。',
     'customColorLabel': '自选任意颜色 →',
     'resetAll': '🧹 全部重新开始', 'resetShort': '重置',
-    'musicLabel': '音乐', 'musicOn': '🎵 音乐已开', 'musicOff': '🔇 点开开音乐',
+    'musicLabel': '音乐', 'musicOn': '🎵 音乐开着(点一下静音)', 'musicOff': '🔇 音乐已静音(点一下打开)',
     'refreshLabel': '刷新', 'refreshTitle': '↻ 刷新页面(添加到主屏幕后没地址栏可以用)',
     'resetAllConfirm': '确定要全部重新开始吗?所有画的作品、上传的图片、计时器设置都会被清空,不能撤销。',
     'resetAllDone': '已重置,正在重新加载…',
@@ -222,11 +226,15 @@ I18N = {
     'helpAutosaveBody': 'Every change is saved in your browser. Close and reopen and your work is still there. Each picture is saved separately.',
     'helpTimerHead': '⏱ Timer',
     'helpTimerBody': 'Tap ⏱ to open settings (default: multi-player, 2 players, 1 min/turn, 5 rounds). Change anything and tap Done — timer restarts with the new settings. Leave it alone — timer just resumes. Each group has a "More…" button for custom numbers.',
+    'helpMusicHead': '🎵 Music',
+    'helpMusicBody': 'Soft background music starts after your first tap on the screen (browsers only allow sound after a tap). Tap the 🎵 button at the top to mute it; it remembers your choice. No sound? Check the device volume and the iPhone side silent switch.',
+    'helpRefreshHead': '↻ Refresh',
+    'helpRefreshBody': 'The ↻ button at the top reloads the page and picks up the latest version (handy for a home-screen app, which has no address bar). Your drawing is saved first.',
     'helpResetHead': '🔄 Reset',
     'helpResetBody': 'The red 🔄 button at the top wipes every drawing + setting back to first-launch state. Confirms before nuking.',
     'customColorLabel': 'Or pick any color →',
     'resetAll': '🧹 Start over from scratch', 'resetShort': 'Reset',
-    'musicLabel': 'Music', 'musicOn': '🎵 Music on', 'musicOff': '🔇 Tap for music',
+    'musicLabel': 'Music', 'musicOn': '🎵 Music on (tap to mute)', 'musicOff': '🔇 Music muted (tap to turn on)',
     'refreshLabel': 'Refresh', 'refreshTitle': '↻ Reload the page (handy when running as a home-screen app)',
     'resetAllConfirm': "Really start over? All your drawings, uploads and timer settings will be wiped. This can't be undone.",
     'resetAllDone': 'Reset done — reloading…',
@@ -1083,7 +1091,7 @@ HTML_BODY = r"""<body>
     <button class="big-btn danger" id="clearBtn"><span class="btn-icon">🗑</span><span class="btn-label" data-i18n="clear">清空</span></button>
     <button class="big-btn" id="saveBtn"><span class="btn-icon">💾</span><span class="btn-label" data-i18n="save">保存</span></button>
     <button class="big-btn" id="langToggle" title="Switch language / 切换语言"><span class="btn-icon">🌐</span><span class="btn-label">EN</span></button>
-    <button class="big-btn" id="musicBtn" data-i18n-title="musicOff" title="🎵 音乐"><span class="btn-icon" id="musicIcon">🔇</span><span class="btn-label" data-i18n="musicLabel">音乐</span></button>
+    <button class="big-btn" id="musicBtn" data-i18n-title="musicOn" title="🎵 音乐"><span class="btn-icon" id="musicIcon">🎵</span><span class="btn-label" data-i18n="musicLabel">音乐</span></button>
     <button class="big-btn" id="refreshBtn" data-i18n-title="refreshTitle" title="刷新页面"><span class="btn-icon">↻</span><span class="btn-label" data-i18n="refreshLabel">刷新</span></button>
     <button class="big-btn danger" id="resetCacheBtn" data-i18n-title="resetAll" title="🧹 全部重新开始"><span class="btn-icon">🔄</span><span class="btn-label" data-i18n="resetShort">重置</span></button>
     <button class="big-btn" id="helpBtn">?</button>
@@ -1370,6 +1378,10 @@ HTML_BODY = r"""<body>
       <p data-i18n="helpAutosaveBody"></p>
       <h3 data-i18n="helpTimerHead"></h3>
       <p data-i18n="helpTimerBody"></p>
+      <h3 data-i18n="helpMusicHead"></h3>
+      <p data-i18n="helpMusicBody"></p>
+      <h3 data-i18n="helpRefreshHead"></h3>
+      <p data-i18n="helpRefreshBody"></p>
       <h3 data-i18n="helpResetHead"></h3>
       <p data-i18n="helpResetBody"></p>
     </div>
@@ -3254,85 +3266,159 @@ document.getElementById('refreshBtn').addEventListener('click', () => {
 document.getElementById('langToggle').addEventListener('click', toggleLang);
 
 /* =========================================================================
-   Background music — ambient pentatonic chimes synthesized on the fly via
-   Web Audio API. No external audio file, no network deps. Off by default;
-   user taps the 🎵 button to turn on. Choice persists across sessions but
-   we re-require a user gesture before audio actually starts (browser
-   autoplay policy).
+   Background music: soft pentatonic chimes synthesized with Web Audio (no
+   audio files, no network). ON by default and starts on the first tap,
+   because browsers refuse to make sound before a user gesture. The music
+   button mutes it and the choice is remembered (cga_music = '0').
+
+   Rules (each one is a bug we already hit):
+   - Exactly ONE scheduling chain. The occasional overlapping note is a
+     one-shot that schedules nothing. When it re-armed the chain, every
+     overlap added a permanent extra chain, the note count grew exponentially
+     and the audio died about a minute in.
+   - Hard cap on simultaneously ringing notes (safety net).
+   - Nothing plays unless the context is running AND the page is visible;
+     all pending timers are cancelled the moment that stops being true, so
+     no backlog of notes can burst out later.
    ========================================================================= */
-let audioCtx = null;
-let musicOn = false;
-let musicTimer = null;
-const musicBtnEl = document.getElementById('musicBtn');
-const musicIconEl = document.getElementById('musicIcon');
-// C major pentatonic across two octaves — calm, kid-friendly, no
-// dissonance no matter which two notes overlap.
+const MUSIC_LS_KEY = 'cga_music';
+const MUSIC_MAX_VOICES = 6;
+const MUSIC_NOTE_SECS = 3.8;
+// C major pentatonic across two octaves: calm, no dissonance however
+// two notes overlap.
 const MUSIC_NOTES = [
   261.63, 293.66, 329.63, 392.00, 440.00,   // C4 D4 E4 G4 A4
   523.25, 587.33, 659.25, 783.99, 880.00,   // C5 D5 E5 G5 A5
 ];
-function playOneNote() {
-  if (!musicOn || !audioCtx) return;
+const musicBtnEl = document.getElementById('musicBtn');
+const musicIconEl = document.getElementById('musicIcon');
+let musicWanted = true;
+try { musicWanted = localStorage.getItem(MUSIC_LS_KEY) !== '0'; } catch (_) {}
+let audioCtx = null;
+let musicMaster = null;              // gain bus every note goes through
+let musicChain = null;               // timer id of THE scheduling chain (null = stopped)
+const musicOneShots = new Set();     // timer ids of pending overlap notes
+const musicVoiceEnds = [];           // audio-clock end times of ringing notes
+
+function musicEnsureAudio() {
+  if (audioCtx) return audioCtx;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+  try { audioCtx = new AC(); } catch (_) { return null; }
+  audioCtx.onstatechange = musicOnState;   // iOS may interrupt / suspend us
+  return audioCtx;
+}
+function musicShouldPlay() {
+  return musicWanted && !!audioCtx && audioCtx.state === 'running' &&
+         document.visibilityState === 'visible';
+}
+// Play ONE note. Never schedules anything.
+function musicTrigger() {
+  const ctx = audioCtx;
+  if (!ctx || !musicMaster) return;
+  const t0 = ctx.currentTime;
+  while (musicVoiceEnds.length && musicVoiceEnds[0] <= t0) musicVoiceEnds.shift();
+  if (musicVoiceEnds.length >= MUSIC_MAX_VOICES) return;
   const freq = MUSIC_NOTES[Math.floor(Math.random() * MUSIC_NOTES.length)];
-  const t0 = audioCtx.currentTime;
-  // Mix a sine (clean tone) with a soft triangle one octave down for a
-  // bit of warmth — kalimba-ish instead of a pure beep.
-  const sine = audioCtx.createOscillator();
-  const tri  = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
+  // Sine plus a soft triangle one octave down: kalimba-ish, not a beep.
+  const sine = ctx.createOscillator();
+  const tri  = ctx.createOscillator();
+  const gain = ctx.createGain();
   sine.type = 'sine';      sine.frequency.value = freq;
   tri.type  = 'triangle';  tri.frequency.value  = freq / 2;
-  // Soft attack, long bell-like decay. Volume varies slightly so
-  // repeated notes don't feel mechanical.
   const peak = 0.04 + Math.random() * 0.02;
   gain.gain.setValueAtTime(0, t0);
   gain.gain.linearRampToValueAtTime(peak, t0 + 0.10);
   gain.gain.exponentialRampToValueAtTime(0.001, t0 + 3.0 + Math.random() * 0.8);
-  sine.connect(gain);
-  tri.connect(gain);
-  gain.connect(audioCtx.destination);
-  sine.start(t0); tri.start(t0);
-  sine.stop(t0 + 3.8); tri.stop(t0 + 3.8);
-  // Schedule next note 0.9-2.3s out; occasionally a brief overlapping
-  // second note for a hint of chord.
-  const gap = 900 + Math.random() * 1400;
-  if (Math.random() < 0.22) setTimeout(playOneNote, 220);   // overlap second note
-  musicTimer = setTimeout(playOneNote, gap);
+  sine.connect(gain); tri.connect(gain); gain.connect(musicMaster);
+  sine.start(t0);                 tri.start(t0);
+  sine.stop(t0 + MUSIC_NOTE_SECS); tri.stop(t0 + MUSIC_NOTE_SECS);
+  musicVoiceEnds.push(t0 + MUSIC_NOTE_SECS);
 }
-function startMusic() {
-  if (!audioCtx) {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return;
-    audioCtx = new AC();
+function musicOneShot(ms) {
+  const id = setTimeout(() => {
+    musicOneShots.delete(id);
+    if (musicShouldPlay()) musicTrigger();
+  }, ms);
+  musicOneShots.add(id);
+}
+// THE single scheduling chain.
+function musicTick() {
+  musicChain = null;                         // the timer that called us has fired
+  if (!musicShouldPlay()) return;            // musicSync() restarts us when allowed
+  musicTrigger();
+  if (Math.random() < 0.22) musicOneShot(220);   // sometimes a second note: hint of chord
+  musicChain = setTimeout(musicTick, 900 + Math.random() * 1400);
+}
+// Make actual playback match the desired state.
+function musicSync() {
+  if (musicShouldPlay()) {
+    if (!musicMaster) {
+      musicMaster = audioCtx.createGain();
+      musicMaster.gain.value = 0;
+      musicMaster.connect(audioCtx.destination);
+      musicMaster.gain.setTargetAtTime(1, audioCtx.currentTime, 0.05);   // fade in, no click
+    }
+    if (musicChain === null) musicTick();
+  } else {
+    if (musicChain !== null) { clearTimeout(musicChain); musicChain = null; }
+    musicOneShots.forEach(id => clearTimeout(id));
+    musicOneShots.clear();
+    if (musicMaster) {
+      const bus = musicMaster; musicMaster = null;
+      try { bus.gain.cancelScheduledValues(0); bus.gain.setTargetAtTime(0, audioCtx.currentTime, 0.04); } catch (_) {}
+      setTimeout(() => { try { bus.disconnect(); } catch (_) {} }, 400);   // ringing tails die with the bus
+    }
   }
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  musicOn = true;
-  playOneNote();
-  updateMusicBtn();
+  musicUpdateBtn();
 }
-function stopMusic() {
-  musicOn = false;
-  if (musicTimer) { clearTimeout(musicTimer); musicTimer = null; }
-  // Don't tear down audioCtx — reusing it avoids re-asking for permission
-  updateMusicBtn();
-}
-function updateMusicBtn() {
-  musicIconEl.textContent = musicOn ? '🎵' : '🔇';
-  const k = musicOn ? 'musicOn' : 'musicOff';
+function musicUpdateBtn() {
+  musicIconEl.textContent = musicWanted ? '🎵' : '🔇';
+  const k = musicWanted ? 'musicOn' : 'musicOff';
   musicBtnEl.setAttribute('data-i18n-title', k);
   musicBtnEl.title = t(k);
 }
+function musicOnState() {
+  musicSync();
+  if (!audioCtx) return;
+  if (audioCtx.state === 'running') musicDisarmUnlock();
+  else if (musicWanted) musicArmUnlock();    // blocked / interrupted: next tap resumes
+}
+// Must run inside a user gesture (tap / key).
+function musicUnlock() {
+  if (!musicEnsureAudio()) return;
+  let p = null;
+  try { p = audioCtx.resume(); } catch (_) {}
+  if (p && p.then) p.then(musicOnState, musicOnState); else musicOnState();
+}
+const MUSIC_UNLOCK_EVENTS = ['pointerup', 'touchend', 'click', 'keydown'];
+let musicUnlockArmed = false;
+function musicOnGesture(e) {
+  if (!musicWanted) return;
+  if (e && e.target && e.target.closest && e.target.closest('#musicBtn')) return;  // button has its own handler
+  musicUnlock();
+}
+function musicArmUnlock() {
+  if (musicUnlockArmed) return;
+  musicUnlockArmed = true;
+  MUSIC_UNLOCK_EVENTS.forEach(ev => document.addEventListener(ev, musicOnGesture, { capture: true, passive: true }));
+}
+function musicDisarmUnlock() {
+  if (!musicUnlockArmed) return;
+  musicUnlockArmed = false;
+  MUSIC_UNLOCK_EVENTS.forEach(ev => document.removeEventListener(ev, musicOnGesture, { capture: true }));
+}
 musicBtnEl.addEventListener('click', () => {
-  if (musicOn) stopMusic();
-  else startMusic();
+  // Audible -> mute. Anything else (muted, or on but still waiting for a
+  // first tap) -> on, and this tap is the gesture that unlocks audio.
+  const wasAudible = musicWanted && musicChain !== null;
+  musicWanted = !wasAudible;
+  try { localStorage.setItem(MUSIC_LS_KEY, musicWanted ? '1' : '0'); } catch (_) {}
+  if (musicWanted) musicUnlock(); else musicSync();
 });
-// Pause music when tab is hidden so we're not playing in the background
-// when the user has switched to another app.
-document.addEventListener('visibilitychange', () => {
-  if (!audioCtx || !musicOn) return;
-  if (document.visibilityState === 'hidden') audioCtx.suspend();
-  else audioCtx.resume();
-});
+document.addEventListener('visibilitychange', musicSync);
+musicUpdateBtn();
+if (musicWanted) musicArmUnlock();
 
 // "Start over" — wipe every app key from localStorage and reload, so the
 // user gets the first-visit flow (help → picker → timer setup) fresh.
