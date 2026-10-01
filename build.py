@@ -2,7 +2,7 @@
 # Build script that assembles index.html from the data + templates below.
 # Run once after editing TEMPLATES / STAMPS. Output: /home/user/DrawGame/index.html
 
-import json, os, sys, textwrap
+import json, os, sys, textwrap, subprocess, datetime
 
 ROOT = '/home/user/DrawGame'
 
@@ -519,6 +519,11 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
     pointer-events: none;
   }
   header > * { position: relative; z-index: 1; }
+  #verBadge {
+    position: fixed; top: calc(1px + var(--safe-top)); left: 50%; transform: translateX(-50%);
+    font-size: 9px; line-height: 1; color: #555; opacity: .6; pointer-events: none;
+    z-index: 5; white-space: nowrap;
+  }
   header h1 {
     font-size: 20px; margin: 0; letter-spacing: 1.5px; flex-shrink: 0;
     font-weight: 800;
@@ -1081,6 +1086,7 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
 
 HTML_BODY = r"""<body>
 
+<span id="verBadge">__VERSION__</span>
 <header>
   <h1 data-i18n="appTitle">🎨 画图填色</h1>
   <div class="timer-chip" id="timerChip" data-i18n-title="timerHint" title="点击设置倒计时">⏱ <span id="timerText">10:00</span></div>
@@ -3527,6 +3533,17 @@ def js_template_literal(svg):
     # Escape backticks and ${
     return svg.replace('\\', '\\\\').replace('`', '\\`').replace('${', '\\${')
 
+def build_version():
+    """Monotonic build label shown on the page: v<commit count + 1> and UTC build time.
+    (+1 because the commit that contains this build does not exist yet.)"""
+    try:
+        n = int(subprocess.check_output(['git', 'rev-list', '--count', 'HEAD'],
+                cwd=os.path.dirname(os.path.abspath(__file__)), text=True).strip()) + 1
+    except Exception:
+        n = 0
+    return f"v{n} · {datetime.datetime.utcnow():%m-%d %H:%M}"
+
+
 def write_html():
     # Build PAGES JS dict
     page_entries = []
@@ -3556,7 +3573,7 @@ def write_html():
         .replace('__TEMPLATE_NAMES_EN__', json.dumps(TEMPLATE_NAMES_EN, ensure_ascii=False)) \
         .replace('__STAMP_NAMES__', json.dumps(STAMP_NAMES_EN, ensure_ascii=False))
 
-    html = HTML_HEAD_CSS + HTML_BODY + js
+    html = (HTML_HEAD_CSS + HTML_BODY + js).replace('__VERSION__', build_version())
     out = os.path.join(ROOT, 'index.html')
     with open(out, 'w', encoding='utf-8') as f:
         f.write(html)

@@ -86,6 +86,11 @@
     pointer-events: none;
   }
   header > * { position: relative; z-index: 1; }
+  #verBadge {
+    position: fixed; top: calc(1px + var(--safe-top)); left: 50%; transform: translateX(-50%);
+    font-size: 9px; line-height: 1; color: #555; opacity: .6; pointer-events: none;
+    z-index: 5; white-space: nowrap;
+  }
   header h1 {
     font-size: 20px; margin: 0; letter-spacing: 1.5px; flex-shrink: 0;
     font-weight: 800;
@@ -646,6 +651,7 @@
 </head>
 <body>
 
+<span id="verBadge">v53 · 10-01 14:36</span>
 <header>
   <h1 data-i18n="appTitle">🎨 画图填色</h1>
   <div class="timer-chip" id="timerChip" data-i18n-title="timerHint" title="点击设置倒计时">⏱ <span id="timerText">10:00</span></div>
