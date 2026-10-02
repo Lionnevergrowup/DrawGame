@@ -527,9 +527,9 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
   }
   header > * { position: relative; z-index: 1; }
   #verBadge {
-    position: fixed; top: calc(1px + var(--safe-top)); left: 50%; transform: translateX(-50%);
-    font-size: 9px; line-height: 1; color: #555; opacity: .6; pointer-events: none;
-    z-index: 5; white-space: nowrap;
+    position: absolute; right: 10px; top: 6px; z-index: 3;
+    font-size: 9px; line-height: 1; color: #555; opacity: .55; pointer-events: none;
+    white-space: nowrap;
   }
   header h1 {
     font-size: 20px; margin: 0; letter-spacing: 1.5px; flex-shrink: 0;
@@ -971,8 +971,13 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
     }
     header h1 { display: none; }
     .header-spacer { display: none; }
+    /* justify-content:flex-end + overflow makes the LEFT-most buttons
+       unreachable (overflow on the start side can't be scrolled to). Start-
+       align and push right with an auto margin instead: same look when it
+       fits, and the row stays scrollable when it doesn't. */
+    .header-btns > :first-child { margin-left: auto; }
     .header-btns {
-      flex: 1; justify-content: flex-end; gap: 4px;
+      flex: 1; justify-content: flex-start; gap: 4px; min-width: 0;
       flex-wrap: nowrap;
       overflow-x: auto;        /* if a really wide language ever overflows, allow scroll */
       scrollbar-width: none;
@@ -985,7 +990,7 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
     .big-btn .btn-icon  { font-size: 18px; }
     .big-btn {
       padding: 4px 8px; font-size: 12px;
-      min-height: 40px; min-width: 40px;
+      min-height: 44px; min-width: 44px;
       gap: 0; border-radius: 10px; flex-shrink: 0;
     }
 
@@ -997,7 +1002,8 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
       gap: 14px; max-height: none;
     }
     .palette > * { flex-shrink: 0; }
-    .palette .pop-btn { min-width: 110px; padding: 6px 10px; min-height: 48px; }
+    .palette .pop-btn { width: auto; min-width: 104px; padding: 6px 10px; min-height: 48px; }
+    .palette .recent-colors { margin-top: 0; align-self: center; grid-template-columns: repeat(5, 30px); gap: 4px; }
     .palette .pop-swatch { width: 28px; height: 28px; }
     .palette .pop-label { font-size: 13px; }
     .palette-section { min-width: 140px; }
@@ -1010,11 +1016,12 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
     .pattern-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
     .pattern-tile { padding: 3px; font-size: 10px; }
 
-    .stage-wrap { flex: 1; padding: 6px; min-height: 0; }
+    .stage-wrap { flex: 1; padding: 6px; min-height: 0;
+      flex-direction: column; justify-content: flex-start; gap: 6px; }
+    .stage { flex-shrink: 1; min-height: 0; }
     .bottom-bar {
-      left:   calc(4px + var(--safe-left));
-      right:  calc(4px + var(--safe-right));
-      bottom: calc(4px + var(--safe-bottom));
+      position: static; width: 100%; flex-shrink: 0;
+      padding-bottom: var(--safe-bottom);
       gap: 4px;
       flex-wrap: wrap;
     }
@@ -1024,7 +1031,7 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
       font-size: 10px; border-width: 2px;
     }
     .tool svg { width: 20px; height: 20px; }
-    .zoom-tools .tool { min-width: 38px; }
+    .zoom-tools .tool { min-width: 44px; }
     .zoom-tools .tool span { font-size: 16px; }
     .zoom-display { font-size: 10px; padding: 0 4px; min-width: 30px; }
 
@@ -1059,7 +1066,7 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
 
   /* Tiny phone (iPhone SE etc) — further compact: smaller buttons + tighter palette */
   @media (max-width: 400px) {
-    .big-btn { min-width: 38px; padding: 4px 6px; }
+    .big-btn { min-width: 44px; padding: 4px 6px; }
     .timer-chip { font-size: 12px; padding: 3px 8px; gap: 3px; }
     .palette { gap: 10px; padding: 6px 8px; }
     .palette > * { min-width: 100px; }
@@ -1094,7 +1101,6 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
 
 HTML_BODY = r"""<body>
 
-<span id="verBadge">__VERSION__</span>
 <header>
   <h1 data-i18n="appTitle">🎨 画图填色</h1>
   <div class="timer-chip" id="timerChip" data-i18n-title="timerHint" title="点击设置倒计时">⏱ <span id="timerText">10:00</span></div>
@@ -1140,6 +1146,7 @@ HTML_BODY = r"""<body>
 
   <div class="stage-wrap">
     <div class="stage" id="stage">
+      <span id="verBadge">__VERSION__</span>
       <div class="stage-inner" id="stageInner">
         <svg id="coloringSvg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid meet"></svg>
         <canvas id="drawCanvas"></canvas>
