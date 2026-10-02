@@ -92,6 +92,7 @@ I18N = {
     'timerAppliedToast': '按新设置重新开始',
     'timeUp': '时间到啦!', 'greatJob': '画得真棒 🎉',
     'add10Min': '再加 10 分钟', 'add1Min': '再加 1 分钟', 'ok': '好的',
+    'confirmYes': '确定', 'confirmNo': '取消', 'searchEmpty': '先在框里输入想搜的东西,比如 熊猫',
     'switchPlayer': '换人啦!',
     'letPlayerStart': '让玩家 {0} 开始 ▶',
     'allDone': '都画完啦!', 'playAgain': '再玩一局', 'finish': '完成',
@@ -184,6 +185,7 @@ I18N = {
     'timerAppliedToast': 'Restarted with new settings',
     'timeUp': 'Time\'s up!', 'greatJob': 'Great job! 🎉',
     'add10Min': '+10 min', 'add1Min': '+1 min', 'ok': 'OK',
+    'confirmYes': 'Yes', 'confirmNo': 'Cancel', 'searchEmpty': 'Type what to search for first, e.g. panda',
     'switchPlayer': 'Switch player!',
     'letPlayerStart': 'Player {0}\'s turn ▶',
     'allDone': 'All done!', 'playAgain': 'Play again', 'finish': 'Finish',
@@ -746,6 +748,7 @@ HTML_HEAD_CSS = r"""<!DOCTYPE html>
     padding: calc(12px + var(--safe-top)) calc(12px + var(--safe-right)) calc(12px + var(--safe-bottom)) calc(12px + var(--safe-left));
   }
   .modal.show { display: flex; }
+  .modal.confirm-modal { z-index: 80; }   /* above any modal that asked */
   .modal.show .modal-box { animation: modalIn .26s cubic-bezier(.34,1.4,.5,1); }
   .modal-box {
     background: #fff; border-radius: 24px;
@@ -1361,6 +1364,22 @@ HTML_BODY = r"""<body>
     </div>
     <!-- Buttons are injected by showTimerExpired() based on mode/turn. -->
     <div class="modal-footer" style="justify-content:center;gap:10px" id="timerExpiredButtons"></div>
+  </div>
+</div>
+
+<!-- In-app confirm dialog. Native confirm() is avoided on purpose: some
+     browsers (iOS home-screen apps, automation, blocked dialogs) make it
+     return false silently, so the action looks dead. -->
+<div class="modal confirm-modal" id="confirmModal" role="alertdialog" aria-modal="true">
+  <div class="modal-box" style="max-width:380px;text-align:center;">
+    <div class="modal-body" style="padding:28px 22px 10px">
+      <div style="font-size:44px">🤔</div>
+      <p id="confirmMsg" style="font-size:17px;line-height:1.55;color:#333;margin:10px 0 0"></p>
+    </div>
+    <div class="modal-footer" style="justify-content:center;gap:12px">
+      <button class="secondary-btn" id="confirmNo" data-i18n="confirmNo">取消</button>
+      <button class="primary-btn" id="confirmYes" data-i18n="confirmYes">确定</button>
+    </div>
   </div>
 </div>
 
@@ -2487,8 +2506,8 @@ document.getElementById('undoBtn').addEventListener('click', () => {
   savePersisted();
 });
 
-document.getElementById('clearBtn').addEventListener('click', () => {
-  if (!confirm(t('confirmClear'))) return;
+document.getElementById('clearBtn').addEventListener('click', async () => {
+  if (!(await askConfirm(t('confirmClear')))) return;
   // loadPage(..) snapshots the CURRENT (pre-clear) state into _pageStates
   // before replacing the SVG, so we have to delete that snapshot AFTER
   // loadPage finishes — otherwise switching to another page and back
@@ -2557,6 +2576,21 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
    ========================================================================= */
 function openModal(id) { document.getElementById(id).classList.add('show'); }
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+// askConfirm(msg) -> Promise<boolean>. Replaces window.confirm (see markup note).
+let _confirmResolve = null;
+function askConfirm(msg) {
+  if (_confirmResolve) _confirmResolve(false);
+  document.getElementById('confirmMsg').textContent = msg;
+  openModal('confirmModal');
+  return new Promise(res => { _confirmResolve = res; });
+}
+function _confirmDone(v) {
+  closeModal('confirmModal');
+  const r = _confirmResolve; _confirmResolve = null;
+  if (r) r(v);
+}
+document.getElementById('confirmYes').addEventListener('click', () => _confirmDone(true));
+document.getElementById('confirmNo').addEventListener('click', () => _confirmDone(false));
 document.querySelectorAll('[data-close]').forEach(b => {
   b.addEventListener('click', () => closeModal(b.dataset.close));
 });
@@ -2617,17 +2651,19 @@ function buildPictureGrid() {
         const r = card.getBoundingClientRect();
         const x = e.clientX - r.left, y = e.clientY - r.top;
         if (x > r.width - 36 && y < 36) {
-          // Confirm before nuking — a tiny 30×30 corner is easy to hit by
-          // accident, and the upload is the only copy.
-          if (!confirm(tFmt('confirmDeleteCustom', label))) return;
-          delete PAGES[key]; delete state.customPages[key];
-          if (state.pageKey === key) { state.pageKey = 'blank'; loadPage('blank'); }
-          // If we just deleted the last custom and we were on that tab,
-          // fall back to the first real category so the grid isn't empty.
-          if (state.pictureCat === 'custom' && !Object.keys(state.customPages).length) {
-            state.pictureCat = CATEGORIES[0][0];
-          }
-          savePersisted(); buildPictureCatTabs(); buildPictureGrid();
+          // Confirm before nuking: the corner is easy to hit by accident and
+          // the upload is the only copy.
+          askConfirm(tFmt('confirmDeleteCustom', label)).then(ok => {
+            if (!ok) return;
+            delete PAGES[key]; delete state.customPages[key];
+            if (state.pageKey === key) { state.pageKey = 'blank'; loadPage('blank'); }
+            // Deleted the last custom while on that tab: fall back to the
+            // first real category so the grid isn't empty.
+            if (state.pictureCat === 'custom' && !Object.keys(state.customPages).length) {
+              state.pictureCat = CATEGORIES[0][0];
+            }
+            savePersisted(); buildPictureCatTabs(); buildPictureGrid();
+          });
           return;
         }
       }
@@ -2763,11 +2799,11 @@ document.getElementById('gcsClear').addEventListener('click', () => {
 
 async function doGoogleSearch() {
   const q = (searchInput.value || '').trim();
-  if (!q) { searchInput.focus(); return; }
+  if (!q) { searchInput.focus(); showToast(t('searchEmpty'), 2000); return; }
   const key = localStorage.getItem(GCS_KEY_LS);
   const cx  = localStorage.getItem(GCS_CX_LS);
   if (!key || !cx) {
-    if (confirm(t('searchNeedKey'))) openModal('searchCfgModal');
+    if (await askConfirm(t('searchNeedKey'))) openModal('searchCfgModal');
     return;
   }
   searchResults.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:14px;color:#666;font-size:14px">${t('searchingImages')}</div>`;
@@ -2821,7 +2857,7 @@ document.getElementById('urlLoadBtn').addEventListener('click', async () => {
     reader.onload = () => { addCustomPage(reader.result, (state.lang === 'en' ? 'URL image' : '网络图')); input.value = ''; };
     reader.readAsDataURL(blob);
   } catch (err) {
-    if (confirm(t('corsWarning'))) {
+    if (await askConfirm(t('corsWarning'))) {
       addCustomPage(url, (state.lang === 'en' ? 'URL image' : '网络图'));
       input.value = '';
     }
@@ -3438,8 +3474,8 @@ if (musicWanted) musicArmUnlock();
 
 // "Start over" — wipe every app key from localStorage and reload, so the
 // user gets the first-visit flow (help → picker → timer setup) fresh.
-function doResetAll() {
-  if (!confirm(t('resetAllConfirm'))) return;
+async function doResetAll() {
+  if (!(await askConfirm(t('resetAllConfirm')))) return;
   // Cancel any pending debounced save and flip the kill switch BEFORE
   // wiping LS, so a stroke saved 100ms ago doesn't fire its 350ms-debounced
   // savePersisted between the wipe and the reload — which would restore
