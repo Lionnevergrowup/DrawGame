@@ -5,7 +5,7 @@
 ## 项目概述
 
 给小朋友(主要 5 岁左右)的画图涂色单页 Web App。100 张卡通线稿 + 30 个贴纸,
-20 种纹路 + 35 色调色板,自动保存到 localStorage,支持双指缩放 / 全屏 / 倒计时
+20 种纹路 + 35 色调色板,自动保存到 localStorage,支持双指缩放 / 倒计时 / 背景音乐
 (单人 + 多人轮流)。
 
 **运行时是单个 `index.html`** — 双击即开,部署到 GitHub Pages 后通过 URL 访问。
@@ -88,15 +88,19 @@ cd /home/user/DrawGame && python3 build.py
 
 ## SVG 图样约定(viewBox 固定 400×300)
 
-- 可填色形状:加 `class="fillable" fill="#ffffff"`
-- 固定颜色细节(瞳孔/嘴线):不加 `.fillable`,直接写死 fill
-- 外层 `<g stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">` 统一描边
-- **不要做覆盖大半画布的单个 `.fillable` 矩形**。用户专门要求"倒颜料区域不要太大,
-  一点一大片就没意思了"。背景留白即可
-- 每张图目标 ≥ 15 个小 `.fillable` 区域,带子结构(熊猫脸有眼眶/眼白/瞳孔分开,
-  老虎身上的条纹一条一条独立)
-- 像 pizza / watermelon / donut 这种几何上"一大片"的图,**用扇形 / 切片 / 环段**
-  切成多个 fillable
+2026-10 全部 99 张按统一画风重画过(用户嫌旧图丑),新图必须保持同一水准。
+样板是 `panda`:可爱卡通、大头圆身、部件互相连接,主体居中坐在地面上。
+
+- 外层统一 `<g stroke="#1a1a1a" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">`
+- 可填色形状:`class="fillable" fill="#ffffff"`。瞳孔 `fill="#1a1a1a" stroke="none"`,
+  眼睛高光 `fill="#ffffff" stroke="none"`,纯线条细节 `fill="none"`
+- 绘制顺序从后到前:天空 → 地面 → 背景道具 → 后肢/尾巴 → 身体 → 前肢 → 头 → 脸。
+  **部件必须互相重叠连接,不能飘在空中**(旧图最大的毛病)
+- 主体占画面高度 60–80%,离画布边 ≥10px;圆润曲线,不要乱锯齿
+- 每张 12–28 个填色区,每块够小手指点(≈14px+);地面带之外单块不超过画布 1/3
+- **不要画整画布背景 rect**(运行时 `loadPage` 会自动垫一个 `.bg-fill`)
+- 背景只放少量合适元素(太阳、云、山、浪);**不要零散小点 / 小星星 / 闪光**,用户明确讨厌
+- 改了某张图的 SVG,它的填色存档会因 `sig` 指纹变化被自动丢弃(贴纸/画笔保留)
 
 ## 贴纸约定(stamp 用)
 
