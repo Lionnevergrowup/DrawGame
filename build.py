@@ -2,7 +2,7 @@
 # Build script that assembles index.html from the data + templates below.
 # Run once after editing TEMPLATES / STAMPS. Output: /home/user/DrawGame/index.html
 
-import json, os, sys, textwrap, subprocess, datetime
+import json, os, sys, textwrap, subprocess, datetime, hashlib
 
 ROOT = '/home/user/DrawGame'
 
@@ -1697,7 +1697,10 @@ function capturePageState() {
     // Avoid serializing huge images: only save if non-empty
     if (canvasDirty && canvasHasContent()) strokes = canvas.toDataURL('image/png');
   } catch (e) {}
-  return { fills, stamps, strokes, bg };
+  // sig = fingerprint of the template drawing; fills are stored by region
+  // index, so they are only valid for the exact drawing they were made on.
+  const pg = PAGES[state.pageKey];
+  return { fills, stamps, strokes, bg, sig: pg && pg.sig };
 }
 
 function canvasHasContent() {
@@ -1733,6 +1736,11 @@ function trimPageStates(keep, currentKey) {
 
 function applyPageState(s) {
   if (!s) return;
+  // If the template drawing changed since this was saved (redrawn picture),
+  // region indices no longer line up: drop the old fills instead of
+  // splashing colors onto the wrong parts. Stamps and brush strokes stay.
+  const pg = PAGES[state.pageKey];
+  if (pg && pg.sig && s.sig !== pg.sig) { s = Object.assign({}, s, { fills: [], bg: null }); }
   if (Array.isArray(s.fills)) {
     // Use the non-bg fillables so indices are stable across the bg-fill rect
     // being prepended at runtime. Saves from before bg-fill still work.
@@ -3593,7 +3601,8 @@ def write_html():
     page_entries = []
     for key, name, cat, svg in TEMPLATES:
         svg_esc = js_template_literal(svg)
-        page_entries.append(f"  {key}: {{ name: {json.dumps(name, ensure_ascii=False)}, category: {json.dumps(cat)}, svg: `{svg_esc}` }}")
+        sig = hashlib.sha1(svg.encode('utf-8')).hexdigest()[:8]
+        page_entries.append(f"  {key}: {{ name: {json.dumps(name, ensure_ascii=False)}, category: {json.dumps(cat)}, sig: {json.dumps(sig)}, svg: `{svg_esc}` }}")
     pages_js = '{\n' + ',\n'.join(page_entries) + '\n}'
 
     # Build STAMPS JS array
